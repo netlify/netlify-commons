@@ -6,9 +6,10 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
 
-	"github.com/rybit/doppler/tls"
 	"github.com/rybit/nats_logrus_hook"
 	"github.com/rybit/nats_metrics"
+
+	"github.com/netlify/netlify-commons/tls"
 )
 
 type NatsConfig struct {
