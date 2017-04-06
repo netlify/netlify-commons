@@ -54,7 +54,15 @@ func ReportStats(config *Config, log *logrus.Entry) {
 	}()
 }
 
-func Increment(key string) {
+func Decrement(key string) {
+	IncrementN(key, -1)
+}
+
+func DecrementN(key string, n int64) {
+	IncrementN(key, -1*n)
+}
+
+func IncrementN(key string, n int64) {
 	go func() {
 		statLock.Lock()
 		defer statLock.Unlock()
@@ -62,6 +70,10 @@ func Increment(key string) {
 		if !ok {
 			val = 0
 		}
-		stats[key] = val + 1
+		stats[key] = val + n
 	}()
+}
+
+func Increment(key string) {
+	IncrementN(key, 1)
 }
