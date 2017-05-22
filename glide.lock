@@ -1,0 +1,133 @@
+hash: 6cfeb666842188c0fa416620d3af1c61c62c8e13ad35b835764b24d93f6c0be1
+updated: 2017-05-18T20:27:33.445751639-07:00
+imports:
+- name: github.com/fsnotify/fsnotify
+  version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+- name: github.com/golang/protobuf
+  version: fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4
+  subpackages:
+  - proto
+- name: github.com/hashicorp/hcl
+  version: 392dba7d905ed5d04a5794ba89f558b27e2ba1ca
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/token
+  - json/parser
+  - hcl/scanner
+  - hcl/strconv
+  - json/scanner
+  - json/token
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/magiconair/properties
+  version: 51463bfca2576e06c62a8504b5c0f06d61312647
+- name: github.com/mitchellh/mapstructure
+  version: cc8532a8e9a55ea36402aa21efdf403a60d34096
+- name: github.com/nats-io/nats
+  version: 61923ed1eaf8398000991fbbee2ef11ab5a5be0d
+  subpackages:
+  - encoders/builtin
+  - util
+- name: github.com/nats-io/nuid
+  version: 3cf34f9fca4e88afa9da8eabd75e3326c9941b44
+- name: github.com/pelletier/go-buffruneio
+  version: c37440a7cf42ac63b919c752ca73a85067e05992
+- name: github.com/pelletier/go-toml
+  version: 5c26a6ff6fd178719e15decac1c8196da0d7d6d1
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/rybit/nats_logrus_hook
+  version: d1b4e03372bb20af60cc00f2a5177718514de04b
+- name: github.com/rybit/nats_metrics
+  version: a36c64e44142c8711345f90dfcfa026ddc2f92f7
+- name: github.com/signalfx/com_signalfx_metrics_protobuf
+  version: 93e507b42f43f458a109ca278d1542a26a0b87fc
+- name: github.com/signalfx/gohistogram
+  version: 1ccfd2ff508314074672f4450a917011a2060408
+- name: github.com/signalfx/golib
+  version: cb7680940d605b817db79790c241eed2a00fa6e6
+  subpackages:
+  - sfxclient
+  - datapoint
+  - errors
+  - event
+  - log
+  - timekeeper
+  - eventcounter
+- name: github.com/Sirupsen/logrus
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+- name: github.com/spf13/afero
+  version: 9be650865eab0c12963d8753212f4f9c66cdcf12
+  subpackages:
+  - mem
+- name: github.com/spf13/cast
+  version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
+- name: github.com/spf13/cobra
+  version: fb1f39915d092e6ecbdb38c0861170bdf4416800
+- name: github.com/spf13/jwalterweatherman
+  version: 8f07c835e5cc1450c082fe3a439cf87b0cbb2d99
+- name: github.com/spf13/pflag
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/spf13/viper
+  version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
+- name: github.com/streadway/amqp
+  version: 1c63b162b69cf6834e0b30e496c4cd5d6ee2a1d1
+- name: golang.org/x/net
+  version: 513929065c19401a1c7b76ecd942f9f86a0c061b
+  subpackages:
+  - context
+- name: golang.org/x/sys
+  version: a2e06a18b0d52d8cb2010e04b372a1965d8e3439
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: 19e51611da83d6be54ddafce4a4af510cb3e9ea4
+  subpackages:
+  - transform
+  - unicode/norm
+- name: gopkg.in/logfmt.v0
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: gopkg.in/mgo.v2
+  version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
+  subpackages:
+  - bson
+  - internal/sasl
+  - internal/scram
+  - internal/json
+- name: gopkg.in/stack.v1
+  version: 7a2f19628aabfe68f0766b59e74d6315f8347d22
+- name: gopkg.in/yaml.v2
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/nats-io/gnatsd
+  version: 5dcad241bcd7fff3aac6e9f8b47350f071f5fd38
+  subpackages:
+  - test
+  - auth
+  - server
+  - conf
+  - logger
+  - server/pse
+  - util
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
+  - require
+- name: golang.org/x/crypto
+  version: 9477e0b78b9ac3d0b03822fd95422e2fe07627cd
+  repo: https://go.googlesource.com/crypto
+  subpackages:
+  - bcrypt
+  - blowfish
