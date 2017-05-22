@@ -35,7 +35,7 @@ func TestSendWithTracer(t *testing.T) {
 	env := NewEnvironment(rec)
 
 	called := false
-	env.tracer = func(m *RawMetric) {
+	env.Tracer = func(m *RawMetric) {
 		called = true
 		if assert.NotNil(t, m) {
 			assert.Equal(t, "something", m.Name)
@@ -79,6 +79,19 @@ func TestSeparateEnv(t *testing.T) {
 
 	assert.Equal(t, "c1", rec1.metrics[0].Name)
 	assert.Equal(t, "c2", rec2.metrics[0].Name)
+}
+
+func TestNamespace(t *testing.T) {
+	rec := new(recordingTransport)
+	env := NewEnvironment(rec)
+
+	require.NoError(t, env.NewCounter("c1", nil).Count(nil))
+	env.Namespace = "marp."
+	require.NoError(t, env.NewCounter("c2", nil).Count(nil))
+
+	assert.Len(t, rec.metrics, 2)
+	assert.Equal(t, "c1", rec.metrics[0].Name)
+	assert.Equal(t, "marp.c2", rec.metrics[1].Name)
 }
 
 func checkCounters(t *testing.T, counters, timers, gauges int, env *Environment) {

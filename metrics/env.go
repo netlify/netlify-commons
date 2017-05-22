@@ -18,7 +18,8 @@ type Environment struct {
 	globalDims DimMap
 	dimlock    sync.Mutex
 
-	tracer    func(m *RawMetric)
+	Namespace string
+	Tracer    func(m *RawMetric)
 	transport Transport
 
 	// some metrics stuff
@@ -43,8 +44,12 @@ func (e *Environment) send(m *RawMetric) error {
 		return UnknownMetricTypeError{errString{fmt.Sprintf("unknown metric type: %s", m.Type)}}
 	}
 
-	if e.tracer != nil {
-		e.tracer(m)
+	if e.Tracer != nil {
+		e.Tracer(m)
+	}
+
+	if e.Namespace != "" {
+		m.Name = e.Namespace + m.Name
 	}
 
 	return e.transport.Publish(m)

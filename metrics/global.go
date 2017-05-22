@@ -58,7 +58,11 @@ func TimeBlockErr(name string, metricDims DimMap, f func() error) (time.Duration
 }
 
 func Trace(tracer func(m *RawMetric)) {
-	globalEnv.tracer = tracer
+	globalEnv.Tracer = tracer
+}
+
+func Namespace(val string) {
+	globalEnv.Namespace = val
 }
 
 func Count(name string, metricDims DimMap) error {
