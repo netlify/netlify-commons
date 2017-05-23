@@ -7,7 +7,9 @@ import (
 	"github.com/nats-io/nats"
 
 	"github.com/rybit/nats_logrus_hook"
-	"github.com/rybit/nats_metrics"
+
+	"github.com/netlify/netlify-commons/metrics"
+	"github.com/netlify/netlify-commons/metrics/transport"
 
 	"github.com/netlify/netlify-commons/tls"
 )
@@ -64,7 +66,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	}
 
 	if config.MetricsConfig != nil {
-		metrics.Init(nc, config.MetricsConfig.Subject)
+		metrics.Init(transport.NewNatsTransport(config.MetricsConfig.Subject, nc))
 		f := logrus.Fields{"subject": config.MetricsConfig.Subject}
 		if config.MetricsConfig.Dimensions != nil {
 			for k, v := range *config.MetricsConfig.Dimensions {
@@ -76,8 +78,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 
 		log.WithFields(f).Debug("Configured nats metrics lib")
 	} else {
-		metrics.Init(nc, "nowhere")
-		log.WithField("subject", config.LogsSubject).Debug("Configured nats hook for logrus")
+		log.WithField("subject", config.LogsSubject).Debug("skipping nats metrics lib configuration")
 	}
 
 	if config.LogsSubject != "" {

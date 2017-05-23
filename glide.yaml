@@ -1,0 +1,27 @@
+package: github.com/netlify/netlify-commons
+import:
+- package: github.com/Sirupsen/logrus
+  version: v0.11.5
+- package: github.com/nats-io/nats
+  version: v1.2.2
+- package: github.com/pkg/errors
+  version: v0.8.0
+- package: github.com/rybit/nats_logrus_hook
+  version: v1.0.3
+- package: github.com/signalfx/golib
+  subpackages:
+  - sfxclient
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+- package: github.com/streadway/amqp
+- package: gopkg.in/mgo.v2
+testImport:
+- package: github.com/nats-io/gnatsd
+  version: v0.9.6
+  subpackages:
+  - test
+- package: github.com/stretchr/testify
+  version: v1.1.4
+  subpackages:
+  - assert
+  - require

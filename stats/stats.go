@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/rybit/nats_metrics"
+	"github.com/netlify/netlify-commons/metrics"
 )
 
 type Config struct {
 	Interval int    `mapstructure:"report_sec"`
-	Prefix   string `mpastructure:"prefix"`
+	Prefix   string `mapstructure:"prefix"`
+	Subject  string `mapstructure:"subject"`
 }
 
 var statLock sync.Mutex
@@ -25,6 +26,9 @@ func ReportStats(config *Config, log *logrus.Entry) {
 	}
 
 	fields := logrus.Fields{}
+	if config.Subject != "" {
+		metrics.NewCounter("", nil)
+	}
 
 	go func() {
 		log.WithFields(logrus.Fields{
