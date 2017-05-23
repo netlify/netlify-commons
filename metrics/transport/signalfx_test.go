@@ -9,7 +9,7 @@ import (
 )
 
 func TestWriteToSFX(t *testing.T) {
-	token := loadToken(t)
+	token := sfxKey(t)
 
 	trans, err := NewSignalFXTransport(&SFXConfig{token})
 	require.NoError(t, err)
@@ -20,7 +20,7 @@ func TestWriteToSFX(t *testing.T) {
 }
 
 func TestUnsupportedType(t *testing.T) {
-	token := loadToken(t)
+	token := sfxKey(t)
 
 	trans, err := NewSignalFXTransport(&SFXConfig{token})
 	require.NoError(t, err)
@@ -30,7 +30,7 @@ func TestUnsupportedType(t *testing.T) {
 	require.Error(t, c.Count(nil))
 }
 
-func loadToken(t *testing.T) string {
+func sfxKey(t *testing.T) string {
 	token := os.Getenv("NF_SFX_TOKEN")
 	if token == "" {
 		t.Skip("NF_SFX_TOKEN not set - skipping tests")
