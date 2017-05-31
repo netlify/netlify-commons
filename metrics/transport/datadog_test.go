@@ -40,3 +40,24 @@ func datadogKey(t *testing.T) (string, string) {
 
 	return apikey, appkey
 }
+
+func TestStringConversion(t *testing.T) {
+	validate := func(t *testing.T, expected string, toTest interface{}) {
+		res, ok := asString(toTest)
+		assert.True(t, ok)
+		assert.Equal(t, expected, res)
+	}
+
+	validate(t, "12", int(12))
+	validate(t, "13", int32(13))
+	validate(t, "14", int64(14))
+	validate(t, "12.000000", float32(12.0))
+	validate(t, "14.000000", float64(14.0))
+	validate(t, "true", true)
+
+	_, ok := asString([]string{"this", "should", "fail"})
+	assert.False(t, ok)
+
+	_, ok = asString(map[string]string{"this": "fails"})
+	assert.False(t, ok)
+}

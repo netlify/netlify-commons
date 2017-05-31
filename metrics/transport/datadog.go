@@ -40,8 +40,12 @@ func (t *DataDogPoint) SetValueInt64(v int64) {
 	(*t)[1] = v
 }
 
-func NewDataDogPoint(t time.Time, val int64) DataDogPoint {
-	return DataDogPoint{t.Unix(), val}
+func NewDataDogPoint(nanos int64, val int64) DataDogPoint {
+	when := time.Unix(0, nanos).Unix()
+	if nanos == 0 {
+		when = time.Now().Unix()
+	}
+	return DataDogPoint{when, val}
 }
 
 func NewDataDogTransport(apiKey, appKey string) (*DataDogTransport, error) {
@@ -69,7 +73,13 @@ func (t DataDogTransport) Publish(m *metrics.RawMetric) error {
 		Tags:   map[string]string{},
 	}
 
-	point.Points = append(point.Points, NewDataDogPoint(time.Unix(0, m.Timestamp), m.Value))
+	for k, v := range m.Dims {
+		if val, ok := asString(v); ok {
+			point.Tags[k] = val
+		}
+	}
+
+	point.Points = append(point.Points, NewDataDogPoint(m.Timestamp, m.Value))
 
 	msg := &struct {
 		Series []DataDogMetric `json:"series"`
@@ -120,4 +130,19 @@ func (t DataDogTransport) do(req *http.Request, expectedStatus int) error {
 	}
 
 	return nil
+}
+
+func asString(v interface{}) (string, bool) {
+	switch v.(type) {
+	case string:
+		return v.(string), true
+	case int, int64, int32:
+		return fmt.Sprintf("%d", v), true
+	case float32, float64:
+		return fmt.Sprintf("%f", v), true
+	case bool:
+		return fmt.Sprintf("%t", v), true
+	}
+
+	return "", false
 }
