@@ -8,20 +8,13 @@ import (
 
 	"github.com/rybit/nats_logrus_hook"
 
-	"github.com/netlify/netlify-commons/metrics"
-	"github.com/netlify/netlify-commons/metrics/transport"
-
 	"github.com/netlify/netlify-commons/tls"
 )
 
 type NatsConfig struct {
-	TLS *tls.Config `mapstructure:"tls_conf"`
-
-	Servers []string `mapstructure:"servers"`
-
-	MetricsConfig *MetricsConfig `mapstructure:"metrics_conf"`
-
-	LogsSubject string `mapstructure:"log_subject"`
+	TLS         *tls.Config `mapstructure:"tls_conf"`
+	Servers     []string    `mapstructure:"servers"`
+	LogsSubject string      `mapstructure:"log_subject"`
 }
 
 type MetricsConfig struct {
@@ -39,10 +32,6 @@ func (config *NatsConfig) Fields() logrus.Fields {
 
 		"logs_subject": config.LogsSubject,
 		"servers":      strings.Join(config.Servers, ","),
-	}
-
-	if config.MetricsConfig != nil {
-		f["metrics_subject"] = config.MetricsConfig.Subject
 	}
 
 	if config.TLS != nil {
@@ -63,22 +52,6 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	nc, err := ConnectToNats(config, ErrorHandler(log))
 	if err != nil {
 		return nil, err
-	}
-
-	if config.MetricsConfig != nil {
-		metrics.Init(transport.NewNatsTransport(config.MetricsConfig.Subject, nc))
-		f := logrus.Fields{"subject": config.MetricsConfig.Subject}
-		if config.MetricsConfig.Dimensions != nil {
-			for k, v := range *config.MetricsConfig.Dimensions {
-				metrics.AddDimension(k, v)
-			}
-
-			f["dimensions_count"] = len(*config.MetricsConfig.Dimensions)
-		}
-
-		log.WithFields(f).Debug("Configured nats metrics lib")
-	} else {
-		log.WithField("subject", config.LogsSubject).Debug("skipping nats metrics lib configuration")
 	}
 
 	if config.LogsSubject != "" {
