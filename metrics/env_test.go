@@ -102,9 +102,14 @@ func checkCounters(t *testing.T, counters, timers, gauges int, env *Environment)
 
 type recordingTransport struct {
 	metrics []*RawMetric
+	events  []*Event
 }
 
 func (t *recordingTransport) Publish(m *RawMetric) error {
 	t.metrics = append(t.metrics, m)
+	return nil
+}
+func (t *recordingTransport) PublishEvent(e *Event) error {
+	t.events = append(t.events, e)
 	return nil
 }

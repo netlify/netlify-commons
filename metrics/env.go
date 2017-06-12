@@ -18,14 +18,31 @@ type Environment struct {
 	globalDims DimMap
 	dimlock    sync.Mutex
 
-	Namespace string
-	Tracer    func(m *RawMetric)
-	transport Transport
+	Namespace   string
+	Tracer      func(m *RawMetric)
+	EventTracer func(event *Event)
+	transport   Transport
 
 	// some metrics stuff
 	timersSent   int64
 	countersSent int64
 	gaugesSent   int64
+}
+
+func (e *Environment) sendEvent(event *Event) error {
+	if event == nil {
+		return nil
+	}
+
+	if e.EventTracer != nil {
+		e.EventTracer(event)
+	}
+
+	if e.Namespace != "" {
+		event.Name = e.Namespace + event.Name
+	}
+
+	return e.transport.PublishEvent(event)
 }
 
 func (e *Environment) send(m *RawMetric) error {

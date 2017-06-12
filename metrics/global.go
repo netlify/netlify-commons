@@ -24,6 +24,14 @@ func GlobalEnv() *Environment {
 	return ge
 }
 
+func NewEvent(name string, dims DimMap, props DimMap) *Event {
+	return globalEnv.NewEvent(name, dims, props)
+}
+
+func RecordEvent(name string, dims DimMap, props DimMap) error {
+	return NewEvent(name, dims, props).Record()
+}
+
 // AddDimension will let you store a dimension in the global space
 func AddDimension(key string, value interface{}) {
 	globalEnv.AddDimension(key, value)
@@ -63,6 +71,10 @@ func Trace(tracer func(m *RawMetric)) {
 
 func Namespace(val string) {
 	globalEnv.Namespace = val
+}
+
+func EventTracer(et func(event *Event)) {
+	globalEnv.EventTracer = et
 }
 
 func Count(name string, metricDims DimMap) error {

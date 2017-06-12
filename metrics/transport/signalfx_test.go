@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWriteToSFX(t *testing.T) {
+func TestWriteMetricToSFX(t *testing.T) {
 	token := sfxKey(t)
 
 	trans, err := NewSignalFXTransport(&SFXConfig{token})
@@ -17,6 +17,16 @@ func TestWriteToSFX(t *testing.T) {
 	c := env.NewCounter("test.unittest.1", metrics.DimMap{"test": true})
 
 	require.NoError(t, c.Count(nil))
+}
+
+func TestWriteEventToSFX(t *testing.T) {
+	token := sfxKey(t)
+
+	trans, err := NewSignalFXTransport(&SFXConfig{token})
+	require.NoError(t, err)
+	env := metrics.NewEnvironment(trans)
+	e := env.NewEvent("test.unittest", metrics.DimMap{"test": true}, metrics.DimMap{"prop": "test"})
+	require.NoError(t, e.Record())
 }
 
 func TestUnsupportedType(t *testing.T) {

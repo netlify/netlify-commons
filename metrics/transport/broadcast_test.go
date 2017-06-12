@@ -13,11 +13,11 @@ func TestDoulbeSendNoError(t *testing.T) {
 	t1 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		gotT1 = true
 		return nil
-	})
+	}, nil)
 	t2 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		gotT2 = true
 		return nil
-	})
+	}, nil)
 
 	bt := NewBroadcastTransport([]metrics.Transport{t1, t2})
 
@@ -34,14 +34,14 @@ func TestWriteAtTheSameTime(t *testing.T) {
 		m.Value = 123
 		block <- true
 		return nil
-	})
+	}, nil)
 	t2 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		// this will block until the other one is called
 
 		<-block
 		assert.Equal(t, int64(123), m.Value)
 		return nil
-	})
+	}, nil)
 
 	bt := NewBroadcastTransport([]metrics.Transport{t1, t2})
 	m := &metrics.RawMetric{Value: 1}
@@ -56,13 +56,13 @@ func TestModifyIsTogether(t *testing.T) {
 	t1 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		block <- true
 		return nil
-	})
+	}, nil)
 	t2 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		// this will block until the other one is called
 		<-block
 		finallyCalled = true
 		return nil
-	})
+	}, nil)
 
 	bt := NewBroadcastTransport([]metrics.Transport{t1, t2})
 	assert.NoError(t, bt.Publish(&metrics.RawMetric{Value: 1}))
@@ -72,10 +72,10 @@ func TestModifyIsTogether(t *testing.T) {
 func TestDoulbeSendWithError(t *testing.T) {
 	t1 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		return errors.New("This is an error")
-	})
+	}, nil)
 	t2 := metrics.TransportFunc(func(m *metrics.RawMetric) error {
 		return nil
-	})
+	}, nil)
 
 	bt := NewBroadcastTransport([]metrics.Transport{t1, t2})
 	err := bt.Publish(&metrics.RawMetric{})

@@ -66,7 +66,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	}
 
 	if config.MetricsConfig != nil {
-		metrics.Init(transport.NewNatsTransport(config.MetricsConfig.Subject, nc))
+		metrics.Init(transport.NewNatsTransport(config.MetricsConfig.Subject, "", nc))
 		f := logrus.Fields{"subject": config.MetricsConfig.Subject}
 		if config.MetricsConfig.Dimensions != nil {
 			for k, v := range *config.MetricsConfig.Dimensions {

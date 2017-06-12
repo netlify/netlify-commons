@@ -60,3 +60,32 @@ func (t BroadcastTransport) Publish(m *metrics.RawMetric) error {
 
 	return nil
 }
+
+func (t BroadcastTransport) PublishEvent(e *metrics.Event) error {
+	errors := make(chan error, len(t.transports))
+	wg := sync.WaitGroup{}
+
+	for _, trans := range t.transports {
+		wg.Add(1)
+		go func(trans metrics.Transport) {
+			errors <- trans.PublishEvent(e)
+			wg.Done()
+		}(trans)
+	}
+
+	wg.Wait()
+	close(errors)
+
+	childErrors := []error{}
+	for err := range errors {
+		if err != nil {
+			childErrors = append(childErrors, err)
+		}
+	}
+
+	if len(childErrors) > 0 {
+		return CompositeError{childErrors}
+	}
+
+	return nil
+}

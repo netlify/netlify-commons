@@ -100,6 +100,10 @@ func (t DataDogTransport) Publish(m *metrics.RawMetric) error {
 	return t.do(req, http.StatusAccepted)
 }
 
+func (t DataDogTransport) PublishEvent(m *metrics.RawMetric) error {
+	return nil // TODO
+}
+
 func (t DataDogTransport) validate() error {
 	req, err := http.NewRequest(http.MethodGet, DataDogAuthEndpoint, nil)
 	if err != nil {

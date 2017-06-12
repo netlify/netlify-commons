@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCanWriteAndRead(t *testing.T) {
-	nt := NewNatsTransport("test-subject", nc)
+	nt := NewNatsTransport("test-subject", "", nc)
 
 	rx := make(chan struct{})
 	var msg *nats.Msg
@@ -69,4 +69,49 @@ func TestCanWriteAndRead(t *testing.T) {
 	assert.EqualValues(t, 1, out.Dims["somenum"])
 	assert.EqualValues(t, true, out.Dims["somebool"])
 	assert.EqualValues(t, "string", out.Dims["somestring"])
+}
+
+func TestCanWriteAndReadEvent(t *testing.T) {
+	nt := NewNatsTransport("", "event-subject", nc)
+
+	rx := make(chan struct{})
+	var msg *nats.Msg
+	nc.Subscribe("event-subject", func(m *nats.Msg) {
+		msg = m
+		close(rx)
+	})
+	ts := time.Now()
+	ev := &metrics.Event{
+		Name: "some-event",
+		Dims: metrics.DimMap{
+			"somenum":    1,
+			"somebool":   true,
+			"somestring": "string",
+		},
+		Timestamp: ts.UnixNano(),
+		Props: metrics.DimMap{
+			"someprop": 2,
+		},
+	}
+	nt.PublishEvent(ev)
+
+	select {
+	case <-rx:
+	case <-time.After(time.Second):
+		assert.Fail(t, "Failed to get message in time")
+	}
+
+	// validate the message itself
+	out := new(metrics.Event)
+	assert.NoError(t, json.Unmarshal(msg.Data, out))
+
+	assert.EqualValues(t, "some-event", out.Name)
+	assert.EqualValues(t, ts.Nanosecond(), out.Timestamp)
+	assert.Len(t, out.Dims, 3)
+	assert.EqualValues(t, 1, out.Dims["somenum"])
+	assert.EqualValues(t, true, out.Dims["somebool"])
+	assert.EqualValues(t, "string", out.Dims["somestring"])
+
+	assert.Len(t, out.Props, 1)
+	assert.EqualValues(t, 2, out.Props["someprop"])
 }
