@@ -52,5 +52,14 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 		p.Dimensions[k] = asStr
 	}
 
+	switch m.Type {
+	case metrics.GaugeType:
+		p.MetricType = datapoint.Gauge
+	case metrics.TimerType:
+		fallthrough
+	case metrics.CounterType:
+		p.MetricType = datapoint.Counter
+	}
+
 	return t.sink.AddDatapoints(context.Background(), []*datapoint.Datapoint{p})
 }
