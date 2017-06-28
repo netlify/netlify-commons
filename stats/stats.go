@@ -56,7 +56,7 @@ func ReportStats(config *Config, log *logrus.Entry) {
 							name += "."
 						}
 						name += k
-						metrics.NewGauge(name, dims).Set(val, nil)
+						metrics.NewCounter(name, dims).CountN(val, nil)
 						go func(n string, v int64, d metrics.DimMap) {
 							d["value"] = v
 							log.WithFields(logrus.Fields(d)).Infof("%s = %d", n, v)
