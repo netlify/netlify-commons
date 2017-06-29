@@ -76,8 +76,11 @@ func report(log *logrus.Entry, prefix string) {
 			name += k
 			metrics.CountN(name, val, dims)
 
-			dims["value"] = val
-			results[name] = append(results[name], dims)
+			resMap := map[string]interface{}{
+				"value": val,
+				"dims":  dims,
+			}
+			results[name] = append(results[name], resMap)
 		}
 	}
 	statLock.Unlock()
