@@ -66,6 +66,11 @@ func report(log *logrus.Entry, prefix string) {
 	results := make(map[string][]map[string]interface{})
 
 	statLock.Lock()
+	if len(mtsMap) == 0 {
+		statLock.Unlock()
+		return
+	}
+
 	for k, series := range mtsMap {
 		for sha, val := range series {
 			dims := dimMap[sha]
@@ -86,13 +91,11 @@ func report(log *logrus.Entry, prefix string) {
 	statLock.Unlock()
 
 	if log != nil {
-		if len(results) > 0 {
-			data, err := json.Marshal(&results)
-			if err != nil {
-				log.WithError(err).Warn("Failed to marshal stats results")
-			} else {
-				log.Infof(string(data))
-			}
+		data, err := json.Marshal(&results)
+		if err != nil {
+			log.WithError(err).Warn("Failed to marshal stats results")
+		} else {
+			log.Infof(string(data))
 		}
 	}
 }
