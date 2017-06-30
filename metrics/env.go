@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
+
+	"github.com/Sirupsen/logrus"
 )
 
 func NewEnvironment(trans Transport) *Environment {
@@ -11,6 +14,7 @@ func NewEnvironment(trans Transport) *Environment {
 		dimlock:    sync.Mutex{},
 		globalDims: DimMap{},
 		transport:  trans,
+		reporter:   new(noopReporter),
 	}
 }
 
@@ -22,10 +26,18 @@ type Environment struct {
 	Tracer    func(m *RawMetric)
 	transport Transport
 
+	reporter reporter
+
 	// some metrics stuff
 	timersSent   int64
 	countersSent int64
 	gaugesSent   int64
+}
+
+func (e *Environment) StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
+	if interval.Seconds() > 0 {
+		e.reporter = newIntervalReporter(interval, log)
+	}
 }
 
 func (e *Environment) send(m *RawMetric) error {
