@@ -86,11 +86,13 @@ func report(log *logrus.Entry, prefix string) {
 	statLock.Unlock()
 
 	if log != nil {
-		data, err := json.Marshal(&results)
-		if err != nil {
-			log.WithError(err).Warn("Failed to marshal stats results")
-		} else {
-			log.Infof(string(data))
+		if len(results) > 0 {
+			data, err := json.Marshal(&results)
+			if err != nil {
+				log.WithError(err).Warn("Failed to marshal stats results")
+			} else {
+				log.Infof(string(data))
+			}
 		}
 	}
 }
