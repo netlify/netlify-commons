@@ -66,6 +66,11 @@ func report(log *logrus.Entry, prefix string) {
 	results := make(map[string][]map[string]interface{})
 
 	statLock.Lock()
+	if len(mtsMap) == 0 {
+		statLock.Unlock()
+		return
+	}
+
 	for k, series := range mtsMap {
 		for sha, val := range series {
 			dims := dimMap[sha]
