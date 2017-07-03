@@ -55,7 +55,7 @@ func (r *intervalReporter) start() {
 		if r.log != nil {
 			r.log.WithFields(logrus.Fields{
 				"interval": r.interval,
-			}).Infof("Starting to report stats every %d seconds", r.interval)
+			}).Infof("Starting to report stats every %s", r.interval.String())
 		}
 
 		ticks := time.Tick(r.interval)
@@ -98,6 +98,8 @@ func (r *intervalReporter) report() {
 			if err != nil {
 				r.log.WithError(err).Warnf("Failed to send %+v", m)
 			}
+			res := map[string]interface{}{"dims": m.Dims, "value": m.Value}
+			results[c.Name] = append(results[c.Name], res)
 		}
 	}
 
