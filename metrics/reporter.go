@@ -103,7 +103,7 @@ func (r *intervalReporter) report() {
 		}
 	}
 
-	if r.log != nil {
+	if r.log != nil && len(results) > 0 {
 		data, err := json.Marshal(&results)
 		if err != nil {
 			r.log.WithError(err).Warn("Failed to marshal stats results")
