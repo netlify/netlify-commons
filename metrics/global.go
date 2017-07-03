@@ -40,6 +40,11 @@ func NewCounter(name string, metricDims DimMap) Counter {
 	return globalEnv.NewCounter(name, metricDims)
 }
 
+// NewCumulativeCounter creates a named cumulative counter
+func NewCumulativeCounter(name string) CumulativeCounter {
+	return globalEnv.NewCumulativeCounter(name)
+}
+
 // NewGauge creates a named gauge with these dimensions
 func NewGauge(name string, metricDims DimMap) Gauge {
 	return globalEnv.NewGauge(name, metricDims)
