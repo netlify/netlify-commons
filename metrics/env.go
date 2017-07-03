@@ -37,6 +37,7 @@ type Environment struct {
 func (e *Environment) StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
 	if interval.Seconds() > 0 {
 		e.reporter = newIntervalReporter(interval, log)
+		e.reporter.start()
 	}
 }
 
