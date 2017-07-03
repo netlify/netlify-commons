@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/pkg/errors"
+)
 
 // Timer will measure the time between two events and send that
 type Timer interface {
@@ -31,7 +35,7 @@ func (t *timer) Stop(instanceDims DimMap) (time.Duration, error) {
 	now := time.Now()
 
 	if t.startTime == nil {
-		return 0, NotStartedError{errString{"the timer hasn't been started yet"}}
+		return 0, NotStartedError{errors.New("the timer hasn't been started yet")}
 	}
 
 	diff := now.Sub(*t.startTime)

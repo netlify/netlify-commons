@@ -3,6 +3,8 @@ package metrics
 import (
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -52,7 +54,7 @@ func (m *metric) AddDimension(key string, value interface{}) *metric {
 
 func (m *metric) send(instanceDims DimMap) error {
 	if m.env == nil {
-		return InitError{errString{"Environment not initialized"}}
+		return InitError{errors.New("Environment not initialized")}
 	}
 
 	metricToSend := &RawMetric{
