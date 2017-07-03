@@ -1,12 +1,12 @@
 package metrics
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
 func NewEnvironment(trans Transport) *Environment {
@@ -29,9 +29,10 @@ type Environment struct {
 	reporter reporter
 
 	// some metrics stuff
-	timersSent   int64
-	countersSent int64
-	gaugesSent   int64
+	timersSent      int64
+	countersSent    int64
+	gaugesSent      int64
+	cumulativesSent int64
 }
 
 func (e *Environment) StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
@@ -53,8 +54,10 @@ func (e *Environment) send(m *RawMetric) error {
 		atomic.AddInt64(&e.timersSent, 1)
 	case GaugeType:
 		atomic.AddInt64(&e.gaugesSent, 1)
+	case CumulativeType:
+		atomic.AddInt64(&e.cumulativesSent, 1)
 	default:
-		return UnknownMetricTypeError{errString{fmt.Sprintf("unknown metric type: %s", m.Type)}}
+		return UnknownMetricTypeError{errors.Errorf("unknown metric type: %s", m.Type)}
 	}
 
 	if e.Tracer != nil {
