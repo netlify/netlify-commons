@@ -12,6 +12,8 @@ const (
 	CounterType MetricType = "counter"
 	// GaugeType is the type for gauges
 	GaugeType MetricType = "gauge"
+	// CumulativeType is the type for cumulative counters
+	CumulativeType MetricType = "cumulative"
 )
 
 // MetricType describes what type the metric is

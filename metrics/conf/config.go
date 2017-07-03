@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"time"
+
 	"github.com/Sirupsen/logrus"
 
 	"github.com/netlify/netlify-commons/messaging"
@@ -25,6 +27,9 @@ type Config struct {
 
 	Namespace  string                 `mapstructure:"namespace"`
 	Dimensions map[string]interface{} `mapstructure:"default_dims"`
+
+	// for reporting cumulative counters on an interval
+	ReportSec int `mapstructure:"report_sec"`
 }
 
 func ConfigureMetrics(mconf *Config, log *logrus.Entry) error {
@@ -80,5 +85,11 @@ func ConfigureMetrics(mconf *Config, log *logrus.Entry) error {
 		metrics.AddDimension(k, v)
 	}
 	metrics.Namespace(mconf.Namespace)
+
+	metrics.StartReportingCumulativeCounters(
+		time.Duration(mconf.ReportSec)*time.Second,
+		log.WithField("component", "stats_report"),
+	)
+
 	return nil
 }

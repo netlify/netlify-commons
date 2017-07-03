@@ -3,6 +3,8 @@ package metrics
 import (
 	"sync"
 
+	"github.com/Sirupsen/logrus"
+
 	"time"
 )
 
@@ -22,6 +24,10 @@ func GlobalEnv() *Environment {
 	ge := globalEnv
 	initLock.Unlock()
 	return ge
+}
+
+func StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
+	globalEnv.StartReportingCumulativeCounters(interval, log)
 }
 
 // AddDimension will let you store a dimension in the global space
