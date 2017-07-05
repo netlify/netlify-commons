@@ -1,10 +1,10 @@
-hash: 6cfeb666842188c0fa416620d3af1c61c62c8e13ad35b835764b24d93f6c0be1
-updated: 2017-05-23T15:55:10.586526423-07:00
+hash: 9f593fd5dd0cb6303262e94b585dc5c046d8a51b405bc692abf98f74094edeba
+updated: 2017-07-05T13:58:24.458317791-07:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
 - name: github.com/golang/protobuf
-  version: 7a211bcf3bce0e3f1d74f9894916e6f116ae83b4
+  version: 6a1fa9404c0aebf36c879bc50152edcc953910d2
   subpackages:
   - proto
 - name: github.com/hashicorp/hcl
@@ -33,14 +33,12 @@ imports:
   - util
 - name: github.com/nats-io/nuid
   version: 3cf34f9fca4e88afa9da8eabd75e3326c9941b44
-- name: github.com/pelletier/go-buffruneio
-  version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pelletier/go-toml
-  version: 5c26a6ff6fd178719e15decac1c8196da0d7d6d1
+  version: 69d355db5304c0f7f809a2edc054553e7142f016
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/rybit/nats_logrus_hook
-  version: d1b4e03372bb20af60cc00f2a5177718514de04b
+  version: 8d9e8da6aeca6fe5ab668efa91d1ea0722af8d1a
 - name: github.com/signalfx/com_signalfx_metrics_protobuf
   version: 93e507b42f43f458a109ca278d1542a26a0b87fc
 - name: github.com/signalfx/gohistogram
@@ -55,8 +53,8 @@ imports:
   - log
   - timekeeper
   - eventcounter
-- name: github.com/Sirupsen/logrus
-  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+- name: github.com/sirupsen/logrus
+  version: 202f25545ea4cf9b191ff7f846df5d87c9382c2b
 - name: github.com/spf13/afero
   version: 9be650865eab0c12963d8753212f4f9c66cdcf12
   subpackages:
@@ -64,25 +62,25 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
-  version: ca57f0f5dba473a8a58765d16d7e811fb8027add
+  version: 8c6fa02d2225de0f9bdcb7ca912556f68d172d8c
 - name: github.com/spf13/jwalterweatherman
   version: 0efa5202c04663c757d84f90f5219c1250baf94f
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/spf13/viper
-  version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
+  version: c1de95864d73a5465492829d7cb2dd422b19ac96
 - name: github.com/streadway/amqp
-  version: dfe15e36048539f4cda41f240b27a5ca25b9cd46
+  version: 27859d32540aebd2e5befa52dc59ae8e6a0132b6
 - name: golang.org/x/net
-  version: 1a26cf06691746ee35aa7113c9b37289afc7ea28
+  version: 570fa1c91359c1869590e9cedf3b53162a51a167
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: dbc2be9168a660ef302e04b6ff6406de6f967473
+  version: 6faef541c73732f438fb660a212750a9ba9f9362
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 19e51611da83d6be54ddafce4a4af510cb3e9ea4
+  version: 2bf8f2a19ec09c670e931282edfe6567f6be21c9
   subpackages:
   - transform
   - unicode/norm
