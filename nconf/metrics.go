@@ -1,4 +1,4 @@
-package conf
+package nconf
 
 import (
 	"time"
@@ -11,7 +11,7 @@ import (
 	"github.com/netlify/netlify-commons/tls"
 )
 
-type Config struct {
+type MetricsConfig struct {
 	DataDog *struct {
 		APIKey string `mapstructure:"api_key"`
 		AppKey string `mapstructure:"app_key"`
@@ -32,7 +32,7 @@ type Config struct {
 	ReportSec int `mapstructure:"report_sec"`
 }
 
-func ConfigureMetrics(mconf *Config, log *logrus.Entry) error {
+func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 	if mconf == nil {
 		log.Info("Skipping configuring metrics lib - no config specified")
 		return nil
