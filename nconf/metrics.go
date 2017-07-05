@@ -3,7 +3,7 @@ package nconf
 import (
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/netlify/netlify-commons/messaging"
 	"github.com/netlify/netlify-commons/metrics"

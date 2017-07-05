@@ -3,7 +3,7 @@ package messaging
 import (
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/nats-io/nats"
 
 	"github.com/rybit/nats_logrus_hook"
