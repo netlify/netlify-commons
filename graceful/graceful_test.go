@@ -42,7 +42,7 @@ func TestStartAndStop(t *testing.T) {
 	require.NoError(t, svr.Bind("127.0.0.1:0"))
 
 	go func() {
-		assert.True(t, http.ErrServerClosed == svr.Listen())
+		assert.NoError(t, svr.Listen())
 		close(finishedListening)
 	}()
 
@@ -58,7 +58,7 @@ func TestStartAndStop(t *testing.T) {
 
 	// initate a shutdown
 	go func() {
-		svr.Close()
+		assert.NoError(t, svr.Shutdown())
 		close(stoppedServer)
 	}()
 

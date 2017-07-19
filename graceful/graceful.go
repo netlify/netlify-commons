@@ -16,9 +16,10 @@ import (
 var DefaultShutdownTimeout = time.Second * 60
 
 type GracefulServer struct {
-	server   *http.Server
-	listener net.Listener
-	log      *logrus.Entry
+	server       *http.Server
+	listener     net.Listener
+	log          *logrus.Entry
+	shutdownErrs chan error
 
 	URL             string
 	ShutdownTimeout time.Duration
@@ -29,6 +30,7 @@ func NewGracefulServer(handler http.Handler, log *logrus.Entry) *GracefulServer 
 		server:          &http.Server{Handler: handler},
 		log:             log,
 		listener:        nil,
+		shutdownErrs:    make(chan error),
 		ShutdownTimeout: DefaultShutdownTimeout,
 	}
 }
@@ -45,7 +47,12 @@ func (svr *GracefulServer) Bind(addr string) error {
 
 func (svr *GracefulServer) Listen() error {
 	go svr.listenForShutdownSignal()
-	return svr.server.Serve(svr.listener)
+	serveErr := svr.server.Serve(svr.listener)
+	if serveErr != http.ErrServerClosed {
+		svr.log.WithError(serveErr).Warn("Error while running server")
+		return serveErr
+	}
+	return <-svr.shutdownErrs
 }
 
 func (svr *GracefulServer) listenForShutdownSignal() {
@@ -53,17 +60,7 @@ func (svr *GracefulServer) listenForShutdownSignal() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-c
 	svr.log.Infof("Triggering shutdown from signal %s", sig)
-
-	shutErr := svr.Close()
-	if shutErr == context.DeadlineExceeded {
-		svr.log.WithError(shutErr).Warnf("Forcing a shutdown after waiting %s", svr.ShutdownTimeout.String())
-		shutErr = svr.server.Close()
-	}
-
-	if shutErr != nil {
-		svr.log.WithError(shutErr).Warnf("Error while shutting down")
-	}
-
+	svr.Shutdown()
 }
 
 func (svr *GracefulServer) ListenAndServe(addr string) error {
@@ -77,10 +74,17 @@ func (svr *GracefulServer) ListenAndServe(addr string) error {
 	return svr.Listen()
 }
 
-func (svr *GracefulServer) Close() error {
+func (svr *GracefulServer) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), svr.ShutdownTimeout)
 	defer cancel()
 
 	svr.log.Infof("Triggering shutdown, in at most %s ", svr.ShutdownTimeout.String())
-	return svr.server.Shutdown(ctx)
+	shutErr := svr.server.Shutdown(ctx)
+	if shutErr == context.DeadlineExceeded {
+		svr.log.WithError(shutErr).Warnf("Forcing a shutdown after waiting %s", svr.ShutdownTimeout.String())
+		shutErr = svr.server.Close()
+	}
+
+	svr.shutdownErrs <- shutErr
+	return shutErr
 }
