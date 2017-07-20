@@ -13,7 +13,7 @@ func TestLoadingExample(t *testing.T) {
 	tmp := testToml(t)
 	defer os.Remove(t.Name())
 
-	conf, err := LoadTomlFrom(tmp.Name())
+	conf, err := LoadFrom(tmp.Name())
 	require.NoError(t, err)
 
 	expected := &NetlifyToml{
@@ -46,7 +46,7 @@ func TestSaveTomlFile(t *testing.T) {
 	tmp, err := ioutil.TempFile("", "netlify-ctl")
 	require.NoError(t, err)
 
-	require.NoError(t, SaveTomlTo(conf, tmp.Name()))
+	require.NoError(t, SaveTo(conf, tmp.Name()))
 
 	data, err := ioutil.ReadFile(tmp.Name())
 	require.NoError(t, err)

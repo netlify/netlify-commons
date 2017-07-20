@@ -47,15 +47,15 @@ type RedirectCondition struct {
 	Role     []string `toml:"role"`
 }
 
-func LoadToml() (*NetlifyToml, error) {
+func Load() (*NetlifyToml, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	return LoadTomlFrom(path.Join(wd, DefaultFilename))
+	return LoadFrom(path.Join(wd, DefaultFilename))
 }
 
-func LoadTomlFrom(paths ...string) (*NetlifyToml, error) {
+func LoadFrom(paths ...string) (*NetlifyToml, error) {
 	if len(paths) == 0 {
 		return nil, errors.New("No paths specified")
 	}
@@ -79,15 +79,15 @@ func LoadTomlFrom(paths ...string) (*NetlifyToml, error) {
 	return nil, fmt.Errorf("Failed to find toml file in %s", strings.Join(paths, ","))
 }
 
-func SaveToml(conf *NetlifyToml) error {
+func Save(conf *NetlifyToml) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	return SaveTomlTo(conf, path.Join(wd, DefaultFilename))
+	return SaveTo(conf, path.Join(wd, DefaultFilename))
 }
 
-func SaveTomlTo(conf *NetlifyToml, path string) error {
+func SaveTo(conf *NetlifyToml, path string) error {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to open file %s", path)
