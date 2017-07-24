@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -15,14 +16,19 @@ import (
 
 var DefaultShutdownTimeout = time.Second * 60
 
+const shutdown uint32 = 1
+
 type GracefulServer struct {
-	server       *http.Server
-	listener     net.Listener
-	log          *logrus.Entry
-	shutdownErrs chan error
+	server   *http.Server
+	listener net.Listener
+	log      *logrus.Entry
+
+	exit chan struct{}
 
 	URL             string
+	state           uint32
 	ShutdownTimeout time.Duration
+	ShutdownError   error
 }
 
 func NewGracefulServer(handler http.Handler, log *logrus.Entry) *GracefulServer {
@@ -30,7 +36,7 @@ func NewGracefulServer(handler http.Handler, log *logrus.Entry) *GracefulServer 
 		server:          &http.Server{Handler: handler},
 		log:             log,
 		listener:        nil,
-		shutdownErrs:    make(chan error),
+		exit:            make(chan struct{}),
 		ShutdownTimeout: DefaultShutdownTimeout,
 	}
 }
@@ -52,7 +58,10 @@ func (svr *GracefulServer) Listen() error {
 		svr.log.WithError(serveErr).Warn("Error while running server")
 		return serveErr
 	}
-	return <-svr.shutdownErrs
+
+	<-svr.exit
+
+	return svr.ShutdownError
 }
 
 func (svr *GracefulServer) listenForShutdownSignal() {
@@ -75,6 +84,11 @@ func (svr *GracefulServer) ListenAndServe(addr string) error {
 }
 
 func (svr *GracefulServer) Shutdown() error {
+	if atomic.SwapUint32(&svr.state, shutdown) == shutdown {
+		svr.log.Debug("Calling shutdown on already shutdown server, ignoring")
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), svr.ShutdownTimeout)
 	defer cancel()
 
@@ -85,6 +99,8 @@ func (svr *GracefulServer) Shutdown() error {
 		shutErr = svr.server.Close()
 	}
 
-	svr.shutdownErrs <- shutErr
+	svr.ShutdownError = shutErr
+	close(svr.exit)
+
 	return shutErr
 }
