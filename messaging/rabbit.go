@@ -8,13 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/netlify/netlify-commons/tls"
+	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
 type Consumer struct {
-	Config     *RabbitConfig
 	Deliveries <-chan amqp.Delivery
 	Connection *amqp.Connection
 	Channel    *amqp.Channel
@@ -154,17 +153,21 @@ func (left *DeliveryDefinition) merge(right *DeliveryDefinition) {
 	}
 }
 
-func sanityCheck(config *RabbitConfig) error {
-	if len(config.Servers) == 0 {
+func ValidateRabbitConfig(config *RabbitConfig) error {
+	return ValidateRabbitConfigStruct(config.Servers, config.ExchangeDefinition, config.QueueDefinition)
+}
+
+func ValidateRabbitConfigStruct(servers []string, exchange ExchangeDefinition, queue QueueDefinition) error {
+	if len(servers) == 0 {
 		return errors.New("missing RabbitMQ servers in the configuration")
 	}
 
 	missing := []string{}
 	req := map[string]string{
-		"exchange_type": config.ExchangeDefinition.Type,
-		"exchange_name": config.ExchangeDefinition.Name,
-		"queue_name":    config.QueueDefinition.Name,
-		"binding_key":   config.QueueDefinition.BindingKey,
+		"exchange_type": exchange.Type,
+		"exchange_name": exchange.Name,
+		"queue_name":    queue.Name,
+		"binding_key":   queue.BindingKey,
 	}
 	for k, v := range req {
 		if v == "" {
@@ -181,17 +184,31 @@ func sanityCheck(config *RabbitConfig) error {
 
 // ConnectToRabbit will open a TLS connection to rabbit mq
 func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error) {
+	if err := ValidateRabbitConfig(config); err != nil {
+		return nil, err
+	}
+
+	conn, err := DialToRabbit(config.Servers, config.TLS, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return CreateConsumer(conn, config.ExchangeDefinition, config.QueueDefinition, config.DeliveryDefinition, log)
+}
+
+// DialToRabbit creates a new AMQP connection.
+func DialToRabbit(servers []string, tls *tls.Config, log *logrus.Entry) (*amqp.Connection, error) {
 	dialConfig := amqp.Config{
 		Heartbeat: 10 * time.Second,
 	}
 
 	fields := logrus.Fields{}
-	if config.TLS != nil {
-		fields["cert_file"] = config.TLS.CertFile
-		fields["key_file"] = config.TLS.KeyFile
-		fields["ca_files"] = config.TLS.CAFiles
+	if tls != nil {
+		fields["cert_file"] = tls.CertFile
+		fields["key_file"] = tls.KeyFile
+		fields["ca_files"] = tls.CAFiles
 
-		tlsConfig, err := config.TLS.TLSConfig()
+		tlsConfig, err := tls.TLSConfig()
 		if err != nil {
 			return nil, err
 		}
@@ -199,32 +216,26 @@ func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error)
 		dialConfig.TLSClientConfig = tlsConfig
 	}
 
-	if err := sanityCheck(config); err != nil {
-		return nil, err
-	}
-
 	log.WithFields(fields).Info("Dialing rabbitmq servers")
 
-	var conn *amqp.Connection
-	var err error
-	if len(config.Servers) == 1 {
-		conn, err = amqp.DialConfig(config.Servers[0], dialConfig)
-	} else {
-		conn, err = connectToCluster(config.Servers, dialConfig)
-	}
-	if err != nil {
-		return nil, err
+	if len(servers) == 1 {
+		return amqp.DialConfig(servers[0], dialConfig)
 	}
 
-	ed := NewExchangeDefinition(config.ExchangeDefinition.Name, config.ExchangeDefinition.Type)
-	ed.merge(&config.ExchangeDefinition)
+	return connectToCluster(servers, dialConfig)
+}
+
+// CreateConsumer initializers a new message consumer.
+func CreateConsumer(conn *amqp.Connection, exchange ExchangeDefinition, queue QueueDefinition, delivery *DeliveryDefinition, log *logrus.Entry) (*Consumer, error) {
+	ed := NewExchangeDefinition(exchange.Name, exchange.Type)
+	ed.merge(&exchange)
 	log.Debugf("Using exchange definition: %s", ed.JSON())
-	qd := NewQueueDefinition(config.QueueDefinition.Name, config.QueueDefinition.BindingKey)
-	qd.merge(&config.QueueDefinition)
+	qd := NewQueueDefinition(queue.Name, queue.BindingKey)
+	qd.merge(&queue)
 	log.Debugf("Using queue definition %s", qd.JSON())
-	dd := NewDeliveryDefinition(config.QueueDefinition.Name)
-	if config.DeliveryDefinition != nil {
-		dd.merge(config.DeliveryDefinition)
+	dd := NewDeliveryDefinition(queue.Name)
+	if delivery != nil {
+		dd.merge(delivery)
 	}
 	log.Debugf("Using delivery definition: %s", dd.JSON())
 
@@ -244,7 +255,6 @@ func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error)
 	log.Debug("Successfully connected to rabbit and setup consumer")
 	return &Consumer{
 		Deliveries: del,
-		Config:     config,
 		Connection: conn,
 		Channel:    ch,
 	}, nil
