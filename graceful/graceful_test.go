@@ -83,3 +83,12 @@ func TestStartAndStop(t *testing.T) {
 	assert.True(t, finished)
 	orTimeout(finishedListening, 1, "didn't actually stop the server in time")
 }
+
+func TestDoubleShutdown(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+	oh := func(w http.ResponseWriter, r *http.Request) {}
+	svr := NewGracefulServer(http.HandlerFunc(oh), logrus.WithField("testing", true))
+
+	assert.NoError(t, svr.Shutdown())
+	assert.NoError(t, svr.Shutdown())
+}
