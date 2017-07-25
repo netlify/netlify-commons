@@ -19,6 +19,26 @@ type Consumer struct {
 	Channel    *amqp.Channel
 }
 
+// Clone creates a new consumer on the same channel.
+//
+// Make sure that the delivery consumer tags do not conflict. An empty tag
+// will result in an auto-generated tag.
+func (c *Consumer) Clone(queueName string, delivery *DeliveryDefinition) (*Consumer, error) {
+	dd := NewDeliveryDefinition(queueName)
+	if delivery != nil {
+		dd.merge(delivery)
+	}
+	del, err := Consume(c.Channel, dd)
+	if err != nil {
+		return nil, err
+	}
+	return &Consumer{
+		Deliveries: del,
+		Connection: c.Connection,
+		Channel:    c.Channel,
+	}, nil
+}
+
 type RabbitConfig struct {
 	Servers []string    `mapstructure:"servers"`
 	TLS     *tls.Config `mapstructure:"tls_conf"`
