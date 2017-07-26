@@ -1,5 +1,5 @@
-hash: 9f593fd5dd0cb6303262e94b585dc5c046d8a51b405bc692abf98f74094edeba
-updated: 2017-07-05T13:58:24.458317791-07:00
+hash: 625d956f7ae179e999687ac2d596c6819cd080624197b2bc406ba2cb975b8636
+updated: 2017-07-26T11:27:50.208687446-04:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
@@ -12,10 +12,10 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/token
-  - json/parser
   - hcl/scanner
   - hcl/strconv
+  - hcl/token
+  - json/parser
   - json/scanner
   - json/token
 - name: github.com/inconshreveable/mousetrap
@@ -46,15 +46,15 @@ imports:
 - name: github.com/signalfx/golib
   version: cb7680940d605b817db79790c241eed2a00fa6e6
   subpackages:
-  - sfxclient
   - datapoint
   - errors
   - event
-  - log
-  - timekeeper
   - eventcounter
+  - log
+  - sfxclient
+  - timekeeper
 - name: github.com/sirupsen/logrus
-  version: 202f25545ea4cf9b191ff7f846df5d87c9382c2b
+  version: a3f95b5c423586578a4e099b11a46c2479628cac
 - name: github.com/spf13/afero
   version: 9be650865eab0c12963d8753212f4f9c66cdcf12
   subpackages:
@@ -70,9 +70,9 @@ imports:
 - name: github.com/spf13/viper
   version: c1de95864d73a5465492829d7cb2dd422b19ac96
 - name: github.com/streadway/amqp
-  version: 27859d32540aebd2e5befa52dc59ae8e6a0132b6
+  version: b11f50dd75cfce13d568f63daa56f61917e93001
 - name: golang.org/x/net
-  version: 570fa1c91359c1869590e9cedf3b53162a51a167
+  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -80,7 +80,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 2bf8f2a19ec09c670e931282edfe6567f6be21c9
+  version: cfdf022e86b4ecfb646e1efbd7db175dd623a8fa
   subpackages:
   - transform
   - unicode/norm
@@ -90,9 +90,9 @@ imports:
   version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
   subpackages:
   - bson
+  - internal/json
   - internal/sasl
   - internal/scram
-  - internal/json
 - name: gopkg.in/stack.v1
   version: 7a2f19628aabfe68f0766b59e74d6315f8347d22
 - name: gopkg.in/yaml.v2
@@ -105,12 +105,12 @@ testImports:
 - name: github.com/nats-io/gnatsd
   version: 5dcad241bcd7fff3aac6e9f8b47350f071f5fd38
   subpackages:
-  - test
   - auth
-  - server
   - conf
   - logger
+  - server
   - server/pse
+  - test
   - util
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
