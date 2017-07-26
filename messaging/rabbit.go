@@ -245,27 +245,36 @@ func DialToRabbit(servers []string, tls *tls.Config, log *logrus.Entry) (*amqp.C
 	return connectToCluster(servers, dialConfig)
 }
 
-// CreateConsumer initializers a new message consumer.
-func CreateConsumer(conn *amqp.Connection, exchange ExchangeDefinition, queue QueueDefinition, delivery *DeliveryDefinition, log *logrus.Entry) (*Consumer, error) {
+// CreateChannel initializes a new message channel.
+func CreateChannel(conn *amqp.Connection, exchange ExchangeDefinition, queue QueueDefinition, log *logrus.Entry) (*amqp.Channel, error) {
 	ed := NewExchangeDefinition(exchange.Name, exchange.Type)
 	ed.merge(&exchange)
 	log.Debugf("Using exchange definition: %s", ed.JSON())
 	qd := NewQueueDefinition(queue.Name, queue.BindingKey)
 	qd.merge(&queue)
 	log.Debugf("Using queue definition %s", qd.JSON())
+
+	log.Info("Binding to exchange and queue")
+	ch, _, err := Bind(conn, ed, qd)
+	return ch, err
+}
+
+// CreateConsumer initializes a new message consumer.
+func CreateConsumer(conn *amqp.Connection, exchange ExchangeDefinition, queue QueueDefinition, delivery *DeliveryDefinition, log *logrus.Entry) (*Consumer, error) {
+	ch, err := CreateChannel(conn, exchange, queue, log)
+	if err != nil {
+		return nil, err
+	}
+	return CreateConsumerOnChannel(conn, ch, queue, delivery, log)
+}
+
+// CreateConsumerOnChannel initializes a message consumer on an existing channel.
+func CreateConsumerOnChannel(conn *amqp.Connection, ch *amqp.Channel, queue QueueDefinition, delivery *DeliveryDefinition, log *logrus.Entry) (*Consumer, error) {
 	dd := NewDeliveryDefinition(queue.Name)
 	if delivery != nil {
 		dd.merge(delivery)
 	}
 	log.Debugf("Using delivery definition: %s", dd.JSON())
-
-	log.Info("Binding to exchange and queue")
-
-	ch, _, err := Bind(conn, ed, qd)
-	if err != nil {
-		return nil, err
-	}
-
 	log.Info("Starting to consume from amqp channel")
 	del, err := Consume(ch, dd)
 	if err != nil {
