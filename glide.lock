@@ -1,10 +1,10 @@
-hash: 625d956f7ae179e999687ac2d596c6819cd080624197b2bc406ba2cb975b8636
-updated: 2017-07-26T11:27:50.208687446-04:00
+hash: 626ce97dae4c2a4bfed5edfff237badfc45b82db2d23c41cee3c6273cc334a23
+updated: 2017-08-03T12:29:01.960239847-04:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
 - name: github.com/golang/protobuf
-  version: 6a1fa9404c0aebf36c879bc50152edcc953910d2
+  version: 748d386b5c1ea99658fd69fe9f03991ce86a90c1
   subpackages:
   - proto
 - name: github.com/hashicorp/hcl
@@ -23,7 +23,7 @@ imports:
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
-  version: 51463bfca2576e06c62a8504b5c0f06d61312647
+  version: be5ece7dd465ab0765a9682137865547526d1dfb
 - name: github.com/mitchellh/mapstructure
   version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/nats-io/nats
@@ -62,25 +62,25 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
-  version: 8c6fa02d2225de0f9bdcb7ca912556f68d172d8c
+  version: b26b538f693051ac6518e65672de3144ce3fbedc
 - name: github.com/spf13/jwalterweatherman
   version: 0efa5202c04663c757d84f90f5219c1250baf94f
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/spf13/viper
-  version: c1de95864d73a5465492829d7cb2dd422b19ac96
+  version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
 - name: github.com/streadway/amqp
-  version: b11f50dd75cfce13d568f63daa56f61917e93001
+  version: 2cbfe40c9341ad63ba23e53013b3ddc7989d801c
 - name: golang.org/x/net
-  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
+  version: f5079bd7f6f74e23c4d65efa0f4ce14cbd6a3c0f
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 6faef541c73732f438fb660a212750a9ba9f9362
+  version: d8f5ea21b9295e315e612b4bcf4bedea93454d4d
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: cfdf022e86b4ecfb646e1efbd7db175dd623a8fa
+  version: 3bd178b88a8180be2df394a1fbb81313916f0e7b
   subpackages:
   - transform
   - unicode/norm
@@ -94,9 +94,9 @@ imports:
   - internal/sasl
   - internal/scram
 - name: gopkg.in/stack.v1
-  version: 7a2f19628aabfe68f0766b59e74d6315f8347d22
+  version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
-  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
