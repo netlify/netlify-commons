@@ -11,6 +11,7 @@ import:
 - package: github.com/signalfx/golib
   subpackages:
   - sfxclient
+  - datapoint
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
 - package: github.com/streadway/amqp
