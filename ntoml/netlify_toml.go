@@ -18,6 +18,8 @@ type NetlifyToml struct {
 
 	Redirects []Redirect `toml:"redirects, omitempty"`
 
+	// this is the default context
+	Build   *BuildConfig             `toml:"build"`
 	Context map[string]DeployContext `toml:"context, omitempty"`
 }
 
@@ -26,9 +28,15 @@ type Settings struct {
 	Path string `toml:"path"`
 }
 
-type DeployContext struct {
+type BuildConfig struct {
 	Command     string            `toml:"command"`
+	Base        string            `toml:"base"`
+	Publish     string            `toml:"publish"`
 	Environment map[string]string `toml:"environment"`
+}
+
+type DeployContext struct {
+	BuildConfig
 }
 
 type Redirect struct {
