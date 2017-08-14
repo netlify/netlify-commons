@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -31,7 +32,10 @@ func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error
 	}
 
 	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
-		return err
+		_, ok := err.(viper.ConfigFileNotFoundError)
+		if !ok {
+			return errors.Wrap(err, "reading configuration from files")
+		}
 	}
 
 	if err = viper.Unmarshal(input); err != nil {
