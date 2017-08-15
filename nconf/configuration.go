@@ -14,8 +14,7 @@ import (
 func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error {
 	viper.SetConfigType("json")
 
-	err := viper.BindPFlags(cmd.Flags())
-	if err != nil {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
 		return err
 	}
 
@@ -38,9 +37,10 @@ func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error
 		}
 	}
 
-	if err = viper.Unmarshal(input); err != nil {
+	if err := viper.Unmarshal(input); err != nil {
 		return err
 	}
 
-	return recursivelySet(reflect.ValueOf(input), "")
+	_, err := recursivelySet(reflect.ValueOf(input), "")
+	return err
 }

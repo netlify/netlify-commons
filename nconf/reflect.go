@@ -10,31 +10,43 @@ import (
 
 const tagPrefix = "viper"
 
-func recursivelySet(val reflect.Value, prefix string) error {
+func recursivelySet(val reflect.Value, prefix string) (bool, error) {
 	if val.Kind() != reflect.Ptr {
-		return errors.New("Must pass a pointer")
+		return false, errors.New("Must pass a pointer")
 	}
 
 	// dereference
 	val = reflect.Indirect(val)
 	if val.Kind() != reflect.Struct {
-		return errors.New("must be a reference to a struct")
+		return false, errors.New("must be a reference to a struct")
 	}
 
 	// grab the type for this instance
 	vType := reflect.TypeOf(val.Interface())
 
+	modified := false
 	// go through child fields
 	for i := 0; i < val.NumField(); i++ {
 		thisField := val.Field(i)
 		thisType := vType.Field(i)
 		tag := prefix + getTag(thisType)
+		modified = modified || viper.IsSet(tag)
 
 		switch thisField.Kind() {
 		case reflect.Struct:
-			err := recursivelySet(thisField.Addr(), tag+".")
+			inst := thisField.Addr()
+			_, err := recursivelySet(inst, tag+".")
 			if err != nil {
-				return err
+				return false, err
+			}
+		case reflect.Ptr:
+			inst := reflect.New(thisField.Type().Elem())
+			mod, err := recursivelySet(inst, tag+".")
+			if err != nil {
+				return false, err
+			}
+			if mod {
+				thisField.Set(inst)
 			}
 		case reflect.Int:
 			fallthrough
@@ -51,11 +63,11 @@ func recursivelySet(val reflect.Value, prefix string) error {
 			configVal := viper.GetString(tag)
 			thisField.SetString(configVal)
 		default:
-			return fmt.Errorf("unexpected type detected ~ aborting: %s", thisField.Kind())
+			return false, fmt.Errorf("unexpected type detected ~ aborting: %s", thisField.Kind())
 		}
 	}
 
-	return nil
+	return modified, nil
 }
 
 func getTag(field reflect.StructField) string {
