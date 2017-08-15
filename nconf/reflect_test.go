@@ -15,7 +15,9 @@ func TestSimpleValues(t *testing.T) {
 
 	viper.SetDefault("simple", "i am a simple string")
 
-	assert.Nil(t, recursivelySet(reflect.ValueOf(&c), ""))
+	mod, err := recursivelySet(reflect.ValueOf(&c), "")
+	assert.Nil(t, err)
+	assert.True(t, mod)
 	assert.Equal(t, "i am a simple string", c.Simple)
 }
 
@@ -27,16 +29,28 @@ func TestNestedValues(t *testing.T) {
 			StringVal string `json:"string"`
 			NumberVal int    `json:"number"`
 		} `json:"nested"`
+		NestedPtr *struct {
+			String string `json:"string"`
+		} `json:"pointer"`
+		MissingPtr *struct {
+			String string `json:"string"`
+		} `json:"missing"`
 	}{}
 
 	viper.SetDefault("simple", "simple")
 	viper.SetDefault("nested.bool", true)
 	viper.SetDefault("nested.string", "i am a simple string")
 	viper.SetDefault("nested.number", 4)
+	viper.SetDefault("pointer.string", "i am a string too")
 
-	assert.Nil(t, recursivelySet(reflect.ValueOf(&c), ""))
+	mod, err := recursivelySet(reflect.ValueOf(&c), "")
+	assert.Nil(t, err)
+	assert.True(t, mod)
 	assert.Equal(t, "simple", c.Simple)
 	assert.Equal(t, 4, c.Nested.NumberVal)
 	assert.Equal(t, "i am a simple string", c.Nested.StringVal)
 	assert.Equal(t, true, c.Nested.BoolVal)
+	assert.NotNil(t, c.NestedPtr)
+	assert.Equal(t, "i am a string too", c.NestedPtr.String)
+	assert.Nil(t, c.MissingPtr)
 }
