@@ -62,6 +62,9 @@ func recursivelySet(val reflect.Value, prefix string) (bool, error) {
 		case reflect.String:
 			configVal := viper.GetString(tag)
 			thisField.SetString(configVal)
+		case reflect.Slice:
+			configVal := viper.GetStringSlice(tag)
+			thisField.Set(reflect.ValueOf(configVal))
 		default:
 			return false, fmt.Errorf("unexpected type detected ~ aborting: %s", thisField.Kind())
 		}

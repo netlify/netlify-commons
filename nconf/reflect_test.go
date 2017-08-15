@@ -35,12 +35,14 @@ func TestNestedValues(t *testing.T) {
 		MissingPtr *struct {
 			String string `json:"string"`
 		} `json:"missing"`
+		Slice []string `mapstructure:"slice"`
 	}{}
 
 	viper.SetDefault("simple", "simple")
 	viper.SetDefault("nested.bool", true)
 	viper.SetDefault("nested.string", "i am a simple string")
 	viper.SetDefault("nested.number", 4)
+	viper.SetDefault("slice", []string{"something", "good"})
 	viper.SetDefault("pointer.string", "i am a string too")
 
 	mod, err := recursivelySet(reflect.ValueOf(&c), "")
@@ -53,4 +55,6 @@ func TestNestedValues(t *testing.T) {
 	assert.NotNil(t, c.NestedPtr)
 	assert.Equal(t, "i am a string too", c.NestedPtr.String)
 	assert.Nil(t, c.MissingPtr)
+	assert.Equal(t, c.Slice, []string{"something", "good"})
+	assert.Len(t, c.Slice, 2)
 }
