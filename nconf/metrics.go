@@ -37,39 +37,19 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 		log.Info("Skipping configuring metrics lib - no config specified")
 		return nil
 	}
-
+	var err error
 	ports := []metrics.Transport{}
-	if mconf.Nats != nil {
-		log.Info("Configuring NATS transport for metrics")
-		natsconf := &messaging.NatsConfig{
-			TLS:     mconf.Nats.TLS,
-			Servers: mconf.Nats.Servers,
-		}
-		nc, err := messaging.ConnectToNats(natsconf, messaging.ErrorHandler(log))
-		if err != nil {
-			log.WithError(err).Warn("Failed to setup nats connection")
-			return err
-		}
-
-		ports = append(ports, transport.NewNatsTransport(mconf.Nats.Subject, nc))
+	ports, err = appendNatsTransport(ports, mconf, log)
+	if err != nil {
+		return err
 	}
-
-	if mconf.DataDog != nil {
-		log.Info("Configuring DataDog transport for metrics")
-		t, err := transport.NewDataDogTransport(mconf.DataDog.APIKey, mconf.DataDog.AppKey)
-		if err != nil {
-			return err
-		}
-		ports = append(ports, t)
+	ports, err = appendDatadogTransport(ports, mconf, log)
+	if err != nil {
+		return err
 	}
-
-	if mconf.SFXToken != "" {
-		log.Info("Configuring SignalFX transport for metrics")
-		t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken})
-		if err != nil {
-			return err
-		}
-		ports = append(ports, t)
+	ports, err = appendSFXTransport(ports, mconf, log)
+	if err != nil {
+		return err
 	}
 
 	if len(ports) > 0 {
@@ -92,4 +72,61 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 	)
 
 	return nil
+}
+func appendSFXTransport(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.SFXToken == "" {
+		log.Debug("Skipping signalfx transport config, not configured")
+		return ports, nil
+	}
+
+	log.Info("Configuring SignalFX transport for metrics")
+	t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken})
+	if err != nil {
+		return nil, err
+	}
+	return append(ports, t), nil
+}
+
+func appendDatadogTransport(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.DataDog == nil {
+		log.Debug("Skipping datadog transport config, not configured")
+		return ports, nil
+	}
+
+	if mconf.DataDog.APIKey == "" || mconf.DataDog.AppKey == "" {
+		log.Debug("Skipping datadog transport config, not properly configured")
+		return ports, nil
+	}
+
+	log.Info("Configuring DataDog transport for metrics")
+	t, err := transport.NewDataDogTransport(mconf.DataDog.APIKey, mconf.DataDog.AppKey)
+	if err != nil {
+		return nil, err
+	}
+	return append(ports, t), nil
+}
+
+func appendNatsTransport(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.Nats == nil {
+		log.Debug("Skipping nats transport config, not configured")
+		return ports, nil
+	}
+
+	if mconf.Nats.Subject == "" || len(mconf.Nats.Servers) == 0 {
+		log.Debug("Skipping nats transport config, not properly configured")
+		return ports, nil
+	}
+
+	log.Info("Configuring NATS transport for metrics")
+	natsconf := &messaging.NatsConfig{
+		TLS:     mconf.Nats.TLS,
+		Servers: mconf.Nats.Servers,
+	}
+	nc, err := messaging.ConnectToNats(natsconf, messaging.ErrorHandler(log))
+	if err != nil {
+		log.WithError(err).Warn("Failed to setup nats connection")
+		return nil, err
+	}
+
+	return append(ports, transport.NewNatsTransport(mconf.Nats.Subject, nc)), nil
 }
