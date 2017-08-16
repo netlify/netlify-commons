@@ -26,6 +26,10 @@ func (cfg Config) TLSConfig() (*tls.Config, error) {
 }
 
 func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
+	if certPEM == "" || keyPEM == "" {
+		return nil, nil
+	}
+
 	var pool *x509.CertPool
 	if ca != "" {
 		p, err := x509.SystemCertPool()
@@ -55,6 +59,10 @@ func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
 }
 
 func LoadFromFiles(certFile, keyFile string, cafiles []string) (*tls.Config, error) {
+	if certFile == "" || keyFile == "" {
+		return nil, nil // skip
+	}
+
 	var pool *x509.CertPool
 	if len(cafiles) == 0 {
 		p, err := x509.SystemCertPool()

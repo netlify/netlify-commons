@@ -1,46 +1,53 @@
 package nconf
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
-	"reflect"
+	"path/filepath"
 	"strings"
 
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // LoadConfig loads the config from a file if specified, otherwise from the environment
-func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error {
-	viper.SetConfigType("json")
-
-	if err := viper.BindPFlags(cmd.Flags()); err != nil {
-		return err
+func LoadConfig(serviceName string, input interface{}, possiblePaths ...string) error {
+	paths := []string{}
+	for _, p := range possiblePaths {
+		paths = ifExists(paths, p)
 	}
+	paths = ifExists(paths, ".", ".env")
+	paths = ifExists(paths, ".", serviceName+".env")
+	paths = ifExists(paths, ".", "env")
+	paths = ifExists(paths, "$HOME", ".netlify", serviceName, "env")
 
-	viper.SetEnvPrefix(serviceName)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	if configFile, _ := cmd.Flags().GetString("config"); configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigName("config")
-		viper.AddConfigPath("./")
-		viper.AddConfigPath("$HOME/.netlify/" + serviceName + "/")
-	}
-
-	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
-		_, ok := err.(viper.ConfigFileNotFoundError)
-		if !ok {
-			return errors.Wrap(err, "reading configuration from files")
+	if len(paths) > 0 {
+		if err := godotenv.Load(paths...); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failed to load env files: %s", strings.Join(paths, ",")))
 		}
 	}
 
-	if err := viper.Unmarshal(input); err != nil {
-		return err
+	if err := envconfig.Process(serviceName, input); err != nil {
+		return errors.Wrap(err, "Failed to unmarshal environment vars")
+	}
+	return nil
+}
+
+func ifExists(paths []string, parts ...string) []string {
+	path := filepath.Join(parts...)
+	if _, err := os.Stat(path); err == nil {
+		return append(paths, path)
+	}
+	return paths
+}
+
+func WriteEnvFile(path string, kv map[string]interface{}) error {
+	var lines string
+	for k, v := range kv {
+		lines += fmt.Sprintf("%s=%v\n", strings.ToUpper(k), v)
 	}
 
-	_, err := recursivelySet(reflect.ValueOf(input), "")
-	return err
+	return ioutil.WriteFile(path, []byte(lines), 0644)
 }
