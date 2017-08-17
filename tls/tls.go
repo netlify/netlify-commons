@@ -22,7 +22,11 @@ func (cfg Config) TLSConfig() (*tls.Config, error) {
 		return LoadFromValues(cfg.Cert, cfg.Key, cfg.CA)
 	}
 
-	return LoadFromFiles(cfg.CertFile, cfg.KeyFile, cfg.CAFiles)
+	if cfg.CertFile != "" && cfg.KeyFile != "" {
+		return LoadFromFiles(cfg.CertFile, cfg.KeyFile, cfg.CAFiles)
+	}
+
+	return nil, nil
 }
 
 func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
