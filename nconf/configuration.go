@@ -2,7 +2,6 @@ package nconf
 
 import (
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -40,7 +39,5 @@ func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error
 	if err := viper.Unmarshal(input); err != nil {
 		return err
 	}
-
-	_, err := recursivelySet(reflect.ValueOf(input), "")
-	return err
+	return nil
 }
