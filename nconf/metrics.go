@@ -13,11 +13,11 @@ import (
 
 type MetricsConfig struct {
 	DataDog *struct {
-		APIKey string `mapstructure:"api_key"`
-		AppKey string `mapstructure:"app_key"`
+		APIKey string `mapstructure:"api_key" split_words:"true"`
+		AppKey string `mapstructure:"app_key" split_words:"true"`
 	} `mapstructure:"datadog"`
 
-	SFXToken string `mapstructure:"sfx_token"`
+	SFXToken string `mapstructure:"sfx_token" split_words:"true"`
 
 	Nats *NatsConfig `mapstructure:"nats"`
 
@@ -25,7 +25,7 @@ type MetricsConfig struct {
 	Dimensions map[string]interface{} `mapstructure:"default_dims"`
 
 	// for reporting cumulative counters on an interval
-	ReportSec int `mapstructure:"report_sec"`
+	ReportSec int `mapstructure:"report_sec" split_words:"true"`
 }
 
 type NatsConfig struct {
