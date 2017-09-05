@@ -27,7 +27,8 @@ func (cfg Config) TLSConfig() (*tls.Config, error) {
 
 func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
 	var pool *x509.CertPool
-	if ca != "" {
+	// If no CA cert if provided, use system pool
+	if ca == "" {
 		p, err := x509.SystemCertPool()
 		if err != nil {
 			return nil, err
