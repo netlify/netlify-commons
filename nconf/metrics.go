@@ -65,7 +65,7 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 
 	if mconf.SFXToken != "" {
 		log.Info("Configuring SignalFX transport for metrics")
-		t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken})
+		t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec})
 		if err != nil {
 			return err
 		}
