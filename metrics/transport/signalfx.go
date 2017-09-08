@@ -33,7 +33,7 @@ func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
 	if t.reportDelay > 0 {
 		scheduler := sfxclient.NewScheduler()
 		scheduler.ReportingDelay(t.reportDelay)
-		scheduler.Sink.(*sfxclient.HTTPSink).AuthToken = config.AuthToken
+		scheduler.Sink = sink
 		scheduler.AddCallback(t)
 		go scheduler.Schedule(context.Background())
 	}
