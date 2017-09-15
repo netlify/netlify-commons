@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/signalfx/golib/datapoint"
 	"github.com/signalfx/golib/sfxclient"
 
@@ -14,17 +16,36 @@ import (
 
 type SFXConfig struct {
 	AuthToken string `mapstructure:"auth_token"`
+	ReportSec int    `mapstructure:"report_sec"`
 }
 
 func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
 	sink := sfxclient.NewHTTPSink()
 	sink.AuthToken = config.AuthToken
 
-	return &SFXTransport{sink}, nil
+	t := &SFXTransport{
+		sink,
+		map[string]map[string]*sfxclient.RollingBucket{},
+		time.Duration(config.ReportSec) * time.Second,
+		new(sync.Mutex),
+	}
+
+	if t.reportDelay > 0 {
+		scheduler := sfxclient.NewScheduler()
+		scheduler.ReportingDelay(t.reportDelay)
+		scheduler.Sink = sink
+		scheduler.AddCallback(t)
+		go scheduler.Schedule(context.Background())
+	}
+
+	return t, nil
 }
 
 type SFXTransport struct {
-	sink *sfxclient.HTTPSink
+	sink          *sfxclient.HTTPSink
+	timingBuckets map[string]map[string]*sfxclient.RollingBucket
+	reportDelay   time.Duration
+	statLock      *sync.Mutex
 }
 
 func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
@@ -58,10 +79,57 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 	case metrics.CumulativeType:
 		p.MetricType = datapoint.Counter
 	case metrics.TimerType:
-		fallthrough
+		if t.reportDelay > 0 {
+			if err := t.recordTimer(m, p.Dimensions); err != nil {
+				return errors.Wrap(err, "error recording timer to histogram")
+			}
+		}
+		p.MetricType = datapoint.Count
 	case metrics.CounterType:
 		p.MetricType = datapoint.Count
 	}
 
 	return t.sink.AddDatapoints(context.Background(), []*datapoint.Datapoint{p})
+}
+
+func (t *SFXTransport) recordTimer(m *metrics.RawMetric, formattedDims map[string]string) error {
+	dims := m.Dims
+	if dims == nil {
+		dims = metrics.DimMap{}
+	}
+	sha, err := metrics.HashDims(dims)
+	if err != nil {
+		return err
+	}
+
+	t.statLock.Lock()
+	defer t.statLock.Unlock()
+
+	dimMap, ok := t.timingBuckets[m.Name]
+	if !ok {
+		dimMap = make(map[string]*sfxclient.RollingBucket)
+		t.timingBuckets[m.Name] = dimMap
+	}
+	bucket, ok := dimMap[sha]
+	if !ok {
+		bucket = sfxclient.NewRollingBucket(m.Name, formattedDims)
+		bucket.BucketWidth = t.reportDelay
+		t.timingBuckets[m.Name][sha] = bucket
+	}
+
+	bucket.AddAt(float64(m.Value), time.Unix(0, m.Timestamp))
+	return nil
+}
+
+func (t *SFXTransport) Datapoints() []*datapoint.Datapoint {
+	t.statLock.Lock()
+	defer t.statLock.Unlock()
+
+	pts := []*datapoint.Datapoint{}
+	for _, dimMap := range t.timingBuckets {
+		for _, bucket := range dimMap {
+			pts = append(pts, bucket.Datapoints()...)
+		}
+	}
+	return pts
 }

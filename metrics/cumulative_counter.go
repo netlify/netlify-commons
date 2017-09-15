@@ -42,7 +42,7 @@ func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) error {
 	if dims == nil {
 		dims = DimMap{}
 	}
-	sha, err := hashDims(dims)
+	sha, err := HashDims(dims)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (cc *cumulativeCounter) series() []*metric {
 	return res
 }
 
-func hashDims(dims DimMap) (string, error) {
+func HashDims(dims DimMap) (string, error) {
 	if dims == nil {
 		return "", nil
 	}

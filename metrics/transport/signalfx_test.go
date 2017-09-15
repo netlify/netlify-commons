@@ -11,7 +11,7 @@ import (
 func TestWriteToSFX(t *testing.T) {
 	token := sfxKey(t)
 
-	trans, err := NewSignalFXTransport(&SFXConfig{token})
+	trans, err := NewSignalFXTransport(&SFXConfig{token, 0})
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
 	c := env.NewCounter("test.unittest.1", metrics.DimMap{"test": true})
@@ -22,7 +22,7 @@ func TestWriteToSFX(t *testing.T) {
 func TestUnsupportedType(t *testing.T) {
 	token := sfxKey(t)
 
-	trans, err := NewSignalFXTransport(&SFXConfig{token})
+	trans, err := NewSignalFXTransport(&SFXConfig{token, 0})
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
 	c := env.NewCounter("test.unittest.2", metrics.DimMap{"test": []bool{true}})
