@@ -13,23 +13,25 @@ import (
 
 type MetricsConfig struct {
 	DataDog *struct {
-		APIKey string `mapstructure:"api_key"`
-		AppKey string `mapstructure:"app_key"`
+		APIKey string `mapstructure:"api_key" split_words:"true"`
+		AppKey string `mapstructure:"app_key" split_words:"true"`
 	} `mapstructure:"datadog"`
 
-	SFXToken string `mapstructure:"sfx_token"`
+	SFXToken string `mapstructure:"sfx_token" split_words:"true"`
 
-	Nats *struct {
-		TLS     *tls.Config `mapstructure:"tls_conf"`
-		Servers []string    `mapstructure:"servers"`
-		Subject string      `mapstructure:"subject"`
-	} `mapstructure:"nats"`
+	Nats *NatsConfig `mapstructure:"nats"`
 
 	Namespace  string                 `mapstructure:"namespace"`
 	Dimensions map[string]interface{} `mapstructure:"default_dims"`
 
 	// for reporting cumulative counters on an interval
-	ReportSec int `mapstructure:"report_sec"`
+	ReportSec int `mapstructure:"report_sec" split_words:"true"`
+}
+
+type NatsConfig struct {
+	TLS     *tls.Config `mapstructure:"tls_conf"`
+	Servers []string    `mapstructure:"servers"`
+	Subject string      `mapstructure:"subject"`
 }
 
 func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
@@ -38,38 +40,19 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 		return nil
 	}
 
+	var err error
 	ports := []metrics.Transport{}
-	if mconf.Nats != nil {
-		log.Info("Configuring NATS transport for metrics")
-		natsconf := &messaging.NatsConfig{
-			TLS:     mconf.Nats.TLS,
-			Servers: mconf.Nats.Servers,
-		}
-		nc, err := messaging.ConnectToNats(natsconf, messaging.ErrorHandler(log))
-		if err != nil {
-			log.WithError(err).Warn("Failed to setup nats connection")
-			return err
-		}
-
-		ports = append(ports, transport.NewNatsTransport(mconf.Nats.Subject, nc))
+	ports, err = appendNatsConfig(ports, mconf, log)
+	if err != nil {
+		return err
 	}
-
-	if mconf.DataDog != nil {
-		log.Info("Configuring DataDog transport for metrics")
-		t, err := transport.NewDataDogTransport(mconf.DataDog.APIKey, mconf.DataDog.AppKey)
-		if err != nil {
-			return err
-		}
-		ports = append(ports, t)
+	ports, err = appendDatadogConfig(ports, mconf, log)
+	if err != nil {
+		return err
 	}
-
-	if mconf.SFXToken != "" {
-		log.Info("Configuring SignalFX transport for metrics")
-		t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec})
-		if err != nil {
-			return err
-		}
-		ports = append(ports, t)
+	ports, err = appendSignalFXConfig(ports, mconf, log)
+	if err != nil {
+		return err
 	}
 
 	if len(ports) > 0 {
@@ -92,4 +75,57 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 	)
 
 	return nil
+}
+
+func appendNatsConfig(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.Nats == nil {
+		return ports, nil
+	}
+
+	if len(mconf.Nats.Servers) == 0 || mconf.Nats.Subject == "" {
+		return ports, nil
+	}
+
+	log.Info("Configuring NATS transport for metrics")
+	natsconf := &messaging.NatsConfig{
+		TLS:     mconf.Nats.TLS,
+		Servers: mconf.Nats.Servers,
+	}
+	nc, err := messaging.ConnectToNats(natsconf, messaging.ErrorHandler(log))
+	if err != nil {
+		log.WithError(err).Warn("Failed to setup nats connection")
+		return nil, err
+	}
+
+	return append(ports, transport.NewNatsTransport(mconf.Nats.Subject, nc)), nil
+}
+
+func appendDatadogConfig(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.DataDog == nil {
+		return ports, nil
+	}
+
+	if mconf.DataDog.APIKey == "" || mconf.DataDog.AppKey == "" {
+		return ports, nil
+	}
+
+	log.Info("Configuring DataDog transport for metrics")
+	t, err := transport.NewDataDogTransport(mconf.DataDog.APIKey, mconf.DataDog.AppKey)
+	if err != nil {
+		return nil, err
+	}
+	return append(ports, t), nil
+
+}
+
+func appendSignalFXConfig(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
+	if mconf.SFXToken == "" {
+		return ports, nil
+	}
+	log.Info("Configuring SignalFX transport for metrics")
+	t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec})
+	if err != nil {
+		return nil, err
+	}
+	return append(ports, t), nil
 }
