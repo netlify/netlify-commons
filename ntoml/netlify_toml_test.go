@@ -54,11 +54,9 @@ func TestSaveTomlFile(t *testing.T) {
 	data, err := ioutil.ReadFile(tmp.Name())
 	require.NoError(t, err)
 
-	expected := `
-	[settings]
-	id: "This is something"
-	path: "/dist"
-	`
+	expected := "[settings]\n" +
+		"  id = \"This is something\"\n" +
+		"  path = \"/dist\"\n"
 
 	assert.Equal(t, expected, string(data))
 }
