@@ -8,7 +8,7 @@ help: ## Show this help.
 all: deps test
 
 deps: ## Install dependencies.
-	go get -u github.com/Masterminds/glide && glide --home /tmp install
+	go get -u github.com/Masterminds/glide && glide install
 
 test: ## Run tests.
 	go test -v `go list ./... | grep -v /vendor/`
