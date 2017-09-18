@@ -3,7 +3,7 @@
 language: go
 
 go:
-  - 1.8
+  - 1.8.0
 
 install: make deps
 script: make test
