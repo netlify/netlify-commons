@@ -71,12 +71,11 @@ func LoadFrom(paths ...string) (*NetlifyToml, error) {
 	out := new(NetlifyToml)
 
 	for _, p := range paths {
-		data, ferr := ioutil.ReadFile(p)
-		if ferr != nil {
-			return nil, errors.Wrapf(ferr, "Error while reading in file %s.", p)
-		}
+		if data, ferr := ioutil.ReadFile(p); !os.IsNotExist(ferr) {
+			if ferr != nil {
+				return nil, errors.Wrapf(ferr, "Error while reading in file %s.", p)
+			}
 
-		if !os.IsNotExist(ferr) {
 			if _, derr := toml.Decode(string(data), out); derr != nil {
 				return nil, errors.Wrapf(derr, "Error while decoding file %s", p)
 			}
