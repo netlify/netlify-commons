@@ -1,6 +1,8 @@
-hash: 8796d27f5234284eb13f482b46f3211e91a6c6fe4f3a69b4a2c591e35ad05e97
-updated: 2017-09-18T11:33:26.350397096-07:00
+hash: eed205870b7bc915d4c42a3cccea1c68e63bde3494d1aea9384777c34bf886cc
+updated: 2017-09-18T15:34:24.716314689-07:00
 imports:
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
 - name: github.com/golang/protobuf
