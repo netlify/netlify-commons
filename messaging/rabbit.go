@@ -43,9 +43,9 @@ type RabbitConfig struct {
 	Servers []string    `mapstructure:"servers"`
 	TLS     *tls.Config `mapstructure:"tls_conf"`
 
-	ExchangeDefinition ExchangeDefinition  `mapstructure:"exchange"`
-	QueueDefinition    QueueDefinition     `mapstructure:"queue"`
-	DeliveryDefinition *DeliveryDefinition `mapstructure:"delivery"`
+	ExchangeDefinition ExchangeDefinition  `envconfig:"exchange" mapstructure:"exchange"`
+	QueueDefinition    QueueDefinition     `envconfig:"queue" mapstructure:"queue"`
+	DeliveryDefinition *DeliveryDefinition `envconfig:"delivery" mapstructure:"delivery"`
 }
 
 // ExchangeDefinition defines all the parameters for an exchange
@@ -222,18 +222,22 @@ func DialToRabbit(servers []string, tls *tls.Config, log *logrus.Entry) (*amqp.C
 		Heartbeat: 10 * time.Second,
 	}
 
-	fields := logrus.Fields{}
+	fields := logrus.Fields{
+		"servers": strings.Join(servers, ","),
+	}
 	if tls != nil {
-		fields["cert_file"] = tls.CertFile
-		fields["key_file"] = tls.KeyFile
-		fields["ca_files"] = tls.CAFiles
-
 		tlsConfig, err := tls.TLSConfig()
 		if err != nil {
 			return nil, err
 		}
 
-		dialConfig.TLSClientConfig = tlsConfig
+		if tlsConfig != nil {
+			fields["cert_file"] = tls.CertFile
+			fields["key_file"] = tls.KeyFile
+			fields["ca_files"] = tls.CAFiles
+			log.WithFields(fields).Debug("Forcing TLS connection")
+			dialConfig.TLSClientConfig = tlsConfig
+		}
 	}
 
 	log.WithFields(fields).Info("Dialing rabbitmq servers")
@@ -247,9 +251,12 @@ func DialToRabbit(servers []string, tls *tls.Config, log *logrus.Entry) (*amqp.C
 
 // CreateChannel initializes a new message channel.
 func CreateChannel(conn *amqp.Connection, exchange ExchangeDefinition, queue QueueDefinition, log *logrus.Entry) (*amqp.Channel, error) {
+	log.Debugf("Original exchange definition: %s", exchange.JSON())
 	ed := NewExchangeDefinition(exchange.Name, exchange.Type)
 	ed.merge(&exchange)
 	log.Debugf("Using exchange definition: %s", ed.JSON())
+
+	log.Debugf("Original queue definition: %s", queue.JSON())
 	qd := NewQueueDefinition(queue.Name, queue.BindingKey)
 	qd.merge(&queue)
 	log.Debugf("Using queue definition %s", qd.JSON())
@@ -272,6 +279,7 @@ func CreateConsumer(conn *amqp.Connection, exchange ExchangeDefinition, queue Qu
 func CreateConsumerOnChannel(conn *amqp.Connection, ch *amqp.Channel, queue QueueDefinition, delivery *DeliveryDefinition, log *logrus.Entry) (*Consumer, error) {
 	dd := NewDeliveryDefinition(queue.Name)
 	if delivery != nil {
+		log.Debugf("Original delivery definition: %s", delivery.JSON())
 		dd.merge(delivery)
 	}
 	log.Debugf("Using delivery definition: %s", dd.JSON())
