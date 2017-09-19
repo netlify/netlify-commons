@@ -3,8 +3,8 @@ package messaging
 import (
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/nats-io/nats"
+	"github.com/sirupsen/logrus"
 
 	"github.com/rybit/nats_logrus_hook"
 
@@ -70,7 +70,9 @@ func ConnectToNats(config *NatsConfig, errHandler nats.ErrHandler) (*nats.Conn, 
 		if err != nil {
 			return nil, err
 		}
-		options = append(options, nats.Secure(tlsConfig))
+		if tlsConfig != nil {
+			options = append(options, nats.Secure(tlsConfig))
+		}
 	}
 
 	if errHandler != nil {
