@@ -8,25 +8,35 @@ import (
 )
 
 type Config struct {
-	CAFiles  []string `mapstructure:"ca_files"`
-	KeyFile  string   `mapstructure:"key_file"`
-	CertFile string   `mapstructure:"cert_file"`
+	CAFiles  []string `mapstructure:"ca_files" envconfig:"ca_files"`
+	KeyFile  string   `mapstructure:"key_file" split_words:"true"`
+	CertFile string   `mapstructure:"cert_file" split_words:"true"`
 
 	Cert string `mapstructure:"cert"`
 	Key  string `mapstructure:"key"`
 	CA   string `mapstructure:"ca"`
+
+	Insecure bool `default:"false"`
 }
 
 func (cfg Config) TLSConfig() (*tls.Config, error) {
+	var tlsconf *tls.Config
+	var err error
 	if cfg.Cert != "" && cfg.Key != "" {
-		return LoadFromValues(cfg.Cert, cfg.Key, cfg.CA)
+		tlsconf, err = LoadFromValues(cfg.Cert, cfg.Key, cfg.CA)
+	} else if cfg.CertFile != "" && cfg.KeyFile != "" {
+		tlsconf, err = LoadFromFiles(cfg.CertFile, cfg.KeyFile, cfg.CAFiles)
 	}
 
-	if cfg.CertFile != "" && cfg.KeyFile != "" {
-		return LoadFromFiles(cfg.CertFile, cfg.KeyFile, cfg.CAFiles)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	if tlsconf != nil {
+		tlsconf.InsecureSkipVerify = cfg.Insecure
+	}
+
+	return tlsconf, nil
 }
 
 func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
