@@ -1,5 +1,5 @@
-hash: eed205870b7bc915d4c42a3cccea1c68e63bde3494d1aea9384777c34bf886cc
-updated: 2017-09-18T15:34:24.716314689-07:00
+hash: 15864385028667f18ee7339d1be26594429654b78533d833b0831814c0886911
+updated: 2017-10-02T17:51:31.804087595+02:00
 imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
@@ -14,10 +14,10 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/token
-  - json/parser
   - hcl/scanner
   - hcl/strconv
+  - hcl/token
+  - json/parser
   - json/scanner
   - json/token
 - name: github.com/inconshreveable/mousetrap
@@ -30,6 +30,10 @@ imports:
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
   version: 8d7837e64d3c1ee4e54a880c5a920ab4316fc90a
+- name: github.com/miekg/dns
+  version: 946bd9fbed05568b0f3cd188353d8aa28f38b688
+  subpackages:
+  - internal/socket
 - name: github.com/mitchellh/mapstructure
   version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/nats-io/nats
@@ -52,13 +56,13 @@ imports:
 - name: github.com/signalfx/golib
   version: cb7680940d605b817db79790c241eed2a00fa6e6
   subpackages:
-  - sfxclient
   - datapoint
   - errors
   - event
-  - log
-  - timekeeper
   - eventcounter
+  - log
+  - sfxclient
+  - timekeeper
 - name: github.com/sirupsen/logrus
   version: a3f95b5c423586578a4e099b11a46c2479628cac
 - name: github.com/spf13/afero
@@ -96,9 +100,9 @@ imports:
   version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
   subpackages:
   - bson
+  - internal/json
   - internal/sasl
   - internal/scram
-  - internal/json
 - name: gopkg.in/stack.v1
   version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
@@ -111,12 +115,12 @@ testImports:
 - name: github.com/nats-io/gnatsd
   version: 5dcad241bcd7fff3aac6e9f8b47350f071f5fd38
   subpackages:
-  - test
   - auth
-  - server
   - conf
   - logger
+  - server
   - server/pse
+  - test
   - util
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
