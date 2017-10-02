@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/netlify/netlify-commons/discovery"
 	"github.com/netlify/netlify-commons/tls"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -40,8 +41,9 @@ func (c *Consumer) Clone(queueName string, delivery *DeliveryDefinition) (*Consu
 }
 
 type RabbitConfig struct {
-	Servers []string    `mapstructure:"servers"`
-	TLS     *tls.Config `mapstructure:"tls_conf"`
+	Servers        []string    `mapstructure:"servers"`
+	ServiceDNSName string      `mapstructure:"service_dnsname"`
+	TLS            *tls.Config `mapstructure:"tls_conf"`
 
 	ExchangeDefinition ExchangeDefinition  `envconfig:"exchange" mapstructure:"exchange"`
 	QueueDefinition    QueueDefinition     `envconfig:"queue" mapstructure:"queue"`
@@ -208,7 +210,20 @@ func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error)
 		return nil, err
 	}
 
-	conn, err := DialToRabbit(config.Servers, config.TLS, log)
+	servers := config.Servers
+	if config.ServiceDNSName != "" {
+		servers = []string{}
+		endpoints, err := discovery.DiscoverEndpoints(config.ServiceDNSName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, endpoint := range endpoints {
+			servers = append(servers, fmt.Sprintf("%s:%d", endpoint.Name, endpoint.Port))
+		}
+	}
+
+	conn, err := DialToRabbit(servers, config.TLS, log)
 	if err != nil {
 		return nil, err
 	}
