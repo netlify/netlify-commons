@@ -1,5 +1,5 @@
-hash: 15864385028667f18ee7339d1be26594429654b78533d833b0831814c0886911
-updated: 2017-10-02T17:51:31.804087595+02:00
+hash: 339fd13f8046318b0a0df3f78ef85db9fc7536ed1e15fb5223109515f1ed2bf0
+updated: 2017-10-03T10:49:34.76139528+02:00
 imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
@@ -30,17 +30,15 @@ imports:
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
   version: 8d7837e64d3c1ee4e54a880c5a920ab4316fc90a
-- name: github.com/miekg/dns
-  version: 946bd9fbed05568b0f3cd188353d8aa28f38b688
-  subpackages:
-  - internal/socket
 - name: github.com/mitchellh/mapstructure
   version: d0303fe809921458f417bcf828397a65db30a7e4
-- name: github.com/nats-io/nats
-  version: 61923ed1eaf8398000991fbbee2ef11ab5a5be0d
+- name: github.com/nats-io/go-nats
+  version: 4b47946e1082797665a3da33c92860d4553455fe
   subpackages:
   - encoders/builtin
   - util
+- name: github.com/nats-io/nats
+  version: 29f9728a183bf3fa7e809e14edac00b33be72088
 - name: github.com/nats-io/nuid
   version: 3cf34f9fca4e88afa9da8eabd75e3326c9941b44
 - name: github.com/pelletier/go-toml
@@ -86,7 +84,7 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: 062cd7e4e68206d8bab9b18396626e855c992658
+  version: f7928cfef4d09d1b080aa2b6fd3ca9ba1567c733
   subpackages:
   - unix
 - name: golang.org/x/text

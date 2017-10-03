@@ -41,9 +41,9 @@ func (c *Consumer) Clone(queueName string, delivery *DeliveryDefinition) (*Consu
 }
 
 type RabbitConfig struct {
-	Servers        []string    `mapstructure:"servers"`
-	ServiceDNSName string      `mapstructure:"service_dnsname"`
-	TLS            *tls.Config `mapstructure:"tls_conf"`
+	Servers       []string    `mapstructure:"servers"`
+	DiscoveryName string      `mapstructure:"discovery_name"`
+	TLS           *tls.Config `mapstructure:"tls_conf"`
 
 	ExchangeDefinition ExchangeDefinition  `envconfig:"exchange" mapstructure:"exchange"`
 	QueueDefinition    QueueDefinition     `envconfig:"queue" mapstructure:"queue"`
@@ -206,20 +206,16 @@ func ValidateRabbitConfigStruct(servers []string, exchange ExchangeDefinition, q
 
 // ConnectToRabbit will open a TLS connection to rabbit mq
 func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error) {
-	if err := ValidateRabbitConfig(config); err != nil {
+	var err error
+	if err = ValidateRabbitConfig(config); err != nil {
 		return nil, err
 	}
 
 	servers := config.Servers
-	if config.ServiceDNSName != "" {
-		servers = []string{}
-		endpoints, err := discovery.DiscoverEndpoints(config.ServiceDNSName)
+	if config.DiscoveryName != "" {
+		servers, err = discoverRabbitServers(config.DiscoveryName)
 		if err != nil {
 			return nil, err
-		}
-
-		for _, endpoint := range endpoints {
-			servers = append(servers, fmt.Sprintf("%s:%d", endpoint.Name, endpoint.Port))
 		}
 	}
 
@@ -407,6 +403,21 @@ func Consume(channel *amqp.Channel, deliveryDef *DeliveryDefinition) (<-chan amq
 		*deliveryDef.NoWait,
 		deliveryDef.Table,
 	)
+}
+
+func discoverRabbitServers(serviceName string) ([]string, error) {
+	rabbitUrls := []string{}
+
+	endpoints, err := discovery.DiscoverEndpoints(serviceName)
+	if err != nil {
+		return rabbitUrls, err
+	}
+
+	for _, endpoint := range endpoints {
+		rabbitUrls = append(rabbitUrls, fmt.Sprintf("%s:%d", endpoint.Name, endpoint.Port))
+	}
+
+	return rabbitUrls, nil
 }
 
 // ----------------------------------------------------------------------------
