@@ -3,8 +3,6 @@ package metrics
 import (
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -52,11 +50,7 @@ func (m *metric) AddDimension(key string, value interface{}) *metric {
 	return m
 }
 
-func (m *metric) send(instanceDims DimMap) error {
-	if m.env == nil {
-		return InitError{errors.New("Environment not initialized")}
-	}
-
+func (m *metric) send(instanceDims DimMap) {
 	metricToSend := &RawMetric{
 		Type:      m.Type,
 		Value:     m.Value,
@@ -82,7 +76,7 @@ func (m *metric) send(instanceDims DimMap) error {
 		metricToSend.Timestamp = time.Now().UnixNano()
 	}
 
-	return m.env.send(metricToSend)
+	m.env.send(metricToSend)
 }
 
 // DimMap is a map of dimensions

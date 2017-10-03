@@ -9,7 +9,7 @@ import (
 // Timer will measure the time between two events and send that
 type Timer interface {
 	Start() time.Time
-	Stop(instanceDims DimMap) (time.Duration, error)
+	Stop(instanceDims DimMap) time.Duration
 	SetTimestamp(time.Time)
 }
 
@@ -31,32 +31,30 @@ func (t *timer) Start() time.Time {
 	return now
 }
 
-func (t *timer) Stop(instanceDims DimMap) (time.Duration, error) {
+func (t *timer) Stop(instanceDims DimMap) time.Duration {
 	now := time.Now()
 
 	if t.startTime == nil {
-		return 0, NotStartedError{errors.New("the timer hasn't been started yet")}
+		t.env.reportError(&t.RawMetric, NotStartedError{errors.New("the timer hasn't been started yet")})
 	}
 
 	diff := now.Sub(*t.startTime)
 	t.Value = int64(diff)
-
-	return diff, t.send(instanceDims)
+	t.send(instanceDims)
+	return diff
 }
 
 func (e *Environment) timeBlock(name string, metricDims DimMap, f func()) time.Duration {
 	t := e.NewTimer(name, metricDims)
 	t.Start()
 	f()
-	dur, _ := t.Stop(nil)
-	return dur
+	return t.Stop(nil)
 }
 
 func (e *Environment) timeBlockErr(name string, metricDims DimMap, f func() error) (time.Duration, error) {
 	t := e.NewTimer(name, metricDims)
 	t.Start()
 	err := f()
-	dur, _ := t.Stop(DimMap{"had_error": err != nil})
-
+	dur := t.Stop(DimMap{"had_error": err != nil})
 	return dur, err
 }

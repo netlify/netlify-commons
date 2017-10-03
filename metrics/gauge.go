@@ -7,42 +7,42 @@ import (
 
 // Gauge keeps a running measure of the value at that moment
 type Gauge interface {
-	Increment(DimMap) error
-	Decrement(DimMap) error
-	Set(int64, DimMap) error
+	Increment(DimMap)
+	Decrement(DimMap)
+	Set(int64, DimMap)
 	SetTimestamp(time.Time)
 }
 
 type gauge struct {
 	metric
-	valueLock sync.Mutex
+	valueLock *sync.Mutex
 }
 
 func (e *Environment) NewGauge(name string, metricDims DimMap) Gauge {
 	m := e.newMetric(name, GaugeType, metricDims)
 	return &gauge{
 		metric:    *m,
-		valueLock: sync.Mutex{},
+		valueLock: new(sync.Mutex),
 	}
 }
 
-func (m *gauge) Increment(instanceDims DimMap) error {
+func (m *gauge) Increment(instanceDims DimMap) {
 	m.valueLock.Lock()
 	defer m.valueLock.Unlock()
 	m.Value++
-	return m.send(instanceDims)
+	m.send(instanceDims)
 }
 
-func (m *gauge) Decrement(instanceDims DimMap) error {
+func (m *gauge) Decrement(instanceDims DimMap) {
 	m.valueLock.Lock()
 	defer m.valueLock.Unlock()
 	m.Value--
-	return m.send(instanceDims)
+	m.send(instanceDims)
 }
 
-func (m *gauge) Set(val int64, instanceDims DimMap) error {
+func (m *gauge) Set(val int64, instanceDims DimMap) {
 	m.valueLock.Lock()
 	defer m.valueLock.Unlock()
 	m.Value = val
-	return m.send(instanceDims)
+	m.send(instanceDims)
 }

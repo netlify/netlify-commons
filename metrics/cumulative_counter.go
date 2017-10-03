@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type CumulativeCounter interface {
-	Increment(dims DimMap) error
-	IncrementN(val int64, dims DimMap) error
+	Increment(dims DimMap)
+	IncrementN(val int64, dims DimMap)
 }
 
 type cumulativeCounter struct {
@@ -31,11 +33,11 @@ func (e *Environment) NewCumulativeCounter(name string) CumulativeCounter {
 	return c
 }
 
-func (cc *cumulativeCounter) Increment(dims DimMap) error {
-	return cc.IncrementN(1, dims)
+func (cc *cumulativeCounter) Increment(dims DimMap) {
+	cc.IncrementN(1, dims)
 }
 
-func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) error {
+func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) {
 	cc.statLock.Lock()
 	defer cc.statLock.Unlock()
 
@@ -44,7 +46,8 @@ func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) error {
 	}
 	sha, err := HashDims(dims)
 	if err != nil {
-		return err
+		cc.env.reportError(&cc.RawMetric, errors.Wrap(err, "Failed to hash dimensions"))
+		return
 	}
 
 	m, exists := cc.mts[sha]
@@ -55,7 +58,6 @@ func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) error {
 	}
 
 	m.Value += val
-	return nil
 }
 
 func (cc *cumulativeCounter) series() []*metric {

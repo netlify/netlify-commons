@@ -15,8 +15,7 @@ func TestWriteToSFX(t *testing.T) {
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
 	c := env.NewCounter("test.unittest.1", metrics.DimMap{"test": true})
-
-	require.NoError(t, c.Count(nil))
+	c.Count(nil)
 }
 
 func TestUnsupportedType(t *testing.T) {
@@ -26,8 +25,7 @@ func TestUnsupportedType(t *testing.T) {
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
 	c := env.NewCounter("test.unittest.2", metrics.DimMap{"test": []bool{true}})
-
-	require.Error(t, c.Count(nil))
+	c.Count(nil)
 }
 
 func sfxKey(t *testing.T) string {

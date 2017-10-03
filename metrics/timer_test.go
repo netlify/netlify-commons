@@ -12,13 +12,15 @@ import (
 func TestTimeIt(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = func(_ *RawMetric, err error) {
+		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
+	}
 
 	timer := env.NewTimer("something", nil)
 	start := timer.Start()
 	<-time.After(time.Millisecond * 100)
 	stop := time.Now()
-	_, err := timer.Stop(nil)
-	assert.Nil(t, err)
+	timer.Stop(nil)
 
 	if assert.Len(t, rec.metrics, 1) {
 		m := rec.metrics[0]
