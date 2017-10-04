@@ -9,20 +9,10 @@ type Endpoint struct {
 	Port uint16
 }
 
-func DiscoverEndpoints(serviceDNS string) ([]Endpoint, error) {
-	endpoints := []Endpoint{}
+func DiscoverEndpoints(serviceDNS string) ([]*net.SRV, error) {
 	_, remotes, err := net.LookupSRV("", "", serviceDNS)
-
 	if err != nil {
-		return endpoints, err
+		return nil, err
 	}
-
-	for _, n := range remotes {
-		endpoints = append(endpoints, Endpoint{
-			Name: n.Target,
-			Port: n.Port,
-		})
-	}
-
-	return endpoints, nil
+	return remotes, nil
 }

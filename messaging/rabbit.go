@@ -42,7 +42,7 @@ func (c *Consumer) Clone(queueName string, delivery *DeliveryDefinition) (*Consu
 
 type RabbitConfig struct {
 	Servers       []string    `mapstructure:"servers"`
-	DiscoveryName string      `mapstructure:"discovery_name"`
+	DiscoveryName string      `split_words:"true" mapstructure:"discovery_name"`
 	TLS           *tls.Config `mapstructure:"tls_conf"`
 
 	ExchangeDefinition ExchangeDefinition  `envconfig:"exchange" mapstructure:"exchange"`
@@ -206,20 +206,19 @@ func ValidateRabbitConfigStruct(servers []string, exchange ExchangeDefinition, q
 
 // ConnectToRabbit will open a TLS connection to rabbit mq
 func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error) {
-	var err error
-	if err = ValidateRabbitConfig(config); err != nil {
+	if err := ValidateRabbitConfig(config); err != nil {
 		return nil, err
 	}
 
-	servers := config.Servers
 	if config.DiscoveryName != "" {
-		servers, err = discoverRabbitServers(config.DiscoveryName)
+		servers, err := discoverRabbitServers(config.DiscoveryName)
 		if err != nil {
 			return nil, err
 		}
+		config.Servers = servers
 	}
 
-	conn, err := DialToRabbit(servers, config.TLS, log)
+	conn, err := DialToRabbit(config.Servers, config.TLS, log)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +413,7 @@ func discoverRabbitServers(serviceName string) ([]string, error) {
 	}
 
 	for _, endpoint := range endpoints {
-		rabbitUrls = append(rabbitUrls, fmt.Sprintf("%s:%d", endpoint.Name, endpoint.Port))
+		rabbitUrls = append(rabbitUrls, fmt.Sprintf("%s:%d", endpoint.Target, endpoint.Port))
 	}
 
 	return rabbitUrls, nil

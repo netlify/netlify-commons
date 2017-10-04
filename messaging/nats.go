@@ -15,7 +15,7 @@ import (
 
 type NatsConfig struct {
 	TLS           *tls.Config `mapstructure:"tls_conf"`
-	DiscoveryName string      `mapstructure:"discovery_name"`
+	DiscoveryName string      `split_words:"true" mapstructure:"discovery_name"`
 	Servers       []string    `mapstructure:"servers"`
 	LogsSubject   string      `mapstructure:"log_subject"`
 }
@@ -66,14 +66,12 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 
 // ConnectToNats will do a TLS connection to the nats servers specified
 func ConnectToNats(config *NatsConfig, errHandler nats.ErrHandler) (*nats.Conn, error) {
-	var err error
-	serversString := config.ServerString()
-
 	if config.DiscoveryName != "" {
-		serversString, err = buildNatsServersString(config.DiscoveryName)
+		servers, err := discoverNatsURLs(config.DiscoveryName)
 		if err != nil {
 			return nil, err
 		}
+		config.Servers = servers
 	}
 
 	options := []nats.Option{}
@@ -91,7 +89,7 @@ func ConnectToNats(config *NatsConfig, errHandler nats.ErrHandler) (*nats.Conn, 
 		options = append(options, nats.ErrorHandler(errHandler))
 	}
 
-	return nats.Connect(serversString, options...)
+	return nats.Connect(config.ServerString(), options...)
 }
 
 func ErrorHandler(log *logrus.Entry) nats.ErrHandler {
@@ -105,17 +103,17 @@ func ErrorHandler(log *logrus.Entry) nats.ErrHandler {
 	}
 }
 
-func buildNatsServersString(serviceName string) (string, error) {
-	natsUrls := []string{}
+func discoverNatsURLs(serviceName string) ([]string, error) {
+	natsURLs := []string{}
 
 	endpoints, err := discovery.DiscoverEndpoints(serviceName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	for _, endpoint := range endpoints {
-		natsUrls = append(natsUrls, fmt.Sprintf("nats://%s:%d", endpoint.Name, endpoint.Port))
+		natsURLs = append(natsURLs, fmt.Sprintf("nats://%s:%d", endpoint.Target, endpoint.Port))
 	}
 
-	return strings.Join(natsUrls, ","), nil
+	return natsURLs, nil
 }
