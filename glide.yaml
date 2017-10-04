@@ -7,7 +7,7 @@ import:
 - package: github.com/kelseyhightower/envconfig
   version: v1.3.0
 - package: github.com/nats-io/nats
-  version: v1.2.2
+  version: v1.3.0
 - package: github.com/pkg/errors
   version: v0.8.0
 - package: github.com/rybit/nats_logrus_hook

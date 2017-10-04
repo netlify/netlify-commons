@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/netlify/netlify-commons/discovery"
 	"github.com/netlify/netlify-commons/tls"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -40,8 +41,9 @@ func (c *Consumer) Clone(queueName string, delivery *DeliveryDefinition) (*Consu
 }
 
 type RabbitConfig struct {
-	Servers []string    `mapstructure:"servers"`
-	TLS     *tls.Config `mapstructure:"tls_conf"`
+	Servers       []string    `mapstructure:"servers"`
+	DiscoveryName string      `split_words:"true" mapstructure:"discovery_name"`
+	TLS           *tls.Config `mapstructure:"tls_conf"`
 
 	ExchangeDefinition ExchangeDefinition  `envconfig:"exchange" mapstructure:"exchange"`
 	QueueDefinition    QueueDefinition     `envconfig:"queue" mapstructure:"queue"`
@@ -206,6 +208,14 @@ func ValidateRabbitConfigStruct(servers []string, exchange ExchangeDefinition, q
 func ConnectToRabbit(config *RabbitConfig, log *logrus.Entry) (*Consumer, error) {
 	if err := ValidateRabbitConfig(config); err != nil {
 		return nil, err
+	}
+
+	if config.DiscoveryName != "" {
+		servers, err := discoverRabbitServers(config.DiscoveryName)
+		if err != nil {
+			return nil, err
+		}
+		config.Servers = servers
 	}
 
 	conn, err := DialToRabbit(config.Servers, config.TLS, log)
@@ -392,6 +402,21 @@ func Consume(channel *amqp.Channel, deliveryDef *DeliveryDefinition) (<-chan amq
 		*deliveryDef.NoWait,
 		deliveryDef.Table,
 	)
+}
+
+func discoverRabbitServers(serviceName string) ([]string, error) {
+	rabbitUrls := []string{}
+
+	endpoints, err := discovery.DiscoverEndpoints(serviceName)
+	if err != nil {
+		return rabbitUrls, err
+	}
+
+	for _, endpoint := range endpoints {
+		rabbitUrls = append(rabbitUrls, fmt.Sprintf("%s:%d", endpoint.Target, endpoint.Port))
+	}
+
+	return rabbitUrls, nil
 }
 
 // ----------------------------------------------------------------------------
