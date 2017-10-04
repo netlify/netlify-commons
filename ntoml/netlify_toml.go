@@ -1,11 +1,9 @@
 package ntoml
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
@@ -83,7 +81,7 @@ func LoadFrom(paths ...string) (*NetlifyToml, error) {
 			return out, nil
 		}
 	}
-	return nil, fmt.Errorf("Failed to find toml file in %s", strings.Join(paths, ","))
+	return nil, os.ErrNotExist
 }
 
 func Save(conf *NetlifyToml) error {
