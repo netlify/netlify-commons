@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMissingFile(t *testing.T) {
+	_, err := LoadFrom("does-not-exist")
+	assert.True(t, os.IsNotExist(err))
+}
+
 func TestLoadingExample(t *testing.T) {
 	tmp := testToml(t)
 	defer os.Remove(t.Name())
