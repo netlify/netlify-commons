@@ -1,9 +1,11 @@
 package: github.com/netlify/netlify-commons
 import:
-- package: github.com/sirupsen/logrus
-  version: 1.0.2
+- package: github.com/BurntSushi/toml
+  version: v0.3.0
+- package: github.com/bugsnag/bugsnag-go
+  version: v1.3.0
 - package: github.com/joho/godotenv
-  version: v1.1
+  version: v1.2.0
 - package: github.com/kelseyhightower/envconfig
   version: v1.3.0
 - package: github.com/nats-io/nats
@@ -12,21 +14,21 @@ import:
   version: v0.8.0
 - package: github.com/rybit/nats_logrus_hook
   version: v1.0.4
+- package: github.com/shopify/logrus-bugsnag
 - package: github.com/signalfx/golib
   subpackages:
-  - sfxclient
   - datapoint
+  - sfxclient
+- package: github.com/sirupsen/logrus
+  version: v1.0.3
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
   version: v1.0.0
 - package: github.com/streadway/amqp
 - package: gopkg.in/mgo.v2
-- package: github.com/BurntSushi/toml
-  version: v0.3.0
-- package: github.com/shopify/logrus-bugsnag
 testImport:
 - package: github.com/nats-io/gnatsd
-  version: v0.9.6
+  version: v1.0.4
   subpackages:
   - test
 - package: github.com/stretchr/testify
