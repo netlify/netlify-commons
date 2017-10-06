@@ -1,5 +1,5 @@
-hash: 339fd13f8046318b0a0df3f78ef85db9fc7536ed1e15fb5223109515f1ed2bf0
-updated: 2017-10-03T10:49:34.76139528+02:00
+hash: c8eb62cdd2b47fd7b2e122f7cdb450721344935bfb5ba449152f9b7fd7442d59
+updated: 2017-10-05T15:41:40.462833307-04:00
 imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
@@ -14,10 +14,10 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/scanner
-  - hcl/strconv
   - hcl/token
   - json/parser
+  - hcl/scanner
+  - hcl/strconv
   - json/scanner
   - json/token
 - name: github.com/inconshreveable/mousetrap
@@ -32,13 +32,11 @@ imports:
   version: 8d7837e64d3c1ee4e54a880c5a920ab4316fc90a
 - name: github.com/mitchellh/mapstructure
   version: d0303fe809921458f417bcf828397a65db30a7e4
-- name: github.com/nats-io/go-nats
-  version: 4b47946e1082797665a3da33c92860d4553455fe
+- name: github.com/nats-io/nats
+  version: 29f9728a183bf3fa7e809e14edac00b33be72088
   subpackages:
   - encoders/builtin
   - util
-- name: github.com/nats-io/nats
-  version: 29f9728a183bf3fa7e809e14edac00b33be72088
 - name: github.com/nats-io/nuid
   version: 3cf34f9fca4e88afa9da8eabd75e3326c9941b44
 - name: github.com/pelletier/go-toml
@@ -47,6 +45,8 @@ imports:
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/rybit/nats_logrus_hook
   version: 8d9e8da6aeca6fe5ab668efa91d1ea0722af8d1a
+- name: github.com/shopify/logrus-bugsnag
+  version: 6dbc35f2c30d1e37549f9673dd07912452ab28a5
 - name: github.com/signalfx/com_signalfx_metrics_protobuf
   version: 93e507b42f43f458a109ca278d1542a26a0b87fc
 - name: github.com/signalfx/gohistogram
@@ -54,13 +54,13 @@ imports:
 - name: github.com/signalfx/golib
   version: cb7680940d605b817db79790c241eed2a00fa6e6
   subpackages:
+  - sfxclient
   - datapoint
   - errors
   - event
-  - eventcounter
   - log
-  - sfxclient
   - timekeeper
+  - eventcounter
 - name: github.com/sirupsen/logrus
   version: a3f95b5c423586578a4e099b11a46c2479628cac
 - name: github.com/spf13/afero
@@ -84,7 +84,7 @@ imports:
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: f7928cfef4d09d1b080aa2b6fd3ca9ba1567c733
+  version: 062cd7e4e68206d8bab9b18396626e855c992658
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -98,9 +98,9 @@ imports:
   version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
   subpackages:
   - bson
-  - internal/json
   - internal/sasl
   - internal/scram
+  - internal/json
 - name: gopkg.in/stack.v1
   version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
@@ -113,12 +113,12 @@ testImports:
 - name: github.com/nats-io/gnatsd
   version: 5dcad241bcd7fff3aac6e9f8b47350f071f5fd38
   subpackages:
+  - test
   - auth
+  - server
   - conf
   - logger
-  - server
   - server/pse
-  - test
   - util
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
