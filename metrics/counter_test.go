@@ -11,7 +11,7 @@ import (
 func TestCount(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
-
+	env.ErrorHandler = failHandler(t)
 	c := env.NewCounter("thingy", nil)
 	c.Count(nil)
 
@@ -23,6 +23,7 @@ func TestCount(t *testing.T) {
 func TestCountN(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	c := env.NewCounter("thingy", nil)
 	c.CountN(100, nil)
@@ -35,6 +36,7 @@ func TestCountN(t *testing.T) {
 func TestCountMultipleTimes(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	ts := time.Now()
 

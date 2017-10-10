@@ -12,9 +12,7 @@ import (
 func TestTimeIt(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
-	env.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	env.ErrorHandler = failHandler(t)
 
 	timer := env.NewTimer("something", nil)
 	start := timer.Start()
@@ -32,6 +30,7 @@ func TestTimeIt(t *testing.T) {
 func TestTimeBlock(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	wasCalled := false
 	env.timeBlock("something", DimMap{"pokemon": "pikachu"}, func() {
@@ -49,6 +48,7 @@ func TestTimeBlock(t *testing.T) {
 func TestTimeBlockErr(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	wasCalled := false
 	madeErr := errors.New("garbage error")

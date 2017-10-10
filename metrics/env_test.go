@@ -9,10 +9,7 @@ import (
 func TestSendMetric(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
-
-	env.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	env.ErrorHandler = failHandler(t)
 
 	// create the metric
 	sender := env.newMetric("something", CounterType, nil)
@@ -35,10 +32,7 @@ func TestSendMetric(t *testing.T) {
 func TestSendWithTracer(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
-
-	env.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	env.ErrorHandler = failHandler(t)
 
 	called := false
 	env.Tracer = func(m *RawMetric) {
@@ -74,13 +68,9 @@ func TestSeparateEnv(t *testing.T) {
 	rec2 := new(recordingTransport)
 
 	e1 := NewEnvironment(rec1)
-	e1.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	e1.ErrorHandler = failHandler(t)
 	e2 := NewEnvironment(rec2)
-	e2.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	e2.ErrorHandler = failHandler(t)
 
 	e1.NewCounter("c1", nil).Count(nil)
 	e2.NewCounter("c2", nil).Count(nil)
@@ -95,9 +85,7 @@ func TestSeparateEnv(t *testing.T) {
 func TestNamespace(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
-	env.ErrorHandler = func(_ *RawMetric, err error) {
-		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
-	}
+	env.ErrorHandler = failHandler(t)
 
 	env.NewCounter("c1", nil).Count(nil)
 	env.Namespace = "marp."
@@ -121,4 +109,10 @@ type recordingTransport struct {
 func (t *recordingTransport) Publish(m *RawMetric) error {
 	t.metrics = append(t.metrics, m)
 	return nil
+}
+
+func failHandler(t *testing.T) func(*RawMetric, error) {
+	return func(_ *RawMetric, err error) {
+		assert.Fail(t, "Shouldn't have caused an error: "+err.Error())
+	}
 }
