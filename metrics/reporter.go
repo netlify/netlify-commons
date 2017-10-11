@@ -94,10 +94,7 @@ func (r *intervalReporter) report() {
 
 	for _, c := range r.counters {
 		for _, m := range c.series() {
-			err := m.send(nil)
-			if err != nil {
-				r.log.WithError(err).Warnf("Failed to send %+v", m)
-			}
+			m.send(nil)
 			res := map[string]interface{}{"dims": m.Dims, "value": m.Value}
 			results[c.Name] = append(results[c.Name], res)
 		}

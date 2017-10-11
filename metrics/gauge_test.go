@@ -9,6 +9,7 @@ import (
 func TestIncrement(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	g := env.NewGauge("something", nil)
 	g.Increment(nil)
@@ -22,6 +23,7 @@ func TestIncrement(t *testing.T) {
 func TestDecrement(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	g := env.NewGauge("something", nil)
 	g.Decrement(nil)
@@ -35,6 +37,7 @@ func TestDecrement(t *testing.T) {
 func TestSet(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	g := env.NewGauge("something", nil)
 	g.Set(123, nil)

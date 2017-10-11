@@ -13,6 +13,7 @@ var tl = logrus.WithField("testing", true)
 func TestAddWithMultipleMTS(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	// we aren't going to start the reporter, just manually call it
 	r := newIntervalReporter(time.Second, tl)

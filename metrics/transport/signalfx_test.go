@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/netlify/netlify-commons/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,9 +15,12 @@ func TestWriteToSFX(t *testing.T) {
 	trans, err := NewSignalFXTransport(&SFXConfig{token, 0})
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
-	c := env.NewCounter("test.unittest.1", metrics.DimMap{"test": true})
+	env.ErrorHandler = func(_ *metrics.RawMetric, err error) {
+		assert.Fail(t, "unexpected error: "+err.Error())
+	}
 
-	require.NoError(t, c.Count(nil))
+	c := env.NewCounter("test.unittest.1", metrics.DimMap{"test": true})
+	c.Count(nil)
 }
 
 func TestUnsupportedType(t *testing.T) {
@@ -25,9 +29,12 @@ func TestUnsupportedType(t *testing.T) {
 	trans, err := NewSignalFXTransport(&SFXConfig{token, 0})
 	require.NoError(t, err)
 	env := metrics.NewEnvironment(trans)
-	c := env.NewCounter("test.unittest.2", metrics.DimMap{"test": []bool{true}})
+	env.ErrorHandler = func(_ *metrics.RawMetric, err error) {
+		assert.Fail(t, "unexpected error: "+err.Error())
+	}
 
-	require.Error(t, c.Count(nil))
+	c := env.NewCounter("test.unittest.2", metrics.DimMap{"test": []bool{true}})
+	c.Count(nil)
 }
 
 func sfxKey(t *testing.T) string {

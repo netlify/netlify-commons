@@ -12,13 +12,13 @@ import (
 func TestTimeIt(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	timer := env.NewTimer("something", nil)
 	start := timer.Start()
 	<-time.After(time.Millisecond * 100)
 	stop := time.Now()
-	_, err := timer.Stop(nil)
-	assert.Nil(t, err)
+	timer.Stop(nil)
 
 	if assert.Len(t, rec.metrics, 1) {
 		m := rec.metrics[0]
@@ -30,6 +30,7 @@ func TestTimeIt(t *testing.T) {
 func TestTimeBlock(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	wasCalled := false
 	env.timeBlock("something", DimMap{"pokemon": "pikachu"}, func() {
@@ -47,6 +48,7 @@ func TestTimeBlock(t *testing.T) {
 func TestTimeBlockErr(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	wasCalled := false
 	madeErr := errors.New("garbage error")

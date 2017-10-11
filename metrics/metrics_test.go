@@ -10,6 +10,7 @@ import (
 func TestDimensionalOverride(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	env.AddDimension("global-val", 12)
 	env.AddDimension("metric-overide", "global-level")
@@ -40,6 +41,7 @@ func TestDimensionalOverride(t *testing.T) {
 func TestSettingTimestamp(t *testing.T) {
 	rec := new(recordingTransport)
 	env := NewEnvironment(rec)
+	env.ErrorHandler = failHandler(t)
 
 	ts := time.Now()
 	m := env.newMetric("thing.one", CounterType, nil)

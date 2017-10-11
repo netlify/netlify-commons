@@ -26,6 +26,10 @@ func GlobalEnv() *Environment {
 	return ge
 }
 
+func SetErrorHandler(eh func(m *RawMetric, err error)) {
+	globalEnv.ErrorHandler = eh
+}
+
 func StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
 	globalEnv.StartReportingCumulativeCounters(interval, log)
 }
@@ -76,10 +80,10 @@ func Namespace(val string) {
 	globalEnv.Namespace = val
 }
 
-func Count(name string, metricDims DimMap) error {
-	return globalEnv.NewCounter(name, nil).Count(metricDims)
+func Count(name string, metricDims DimMap) {
+	globalEnv.NewCounter(name, nil).Count(metricDims)
 }
 
-func CountN(name string, val int64, metricDims DimMap) error {
-	return globalEnv.NewCounter(name, nil).CountN(val, metricDims)
+func CountN(name string, val int64, metricDims DimMap) {
+	globalEnv.NewCounter(name, nil).CountN(val, metricDims)
 }

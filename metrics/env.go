@@ -22,9 +22,10 @@ type Environment struct {
 	globalDims DimMap
 	dimlock    sync.Mutex
 
-	Namespace string
-	Tracer    func(m *RawMetric)
-	transport Transport
+	Namespace    string
+	Tracer       func(m *RawMetric)
+	ErrorHandler func(m *RawMetric, err error)
+	transport    Transport
 
 	reporter reporter
 
@@ -35,6 +36,12 @@ type Environment struct {
 	cumulativesSent int64
 }
 
+func (e *Environment) reportError(m *RawMetric, err error) {
+	if e.ErrorHandler != nil {
+		go e.ErrorHandler(m, err)
+	}
+}
+
 func (e *Environment) StartReportingCumulativeCounters(interval time.Duration, log *logrus.Entry) {
 	if interval.Seconds() > 0 {
 		e.reporter = newIntervalReporter(interval, log)
@@ -42,9 +49,9 @@ func (e *Environment) StartReportingCumulativeCounters(interval time.Duration, l
 	}
 }
 
-func (e *Environment) send(m *RawMetric) error {
+func (e *Environment) send(m *RawMetric) {
 	if m == nil {
-		return nil
+		return
 	}
 
 	switch m.Type {
@@ -57,7 +64,7 @@ func (e *Environment) send(m *RawMetric) error {
 	case CumulativeType:
 		atomic.AddInt64(&e.cumulativesSent, 1)
 	default:
-		return UnknownMetricTypeError{errors.Errorf("unknown metric type: %s", m.Type)}
+		e.reportError(m, UnknownMetricTypeError{errors.Errorf("unknown metric type: %s", m.Type)})
 	}
 
 	if e.Tracer != nil {
@@ -68,7 +75,9 @@ func (e *Environment) send(m *RawMetric) error {
 		m.Name = e.Namespace + m.Name
 	}
 
-	return e.transport.Publish(m)
+	if err := e.transport.Publish(m); err != nil {
+		e.reportError(m, err)
+	}
 }
 
 func (e *Environment) AddDimension(k string, v interface{}) {
