@@ -94,12 +94,25 @@ func ConnectToNats(config *NatsConfig, errHandler nats.ErrHandler) (*nats.Conn, 
 
 func ErrorHandler(log *logrus.Entry) nats.ErrHandler {
 	errLogger := log.WithField("component", "error-logger")
-	return func(conn *nats.Conn, sub *nats.Subscription, err error) {
-		errLogger.WithError(err).WithFields(logrus.Fields{
+	return func(conn *nats.Conn, sub *nats.Subscription, natsErr error) {
+		err := natsErr
+
+		l := errLogger.WithFields(logrus.Fields{
 			"subject":     sub.Subject,
 			"group":       sub.Queue,
 			"conn_status": conn.Status(),
-		}).Error("Error while consuming from " + sub.Subject)
+		})
+
+		if err == nats.ErrSlowConsumer {
+			pendingMsgs, _, perr := sub.Pending()
+			if perr != nil {
+				err = perr
+			} else {
+				l = l.WithField("pending_messages", pendingMsgs)
+			}
+		}
+
+		l.WithError(err).Error("Error while consuming from " + sub.Subject)
 	}
 }
 
