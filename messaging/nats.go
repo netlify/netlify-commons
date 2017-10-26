@@ -33,8 +33,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	}
 
 	log.WithFields(config.Fields()).Info("Going to connect to nats servers")
-	errHandler := nats.ErrorHandler(ErrorHandler(log))
-	nc, err := ConnectToNats(config, errHandler)
+	nc, err := ConnectToNats(config, ErrorHandler(log))
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +95,9 @@ func ConfigureNatsStreaming(config *NatsConfig, log *logrus.Entry) (stan.Conn, e
 	return conn, nil
 }
 
-func ErrorHandler(log *logrus.Entry) nats.ErrHandler {
+func ErrorHandler(log *logrus.Entry) nats.Option {
 	errLogger := log.WithField("component", "error-logger")
-	return func(conn *nats.Conn, sub *nats.Subscription, natsErr error) {
+	handler := func(conn *nats.Conn, sub *nats.Subscription, natsErr error) {
 		err := natsErr
 
 		l := errLogger.WithFields(logrus.Fields{
@@ -118,4 +117,5 @@ func ErrorHandler(log *logrus.Entry) nats.ErrHandler {
 
 		l.WithError(err).Error("Error while consuming from " + sub.Subject)
 	}
+	return nats.ErrorHandler(handler)
 }
