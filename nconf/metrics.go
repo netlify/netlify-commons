@@ -13,11 +13,11 @@ import (
 
 type MetricsConfig struct {
 	DataDog *struct {
-		APIKey string `mapstructure:"api_key" split_words:"true"`
+		APIKey string `mapstructure:"api_key" envconfig:"API_KEY"`
 		AppKey string `mapstructure:"app_key" split_words:"true"`
 	} `mapstructure:"datadog"`
 
-	SFXToken string `mapstructure:"sfx_token" split_words:"true"`
+	SFXToken string `mapstructure:"sfx_token" envconfig:"SFX_TOKEN"`
 
 	Nats *NatsConfig `mapstructure:"nats"`
 
