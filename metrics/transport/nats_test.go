@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/nats-io/gnatsd/test"
-	"github.com/nats-io/nats"
+	"github.com/nats-io/go-nats"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/netlify/netlify-commons/metrics"

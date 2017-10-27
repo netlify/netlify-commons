@@ -3,7 +3,7 @@ package transport
 import (
 	"encoding/json"
 
-	"github.com/nats-io/nats"
+	"github.com/nats-io/go-nats"
 	"github.com/pkg/errors"
 
 	"github.com/netlify/netlify-commons/metrics"

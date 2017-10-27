@@ -91,7 +91,7 @@ func appendNatsConfig(ports []metrics.Transport, mconf *MetricsConfig, log *logr
 		TLS:     mconf.Nats.TLS,
 		Servers: mconf.Nats.Servers,
 	}
-	nc, err := messaging.ConnectToNats(natsconf, messaging.ErrorHandler(log))
+	nc, err := messaging.ConfigureNatsConnection(natsconf, log)
 	if err != nil {
 		log.WithError(err).Warn("Failed to setup nats connection")
 		return nil, err

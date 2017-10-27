@@ -8,14 +8,15 @@ import:
   version: v1.2.0
 - package: github.com/kelseyhightower/envconfig
   version: v1.3.0
-- package: github.com/nats-io/nats
+- package: github.com/nats-io/go-nats-streaming
+  version: v0.3.4
+- package: github.com/nats-io/go-nats
   version: v1.3.0
 - package: github.com/pkg/errors
   version: v0.8.0
-- package: github.com/rybit/nats_logrus_hook
-  version: v1.0.4
 - package: github.com/shopify/logrus-bugsnag
 - package: github.com/signalfx/golib
+  version: v1.0.0
   subpackages:
   - datapoint
   - sfxclient
