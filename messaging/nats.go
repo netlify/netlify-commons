@@ -71,6 +71,21 @@ func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) 
 }
 
 func ConfigureNatsStreaming(config *NatsConfig, log *logrus.Entry) (stan.Conn, error) {
+	// connect to the underlying instance
+	nc, err := ConfigureNatsConnection(config, log)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to connect to underlying NATS servers")
+	}
+
+	conn, err := ConnectToNatsStreaming(nc, config, log)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to connect to NATS streaming")
+	}
+
+	return conn, nil
+}
+
+func ConnectToNatsStreaming(nc *nats.Conn, config *NatsConfig, log *logrus.Entry) (stan.Conn, error) {
 	if config.ClusterID == "" {
 		return nil, errors.New("Must provide a cluster ID to connect to streaming nats")
 	}
@@ -79,20 +94,9 @@ func ConfigureNatsStreaming(config *NatsConfig, log *logrus.Entry) (stan.Conn, e
 		log.WithField("client_id", config.ClientID).Debug("No client ID specified, generating a random one")
 	}
 
-	// connect to the underlying instance
-	nc, err := ConfigureNatsConnection(config, log)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to connect to underlying NATS servers")
-	}
-
 	// connect to the actual instance
-	log.Info("Connecting to nats streaming cluster %s", config.ClusterID)
-	conn, err := stan.Connect(config.ClusterID, config.ClientID, stan.NatsConn(nc))
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to connect to streaming NATS")
-	}
-
-	return conn, nil
+	log.WithFields(config.Fields()).Debugf("Connecting to nats streaming cluster %s", config.ClusterID)
+	return stan.Connect(config.ClusterID, config.ClientID, stan.NatsConn(nc))
 }
 
 func ErrorHandler(log *logrus.Entry) nats.Option {
