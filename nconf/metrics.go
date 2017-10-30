@@ -21,8 +21,8 @@ type MetricsConfig struct {
 
 	Nats *NatsConfig `mapstructure:"nats"`
 
-	Namespace  string                 `mapstructure:"namespace"`
-	Dimensions map[string]interface{} `mapstructure:"default_dims"`
+	Namespace  string            `mapstructure:"namespace"`
+	Dimensions map[string]string `mapstructure:"default_dims"`
 
 	// for reporting cumulative counters on an interval
 	ReportSec int `mapstructure:"report_sec" split_words:"true"`
