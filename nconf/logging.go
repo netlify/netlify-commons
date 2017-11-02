@@ -2,6 +2,7 @@ package nconf
 
 import (
 	"os"
+	"time"
 
 	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/pkg/errors"
@@ -30,6 +31,7 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:    true,
 		DisableTimestamp: false,
+		TimestampFormat:  time.RFC3339Nano,
 	})
 
 	// use a file if you want
