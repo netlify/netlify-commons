@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"encoding/json"
 	"sync/atomic"
 	"time"
 
@@ -90,22 +89,9 @@ func (r *intervalReporter) report() {
 		return
 	}
 
-	results := make(map[string][]map[string]interface{})
-
 	for _, c := range r.counters {
 		for _, m := range c.series() {
 			m.send(nil)
-			res := map[string]interface{}{"dims": m.Dims, "value": m.Value}
-			results[c.Name] = append(results[c.Name], res)
-		}
-	}
-
-	if r.log != nil && len(results) > 0 {
-		data, err := json.Marshal(&results)
-		if err != nil {
-			r.log.WithError(err).Warn("Failed to marshal stats results")
-		} else {
-			r.log.Infof(string(data))
 		}
 	}
 }
