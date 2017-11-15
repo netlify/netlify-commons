@@ -53,15 +53,14 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		logrus.Debug("Set log level to: " + logrus.GetLevel().String())
 	}
 
-	log := logrus.StandardLogger()
-	if err := AddBugSnagHook(log, config.BugSnag); err != nil {
+	if err := AddBugSnagHook(config.BugSnag); err != nil {
 		return nil, errors.Wrap(err, "Failed to configure bugsnag")
 	}
 
-	return log.WithField("hostname", hostname), nil
+	return logrus.WithField("hostname", hostname), nil
 }
 
-func AddBugSnagHook(log *logrus.Logger, config *BugSnagConfig) error {
+func AddBugSnagHook(config *BugSnagConfig) error {
 	if config == nil || config.APIKey == "" {
 		return nil
 	}
@@ -74,7 +73,7 @@ func AddBugSnagHook(log *logrus.Logger, config *BugSnagConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Hooks.Add(hook)
-	log.Debug("Added bugsnag hook")
+	logrus.AddHook(hook)
+	logrus.Debug("Added bugsnag hook")
 	return nil
 }
