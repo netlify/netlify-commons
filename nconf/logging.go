@@ -68,6 +68,7 @@ func AddBugSnagHook(config *BugSnagConfig) error {
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:       config.APIKey,
 		ReleaseStage: config.Environment,
+		PanicHandler: func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
 	})
 	hook, err := logrus_bugsnag.NewBugsnagHook()
 	if err != nil {
