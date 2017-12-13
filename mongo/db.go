@@ -24,13 +24,15 @@ type Config struct {
 	TLS         *nftls.Config `mapstructure:"tls_conf"`
 	DB          string        `mapstructure:"db"`
 	Servers     []string      `mapstructure:"servers"`
+	ReplSetName string        `mapstructure:"replset_name"`
 	ConnTimeout int64         `mapstructure:"conn_timeout"`
 }
 
 func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
 	info := &mgo.DialInfo{
-		Addrs:   config.Servers,
-		Timeout: time.Second * time.Duration(config.ConnTimeout),
+		Addrs:          config.Servers,
+		ReplicaSetName: config.ReplSetName,
+		Timeout:        time.Second * time.Duration(config.ConnTimeout),
 	}
 
 	if config.TLS != nil {
