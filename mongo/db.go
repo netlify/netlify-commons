@@ -55,7 +55,11 @@ func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
 		log.Debug("Skipping TLS config")
 	}
 
-	log.WithField("servers", strings.Join(info.Addrs, ",")).Debug("Dialing database")
+	log.WithFields(logrus.Fields{
+		"servers":     strings.Join(info.Addrs, ","),
+		"replica_set": config.ReplSetName,
+	}).Debug("Dialing database")
+
 	sess, err := mgo.DialWithInfo(info)
 	if err != nil {
 		return nil, err
