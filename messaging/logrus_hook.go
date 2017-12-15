@@ -1,15 +1,18 @@
 package messaging
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/nats-io/go-nats"
 	"github.com/sirupsen/logrus"
 )
 
+type NatsWriter interface {
+	Publish(string, []byte) error
+}
+
 // NatsHook will emit logs to the subject provided
 type NatsHook struct {
-	conn          *nats.Conn
+	conn          NatsWriter
 	subject       string
 	extraFields   map[string]interface{}
 	dynamicFields map[string]func() interface{}
@@ -20,21 +23,20 @@ type NatsHook struct {
 
 // NewNatsHook will create a logrus hook that will automatically send
 // new info into the channel
-func NewNatsHook(conn *nats.Conn, subject string) *NatsHook {
+func NewNatsHook(conn NatsWriter, subject string, levels []logrus.Level) *NatsHook {
 	hook := NatsHook{
 		conn:          conn,
 		subject:       subject,
 		extraFields:   make(map[string]interface{}),
 		dynamicFields: make(map[string]func() interface{}),
-		Formatter:     &logrus.JSONFormatter{},
-		LogLevels: []logrus.Level{
-			logrus.PanicLevel,
-			logrus.FatalLevel,
-			logrus.ErrorLevel,
-			logrus.WarnLevel,
-			logrus.InfoLevel,
-			logrus.DebugLevel,
+		Formatter: &logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
 		},
+		LogLevels: levels,
+	}
+
+	if len(hook.LogLevels) == 0 {
+		hook.LogLevels = logrus.AllLevels
 	}
 
 	return &hook
@@ -54,10 +56,6 @@ func (hook *NatsHook) AddDynamicField(key string, generator func() interface{}) 
 
 // Fire will use the connection and try to send the message to the right destination
 func (hook *NatsHook) Fire(entry *logrus.Entry) error {
-	if hook.conn.IsClosed() {
-		return fmt.Errorf("Attempted to log on a closed connection")
-	}
-
 	// add in the new fields
 	for k, v := range hook.extraFields {
 		entry.Data[k] = v

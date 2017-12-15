@@ -38,22 +38,26 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 		return nil, err
 	}
 
+	return nc, nil
+}
+
+func AddNatsLogHook(nc NatsWriter, config *NatsConfig, log *logrus.Entry) error {
 	if config.LogsSubject != "" {
-		hook := NewNatsHook(nc, config.LogsSubject)
+		lvls := []logrus.Level{}
 		if len(config.LogLevels) > 0 {
-			hook.LogLevels = []logrus.Level{}
 			for _, lstr := range config.LogLevels {
 				lvl, err := logrus.ParseLevel(lstr)
 				if err != nil {
-					return nil, errors.Wrapf(err, "Failed to parse '%s' into a level", lstr)
+					return errors.Wrapf(err, "Failed to parse '%s' into a level", lstr)
 				}
-				hook.LogLevels = append(hook.LogLevels, lvl)
+				lvls = append(lvls, lvl)
 			}
 		}
+		hook := NewNatsHook(nc, config.LogsSubject, lvls)
 		log.Logger.Hooks.Add(hook)
 		log.Debugf("Added NATS hook to send logs to %s", config.LogsSubject)
 	}
-	return nc, nil
+	return nil
 }
 
 func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
