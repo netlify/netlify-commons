@@ -26,6 +26,7 @@ type Config struct {
 	Servers     []string      `mapstructure:"servers"`
 	ReplSetName string        `mapstructure:"replset_name"`
 	ConnTimeout int64         `mapstructure:"conn_timeout"`
+	Direct      bool          `mapstructure:"direct"`
 }
 
 func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
@@ -33,6 +34,7 @@ func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
 		Addrs:          config.Servers,
 		ReplicaSetName: config.ReplSetName,
 		Timeout:        time.Second * time.Duration(config.ConnTimeout),
+		Direct:         config.Direct,
 	}
 
 	if config.TLS != nil {
