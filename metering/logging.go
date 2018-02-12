@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,10 +15,19 @@ import (
 
 func init() {
 	initFromEnv()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		s := <-sigs
+		errorLogger.Debug("Shutdown signal recieved: %s", s)
+		global.Flush()
+	}()
 }
 
 var global *MeteringLog
-var errorLogger *logrus.Entry = logrus.WithField("component", "metering_errors")
+var errorLogger *logrus.Entry = logrus.WithField("component", "metering")
 
 type MeteringLog struct {
 	writelock *sync.Mutex
@@ -34,7 +45,7 @@ func initFromEnv() {
 	var err error
 	fname := os.Getenv("METERING_FILENAME")
 	if fname != "" {
-		global, err = NewMeteringLog(fname)
+		global, err = NewLog(fname)
 		if err != nil {
 			panic(errors.Wrapf(err, "Failed to open file '%s' which was specified by the env var 'METERING_FILENAME'", fname))
 		}
@@ -47,7 +58,7 @@ func Global() *MeteringLog {
 	return global
 }
 
-func NewMeteringLog(filename string) (*MeteringLog, error) {
+func NewLog(filename string) (*MeteringLog, error) {
 	ml := &MeteringLog{
 		writelock: new(sync.Mutex),
 	}
@@ -103,7 +114,6 @@ func RecordEvent(event string, data map[string]interface{}) {
 func (ml *MeteringLog) RecordEvent(event string, data map[string]interface{}) error {
 	ml.writelock.Lock()
 	defer ml.writelock.Unlock()
-
 	return ml.encoder.Encode(&MeteringEvent{
 		Event:     event,
 		Data:      data,

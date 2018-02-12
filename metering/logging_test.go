@@ -26,6 +26,20 @@ func TestInit(t *testing.T) {
 	assert.NotNil(t, global.buffer)
 	assert.NotNil(t, global.encoder)
 	assert.NotNil(t, global.writelock)
+
+	RecordEvent("testevent", nil)
+
+	require.NoError(t, global.Flush())
+
+	data, err := ioutil.ReadAll(f)
+	require.NoError(t, err)
+
+	m := new(MeteringEvent)
+	require.NoError(t, json.Unmarshal(data, m))
+
+	assert.Equal(t, "testevent", m.Event)
+	assert.Nil(t, m.Data)
+	assert.NotEqual(t, int64(0), m.Timestamp)
 }
 
 func TestInitNoFile(t *testing.T) {
@@ -42,7 +56,7 @@ func TestWriteDataAppendFile(t *testing.T) {
 	ogcontents := []byte("this is a test\n")
 	f.Write(ogcontents)
 
-	ut, err := NewMeteringLog(f.Name())
+	ut, err := NewLog(f.Name())
 	require.NoError(t, err)
 
 	assert.NotNil(t, ut.buffer)
@@ -77,7 +91,7 @@ func TestSeparationOfGlobal(t *testing.T) {
 	f2 := filepath.Join(d, "file2")
 
 	require.NoError(t, SetMeteringFile(f1))
-	ut, err := NewMeteringLog(f2)
+	ut, err := NewLog(f2)
 	require.NoError(t, err)
 
 	RecordEvent("first", nil)
