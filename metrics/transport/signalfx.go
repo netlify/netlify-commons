@@ -113,6 +113,7 @@ func (t *SFXTransport) recordTimer(m *metrics.RawMetric, formattedDims map[strin
 	bucket, ok := dimMap[sha]
 	if !ok {
 		bucket = sfxclient.NewRollingBucket(m.Name, formattedDims)
+		bucket.Quantiles = []float64{.5, .9, .99}
 		bucket.BucketWidth = t.reportDelay
 		t.timingBuckets[m.Name][sha] = bucket
 	}
