@@ -129,7 +129,12 @@ func (t *SFXTransport) Datapoints() []*datapoint.Datapoint {
 	pts := []*datapoint.Datapoint{}
 	for _, dimMap := range t.timingBuckets {
 		for _, bucket := range dimMap {
-			pts = append(pts, bucket.Datapoints()...)
+			dps := bucket.Datapoints()
+			// do not add points if they are just .count, .sum, .sumsquare for 0 datapoints
+			if len(dps) == 3 {
+				continue
+			}
+			pts = append(pts, dps...)
 		}
 	}
 	return pts
