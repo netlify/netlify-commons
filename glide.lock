@@ -1,5 +1,5 @@
-hash: b121304ca825212dccae887631b49ec51c714c4292babf5126ebf123beb5d2cd
-updated: 2017-10-26T10:39:55.584241552-07:00
+hash: d65933e56a27ebc2d3f9a1e6b483b3964f5dc2a6a258620d5792a14ecb063f48
+updated: 2018-03-16T18:07:28.178055-04:00
 imports:
 - name: github.com/bugsnag/bugsnag-go
   version: 036f1af2a63f8133e596d1c127c86100b4642ba1
@@ -26,10 +26,10 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
-  - hcl/token
-  - json/parser
   - hcl/scanner
   - hcl/strconv
+  - hcl/token
+  - json/parser
   - json/scanner
   - json/token
 - name: github.com/inconshreveable/mousetrap
@@ -71,14 +71,14 @@ imports:
   version: cb7680940d605b817db79790c241eed2a00fa6e6
   subpackages:
   - datapoint
-  - sfxclient
   - errors
   - event
-  - log
-  - timekeeper
   - eventcounter
+  - log
+  - sfxclient
+  - timekeeper
 - name: github.com/sirupsen/logrus
-  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
+  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/spf13/afero
   version: 5660eeed305fe5f69c8fc6cf899132a459a97064
   subpackages:
@@ -98,9 +98,9 @@ imports:
 - name: golang.org/x/crypto
   version: 9477e0b78b9ac3d0b03822fd95422e2fe07627cd
   subpackages:
-  - ssh/terminal
   - bcrypt
   - blowfish
+  - ssh/terminal
 - name: golang.org/x/net
   version: 4b14673ba32bee7f5ac0f990a48f033919fd418b
   subpackages:
@@ -109,12 +109,12 @@ imports:
   version: f7928cfef4d09d1b080aa2b6fd3ca9ba1567c733
   subpackages:
   - unix
-  - windows/svc
-  - windows/svc/debug
-  - windows/svc/mgr
-  - windows/svc/eventlog
   - windows
   - windows/registry
+  - windows/svc
+  - windows/svc/debug
+  - windows/svc/eventlog
+  - windows/svc/mgr
 - name: golang.org/x/text
   version: 6eab0e8f74e86c598ec3b6fad4888e0c11482d48
   subpackages:
@@ -126,9 +126,9 @@ imports:
   version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
   subpackages:
   - bson
+  - internal/json
   - internal/sasl
   - internal/scram
-  - internal/json
 - name: gopkg.in/stack.v1
   version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
@@ -141,11 +141,11 @@ testImports:
 - name: github.com/nats-io/gnatsd
   version: 12a5ced612f30aa511906c0de12a124233752f70
   subpackages:
-  - test
-  - server
   - conf
   - logger
+  - server
   - server/pse
+  - test
   - util
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
