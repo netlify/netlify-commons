@@ -11,9 +11,10 @@ import (
 )
 
 type LoggingConfig struct {
-	Level   string `mapstructure:"log_level" json:"log_level"`
-	File    string `mapstructure:"log_file" json:"log_file"`
-	BugSnag *BugSnagConfig
+	Level         string `mapstructure:"log_level" json:"log_level"`
+	File          string `mapstructure:"log_file" json:"log_file"`
+	DisableColors bool   `mapstructure:"disable_colors" json:"disable_colors"`
+	BugSnag       *BugSnagConfig
 }
 
 type BugSnagConfig struct {
@@ -32,6 +33,7 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		FullTimestamp:    true,
 		DisableTimestamp: false,
 		TimestampFormat:  time.RFC3339Nano,
+		DisableColors:    config.DisableColors,
 	})
 
 	// use a file if you want

@@ -21,7 +21,7 @@ import:
   - datapoint
   - sfxclient
 - package: github.com/sirupsen/logrus
-  version: v1.0.3
+  version: v1.0.5
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
   version: v1.0.0
