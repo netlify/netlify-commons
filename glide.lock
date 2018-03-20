@@ -1,5 +1,5 @@
-hash: d65933e56a27ebc2d3f9a1e6b483b3964f5dc2a6a258620d5792a14ecb063f48
-updated: 2018-03-16T18:07:28.178055-04:00
+hash: 3e274ab6f5c1d51af6b38822967eb5fd28980916b47d5db4ea474b07442042ab
+updated: 2018-03-20T13:41:27.808372-04:00
 imports:
 - name: github.com/bugsnag/bugsnag-go
   version: 036f1af2a63f8133e596d1c127c86100b4642ba1
@@ -12,13 +12,13 @@ imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
 - name: github.com/gogo/protobuf
-  version: 117892bf1866fbaa2318c03e50e40564c8845457
+  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
   - gogoproto
   - proto
   - protoc-gen-gogo/descriptor
 - name: github.com/golang/protobuf
-  version: 1643683e1b54a9e88ad26d98f81400c8c9d9f4f9
+  version: 4bd1920723d7b7c925de087aa32e2187708897f7
   subpackages:
   - proto
 - name: github.com/hashicorp/hcl
@@ -26,6 +26,7 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
+  - hcl/printer
   - hcl/scanner
   - hcl/strconv
   - hcl/token
@@ -90,9 +91,9 @@ imports:
 - name: github.com/spf13/jwalterweatherman
   version: 12bd96e66386c1960ab0f74ced1362f66f552f7b
 - name: github.com/spf13/pflag
-  version: 97afa5e7ca8a08a383cb259e06636b5e2cc7897f
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/spf13/viper
-  version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
+  version: b5e8006cbee93ec955a89ab31e0e3ce3204f3736
 - name: github.com/streadway/amqp
   version: 7db842394ca79f338f781d47bc59115f44adb20b
 - name: golang.org/x/crypto
@@ -102,7 +103,7 @@ imports:
   - blowfish
   - ssh/terminal
 - name: golang.org/x/net
-  version: 4b14673ba32bee7f5ac0f990a48f033919fd418b
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -116,7 +117,7 @@ imports:
   - windows/svc/eventlog
   - windows/svc/mgr
 - name: golang.org/x/text
-  version: 6eab0e8f74e86c598ec3b6fad4888e0c11482d48
+  version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
   - transform
   - unicode/norm
@@ -132,7 +133,7 @@ imports:
 - name: gopkg.in/stack.v1
   version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
-  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
