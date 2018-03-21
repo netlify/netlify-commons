@@ -25,7 +25,8 @@ type MetricsConfig struct {
 	Dimensions map[string]string `mapstructure:"default_dims"`
 
 	// for reporting cumulative counters on an interval
-	ReportSec int `mapstructure:"report_sec" split_words:"true"`
+	ReportSec            int  `mapstructure:"report_sec" split_words:"true"`
+	DisableTimerCounters bool `mapstructure:"disable_timer_counters" split_words:"true"`
 }
 
 type NatsConfig struct {
@@ -123,7 +124,7 @@ func appendSignalFXConfig(ports []metrics.Transport, mconf *MetricsConfig, log *
 		return ports, nil
 	}
 	log.Info("Configuring SignalFX transport for metrics")
-	t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec})
+	t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec, DisableTimerCounters: mconf.DisableTimerCounters})
 	if err != nil {
 		return nil, err
 	}
