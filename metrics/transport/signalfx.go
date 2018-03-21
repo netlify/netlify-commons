@@ -15,8 +15,9 @@ import (
 )
 
 type SFXConfig struct {
-	AuthToken string `mapstructure:"auth_token"`
-	ReportSec int    `mapstructure:"report_sec"`
+	AuthToken            string `mapstructure:"auth_token"`
+	ReportSec            int    `mapstructure:"report_sec"`
+	DisableTimerCounters bool   `mapstructure:"disable_timer_counters"`
 }
 
 func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
@@ -28,6 +29,7 @@ func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
 		map[string]map[string]*sfxclient.RollingBucket{},
 		time.Duration(config.ReportSec) * time.Second,
 		new(sync.Mutex),
+		config.DisableTimerCounters,
 	}
 
 	if t.reportDelay > 0 {
@@ -42,10 +44,11 @@ func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
 }
 
 type SFXTransport struct {
-	sink          *sfxclient.HTTPSink
-	timingBuckets map[string]map[string]*sfxclient.RollingBucket
-	reportDelay   time.Duration
-	statLock      *sync.Mutex
+	sink                 *sfxclient.HTTPSink
+	timingBuckets        map[string]map[string]*sfxclient.RollingBucket
+	reportDelay          time.Duration
+	statLock             *sync.Mutex
+	disableTimerCounters bool
 }
 
 func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
@@ -83,6 +86,9 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 			if err := t.recordTimer(m, p.Dimensions); err != nil {
 				return errors.Wrap(err, "error recording timer to histogram")
 			}
+		}
+		if t.disableTimerCounters {
+			return nil
 		}
 		p.MetricType = datapoint.Count
 	case metrics.CounterType:
