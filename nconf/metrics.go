@@ -24,9 +24,10 @@ type MetricsConfig struct {
 	Namespace  string            `mapstructure:"namespace"`
 	Dimensions map[string]string `mapstructure:"default_dims"`
 
+	ReportSec int `mapstructure:"report_sec" split_words:"true"`
 	// for reporting cumulative counters on an interval
-	ReportSec            int  `mapstructure:"report_sec" split_words:"true"`
-	DisableTimerCounters bool `mapstructure:"disable_timer_counters" split_words:"true"`
+	CumulativeCounterReportSec int  `mapstructure:"cc_report_sec" split_words:"true"`
+	DisableTimerCounters       bool `mapstructure:"disable_timer_counters" split_words:"true"`
 }
 
 type NatsConfig struct {
@@ -71,7 +72,7 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 	metrics.Namespace(mconf.Namespace)
 
 	metrics.StartReportingCumulativeCounters(
-		time.Duration(mconf.ReportSec)*time.Second,
+		time.Duration(mconf.CumulativeCounterReportSec)*time.Second,
 		log.WithField("component", "stats_report"),
 	)
 
