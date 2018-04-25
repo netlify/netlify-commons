@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -15,34 +15,26 @@ type Gauge interface {
 
 type gauge struct {
 	metric
-	valueLock *sync.Mutex
 }
 
 func (e *Environment) NewGauge(name string, metricDims DimMap) Gauge {
 	m := e.newMetric(name, GaugeType, metricDims)
 	return &gauge{
-		metric:    *m,
-		valueLock: new(sync.Mutex),
+		metric: *m,
 	}
 }
 
 func (m *gauge) Increment(instanceDims DimMap) {
-	m.valueLock.Lock()
-	defer m.valueLock.Unlock()
-	m.Value++
-	m.send(instanceDims)
+	val := atomic.AddInt64(&m.value, 1)
+	m.send(instanceDims, val)
 }
 
 func (m *gauge) Decrement(instanceDims DimMap) {
-	m.valueLock.Lock()
-	defer m.valueLock.Unlock()
-	m.Value--
-	m.send(instanceDims)
+	val := atomic.AddInt64(&m.value, -1)
+	m.send(instanceDims, val)
 }
 
 func (m *gauge) Set(val int64, instanceDims DimMap) {
-	m.valueLock.Lock()
-	defer m.valueLock.Unlock()
-	m.Value = val
-	m.send(instanceDims)
+	atomic.SwapInt64(&m.value, val)
+	m.send(instanceDims, val)
 }

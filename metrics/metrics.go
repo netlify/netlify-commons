@@ -28,9 +28,13 @@ type RawMetric struct {
 }
 
 type metric struct {
-	RawMetric
+	Name      string     `json:"name"`
+	Type      MetricType `json:"type"`
+	Dims      DimMap     `json:"dimensions"`
+	Timestamp int64      `json:"timestamp"`
 
-	dimlock *sync.Mutex
+	value   int64
+	dimlock *sync.RWMutex
 	env     *Environment
 }
 
@@ -43,31 +47,30 @@ func (m *metric) SetTimestamp(t time.Time) {
 }
 
 // AddDimension will add this dimension with locking
-func (m *metric) AddDimension(key string, value interface{}) *metric {
+func (m *metric) AddDimension(key string, value interface{}) {
 	m.dimlock.Lock()
 	defer m.dimlock.Unlock()
 	m.Dims[key] = value
-	return m
 }
 
-func (m *metric) send(instanceDims DimMap) {
+func (m *metric) send(instanceDims DimMap, val int64) {
 	metricToSend := &RawMetric{
 		Type:      m.Type,
-		Value:     m.Value,
+		Value:     val,
 		Name:      m.Name,
 		Timestamp: m.Timestamp,
 		Dims:      DimMap{},
 	}
 
 	// global
-	m.env.dimlock.Lock()
+	m.env.dimlock.RLock()
 	addAll(metricToSend.Dims, m.env.globalDims)
-	m.env.dimlock.Unlock()
+	m.env.dimlock.RUnlock()
 
 	// metric
-	m.dimlock.Lock()
+	m.dimlock.RLock()
 	addAll(metricToSend.Dims, m.Dims)
-	m.dimlock.Unlock()
+	m.dimlock.RUnlock()
 
 	// instance
 	addAll(metricToSend.Dims, instanceDims)

@@ -66,6 +66,11 @@ func NewDataDogTransportWithClient(apiKey, appKey string, client *http.Client) (
 	return trans, nil
 }
 
+func (t DataDogTransport) Queue(m *metrics.RawMetric) error {
+	// TODO support queueing
+	return t.Publish(m)
+}
+
 func (t DataDogTransport) Publish(m *metrics.RawMetric) error {
 	point := DataDogMetric{
 		Metric: m.Name,

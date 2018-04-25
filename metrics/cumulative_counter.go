@@ -46,7 +46,7 @@ func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) {
 	}
 	sha, err := HashDims(dims)
 	if err != nil {
-		cc.env.reportError(&cc.RawMetric, errors.Wrap(err, "Failed to hash dimensions"))
+		cc.env.reportError(rawMetric(&cc.metric), errors.Wrap(err, "Failed to hash dimensions"))
 		return
 	}
 
@@ -57,7 +57,7 @@ func (cc *cumulativeCounter) IncrementN(val int64, dims DimMap) {
 		cc.mts[sha] = m
 	}
 
-	m.Value += val
+	m.value += val
 }
 
 func (cc *cumulativeCounter) series() []*metric {

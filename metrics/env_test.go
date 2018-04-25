@@ -13,8 +13,8 @@ func TestSendMetric(t *testing.T) {
 
 	// create the metric
 	sender := env.newMetric("something", CounterType, nil)
-	sender.Value = 123
-	sender.send(nil)
+	sender.value = 123
+	sender.send(nil, sender.value)
 
 	if assert.Len(t, rec.metrics, 1) {
 		m := rec.metrics[0]
@@ -48,8 +48,8 @@ func TestSendWithTracer(t *testing.T) {
 
 	// create the metric
 	sender := env.newMetric("something", CounterType, nil)
-	sender.Value = 123
-	sender.send(nil)
+	sender.value = 123
+	sender.send(nil, sender.value)
 
 	if assert.Len(t, rec.metrics, 1) {
 		m := rec.metrics[0]
@@ -107,6 +107,11 @@ type recordingTransport struct {
 }
 
 func (t *recordingTransport) Publish(m *RawMetric) error {
+	t.metrics = append(t.metrics, m)
+	return nil
+}
+
+func (t *recordingTransport) Queue(m *RawMetric) error {
 	t.metrics = append(t.metrics, m)
 	return nil
 }

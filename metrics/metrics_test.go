@@ -24,7 +24,7 @@ func TestDimensionalOverride(t *testing.T) {
 	sender.send(DimMap{
 		"instance-overide": "instance-level",
 		"instance-val":     789,
-	})
+	}, sender.value)
 
 	if assert.Len(t, rec.metrics, 1) {
 		m := rec.metrics[0]
@@ -46,10 +46,10 @@ func TestSettingTimestamp(t *testing.T) {
 	ts := time.Now()
 	m := env.newMetric("thing.one", CounterType, nil)
 	m.SetTimestamp(ts)
-	m.send(nil)
+	m.send(nil, m.value)
 
 	m.SetTimestamp(time.Time{})
-	m.send(nil)
+	m.send(nil, m.value)
 
 	if assert.Len(t, rec.metrics, 2) {
 		m := rec.metrics[0]
