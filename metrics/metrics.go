@@ -43,11 +43,10 @@ func (m *metric) SetTimestamp(t time.Time) {
 }
 
 // AddDimension will add this dimension with locking
-func (m *metric) AddDimension(key string, value interface{}) *metric {
+func (m *metric) AddDimension(key string, value interface{}) {
 	m.dimlock.Lock()
 	defer m.dimlock.Unlock()
 	m.Dims[key] = value
-	return m
 }
 
 func (m *metric) send(instanceDims DimMap) {
