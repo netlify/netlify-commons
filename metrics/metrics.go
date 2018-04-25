@@ -30,7 +30,7 @@ type RawMetric struct {
 type metric struct {
 	RawMetric
 
-	dimlock *sync.Mutex
+	dimlock *sync.RWMutex
 	env     *Environment
 }
 
@@ -60,14 +60,14 @@ func (m *metric) send(instanceDims DimMap) {
 	}
 
 	// global
-	m.env.dimlock.Lock()
+	m.env.dimlock.RLock()
 	addAll(metricToSend.Dims, m.env.globalDims)
-	m.env.dimlock.Unlock()
+	m.env.dimlock.RUnlock()
 
 	// metric
-	m.dimlock.Lock()
+	m.dimlock.RLock()
 	addAll(metricToSend.Dims, m.Dims)
-	m.dimlock.Unlock()
+	m.dimlock.RUnlock()
 
 	// instance
 	addAll(metricToSend.Dims, instanceDims)

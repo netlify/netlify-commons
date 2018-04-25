@@ -11,7 +11,7 @@ import (
 
 func NewEnvironment(trans Transport) *Environment {
 	return &Environment{
-		dimlock:    sync.Mutex{},
+		dimlock:    sync.RWMutex{},
 		globalDims: DimMap{},
 		transport:  trans,
 		reporter:   new(noopReporter),
@@ -20,7 +20,7 @@ func NewEnvironment(trans Transport) *Environment {
 
 type Environment struct {
 	globalDims DimMap
-	dimlock    sync.Mutex
+	dimlock    sync.RWMutex
 
 	Namespace    string
 	Tracer       func(m *RawMetric)
@@ -104,7 +104,7 @@ func (e *Environment) newMetric(name string, t MetricType, dims DimMap) *metric 
 			Dims: make(DimMap),
 		},
 		env:     e,
-		dimlock: &sync.Mutex{},
+		dimlock: &sync.RWMutex{},
 	}
 
 	if dims != nil {
