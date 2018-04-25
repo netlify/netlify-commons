@@ -91,7 +91,7 @@ func (r *intervalReporter) report() {
 
 	for _, c := range r.counters {
 		for _, m := range c.series() {
-			m.send(nil)
+			m.send(nil, m.value)
 		}
 	}
 }

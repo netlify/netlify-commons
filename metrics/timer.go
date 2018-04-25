@@ -35,12 +35,12 @@ func (t *timer) Stop(instanceDims DimMap) time.Duration {
 	now := time.Now()
 
 	if t.startTime == nil {
-		t.env.reportError(&t.RawMetric, NotStartedError{errors.New("the timer hasn't been started yet")})
+		t.env.reportError(rawMetric(&t.metric), NotStartedError{errors.New("the timer hasn't been started yet")})
 	}
 
 	diff := now.Sub(*t.startTime)
-	t.Value = int64(diff)
-	t.send(instanceDims)
+	t.value = int64(diff)
+	t.send(instanceDims, t.value)
 	return diff
 }
 

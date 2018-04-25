@@ -33,13 +33,25 @@ func NewBroadcastTransport(transports []metrics.Transport) *BroadcastTransport {
 }
 
 func (t BroadcastTransport) Publish(m *metrics.RawMetric) error {
+	return t.performFunc(m, func(p metrics.Transport, rm *metrics.RawMetric) error {
+		return p.Publish(rm)
+	})
+}
+
+func (t BroadcastTransport) Queue(m *metrics.RawMetric) error {
+	return t.performFunc(m, func(p metrics.Transport, rm *metrics.RawMetric) error {
+		return p.Queue(rm)
+	})
+}
+
+func (t BroadcastTransport) performFunc(m *metrics.RawMetric, f func(metrics.Transport, *metrics.RawMetric) error) error {
 	errors := make(chan error, len(t.transports))
 	wg := sync.WaitGroup{}
 
 	for _, trans := range t.transports {
 		wg.Add(1)
 		go func(trans metrics.Transport) {
-			errors <- trans.Publish(m)
+			errors <- f(trans, m)
 			wg.Done()
 		}(trans)
 	}

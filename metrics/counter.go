@@ -1,6 +1,9 @@
 package metrics
 
-import "time"
+import (
+	"sync/atomic"
+	"time"
+)
 
 // Counter will send when an event occurs
 type Counter interface {
@@ -20,6 +23,6 @@ func (m *metric) Count(instanceDims DimMap) {
 
 //CountN will count N occurrences of an event
 func (m *metric) CountN(val int64, instanceDims DimMap) {
-	m.Value = val
-	m.send(instanceDims)
+	atomic.SwapInt64(&m.value, val)
+	m.send(instanceDims, val)
 }

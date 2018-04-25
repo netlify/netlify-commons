@@ -24,21 +24,24 @@ func NewSignalFXTransport(config *SFXConfig) (*SFXTransport, error) {
 	sink := sfxclient.NewHTTPSink()
 	sink.AuthToken = config.AuthToken
 
+	if config.ReportSec <= 0 {
+		return nil, fmt.Errorf("Reporting interval must be greater than zero")
+	}
+
 	t := &SFXTransport{
 		sink,
 		map[string]map[string]*sfxclient.RollingBucket{},
 		time.Duration(config.ReportSec) * time.Second,
 		new(sync.Mutex),
 		config.DisableTimerCounters,
+		[]*datapoint.Datapoint{},
 	}
 
-	if t.reportDelay > 0 {
-		scheduler := sfxclient.NewScheduler()
-		scheduler.ReportingDelay(t.reportDelay)
-		scheduler.Sink = sink
-		scheduler.AddCallback(t)
-		go scheduler.Schedule(context.Background())
-	}
+	scheduler := sfxclient.NewScheduler()
+	scheduler.ReportingDelay(t.reportDelay)
+	scheduler.Sink = sink
+	scheduler.AddCallback(t)
+	go scheduler.Schedule(context.Background())
 
 	return t, nil
 }
@@ -49,9 +52,43 @@ type SFXTransport struct {
 	reportDelay          time.Duration
 	statLock             *sync.Mutex
 	disableTimerCounters bool
+	queue                []*datapoint.Datapoint
+}
+
+func (t *SFXTransport) Queue(m *metrics.RawMetric) error {
+	p, err := t.newDatapoint(m)
+	if err != nil {
+		return err
+	}
+
+	t.statLock.Lock()
+	defer t.statLock.Unlock()
+
+	t.queue = append(t.queue, p)
+	return nil
 }
 
 func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
+	p, err := t.newDatapoint(m)
+	if err != nil {
+		return err
+	}
+
+	if m.Type == metrics.TimerType {
+		if t.reportDelay > 0 {
+			if err := t.recordTimer(m, p.Dimensions); err != nil {
+				return errors.Wrap(err, "error recording timer to histogram")
+			}
+		}
+		if t.disableTimerCounters {
+			return nil
+		}
+	}
+
+	return t.sink.AddDatapoints(context.Background(), []*datapoint.Datapoint{p})
+}
+
+func (t *SFXTransport) newDatapoint(m *metrics.RawMetric) (*datapoint.Datapoint, error) {
 	p := &datapoint.Datapoint{
 		Metric:     m.Name,
 		Dimensions: map[string]string{},
@@ -71,7 +108,7 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 		case string:
 			asStr = v.(string)
 		default:
-			return fmt.Errorf("Unsupported type for dimension '%s': '%v'", k, reflect.TypeOf(v))
+			return nil, fmt.Errorf("Unsupported type for dimension '%s': '%v'", k, reflect.TypeOf(v))
 		}
 		p.Dimensions[k] = asStr
 	}
@@ -82,20 +119,12 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 	case metrics.CumulativeType:
 		p.MetricType = datapoint.Counter
 	case metrics.TimerType:
-		if t.reportDelay > 0 {
-			if err := t.recordTimer(m, p.Dimensions); err != nil {
-				return errors.Wrap(err, "error recording timer to histogram")
-			}
-		}
-		if t.disableTimerCounters {
-			return nil
-		}
 		p.MetricType = datapoint.Count
 	case metrics.CounterType:
 		p.MetricType = datapoint.Count
 	}
 
-	return t.sink.AddDatapoints(context.Background(), []*datapoint.Datapoint{p})
+	return p, nil
 }
 
 func (t *SFXTransport) recordTimer(m *metrics.RawMetric, formattedDims map[string]string) error {
@@ -133,6 +162,12 @@ func (t *SFXTransport) Datapoints() []*datapoint.Datapoint {
 	defer t.statLock.Unlock()
 
 	pts := []*datapoint.Datapoint{}
+
+	for _, p := range t.queue {
+		pts = append(pts, p)
+	}
+	t.queue = []*datapoint.Datapoint{}
+
 	for _, dimMap := range t.timingBuckets {
 		for _, bucket := range dimMap {
 			dps := bucket.Datapoints()

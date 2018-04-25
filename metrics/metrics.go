@@ -28,8 +28,12 @@ type RawMetric struct {
 }
 
 type metric struct {
-	RawMetric
+	Name      string     `json:"name"`
+	Type      MetricType `json:"type"`
+	Dims      DimMap     `json:"dimensions"`
+	Timestamp int64      `json:"timestamp"`
 
+	value   int64
 	dimlock *sync.RWMutex
 	env     *Environment
 }
@@ -49,10 +53,10 @@ func (m *metric) AddDimension(key string, value interface{}) {
 	m.Dims[key] = value
 }
 
-func (m *metric) send(instanceDims DimMap) {
+func (m *metric) send(instanceDims DimMap, val int64) {
 	metricToSend := &RawMetric{
 		Type:      m.Type,
-		Value:     m.Value,
+		Value:     val,
 		Name:      m.Name,
 		Timestamp: m.Timestamp,
 		Dims:      DimMap{},

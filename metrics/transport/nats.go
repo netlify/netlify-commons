@@ -30,3 +30,8 @@ func (t *NatsTransport) Publish(m *metrics.RawMetric) error {
 
 	return t.conn.Publish(t.subject, data)
 }
+
+func (t *NatsTransport) Queue(m *metrics.RawMetric) error {
+	// NATS does not support queueing
+	return t.Publish(m)
+}

@@ -36,6 +36,16 @@ type Environment struct {
 	cumulativesSent int64
 }
 
+func rawMetric(m *metric) *RawMetric {
+	return &RawMetric{
+		Name:      m.Name,
+		Type:      m.Type,
+		Dims:      m.Dims,
+		Value:     m.value,
+		Timestamp: m.Timestamp,
+	}
+}
+
 func (e *Environment) reportError(m *RawMetric, err error) {
 	if e.ErrorHandler != nil {
 		go e.ErrorHandler(m, err)
@@ -75,7 +85,7 @@ func (e *Environment) send(m *RawMetric) {
 		m.Name = e.Namespace + m.Name
 	}
 
-	if err := e.transport.Publish(m); err != nil {
+	if err := e.transport.Queue(m); err != nil {
 		e.reportError(m, err)
 	}
 }
@@ -98,11 +108,9 @@ func addAll(into DimMap, from DimMap) {
 
 func (e *Environment) newMetric(name string, t MetricType, dims DimMap) *metric {
 	m := &metric{
-		RawMetric: RawMetric{
-			Name: name,
-			Type: t,
-			Dims: make(DimMap),
-		},
+		Name:    name,
+		Type:    t,
+		Dims:    make(DimMap),
 		env:     e,
 		dimlock: &sync.RWMutex{},
 	}
