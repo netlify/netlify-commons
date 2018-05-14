@@ -33,7 +33,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	}
 
 	log.WithFields(config.Fields()).Info("Going to connect to nats servers")
-	nc, err := ConnectToNats(config, ErrorHandler(log))
+	nc, err := ConnectToNats(config, ErrorHandler(log), nats.MaxReconnects(-1))
 	if err != nil {
 		return nil, err
 	}
