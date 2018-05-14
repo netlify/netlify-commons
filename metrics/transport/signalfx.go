@@ -61,6 +61,15 @@ func (t *SFXTransport) Queue(m *metrics.RawMetric) error {
 		return err
 	}
 
+	if m.Type == metrics.TimerType {
+		if err := t.recordTimer(m, p.Dimensions); err != nil {
+			return errors.Wrap(err, "error recording timer to histogram")
+		}
+		if t.disableTimerCounters {
+			return nil
+		}
+	}
+
 	t.statLock.Lock()
 	defer t.statLock.Unlock()
 
@@ -75,10 +84,8 @@ func (t *SFXTransport) Publish(m *metrics.RawMetric) error {
 	}
 
 	if m.Type == metrics.TimerType {
-		if t.reportDelay > 0 {
-			if err := t.recordTimer(m, p.Dimensions); err != nil {
-				return errors.Wrap(err, "error recording timer to histogram")
-			}
+		if err := t.recordTimer(m, p.Dimensions); err != nil {
+			return errors.Wrap(err, "error recording timer to histogram")
 		}
 		if t.disableTimerCounters {
 			return nil
