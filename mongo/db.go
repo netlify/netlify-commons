@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/globalsign/mgo"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/mgo.v2"
 
 	nftls "github.com/netlify/netlify-commons/tls"
 )

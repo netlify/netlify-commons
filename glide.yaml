@@ -29,7 +29,7 @@ import:
 - package: github.com/spf13/pflag
   version: v1.0.0
 - package: github.com/streadway/amqp
-- package: gopkg.in/mgo.v2
+- package: github.com/globalsign/mgo
 testImport:
 - package: github.com/nats-io/gnatsd
   version: v1.0.4
