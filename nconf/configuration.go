@@ -3,6 +3,7 @@ package nconf
 import (
 	"os"
 	"strings"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -11,8 +12,6 @@ import (
 
 // LoadConfig loads the config from a file if specified, otherwise from the environment
 func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error {
-	viper.SetConfigType("json")
-
 	if err := viper.BindPFlags(cmd.Flags()); err != nil {
 		return err
 	}
@@ -23,6 +22,17 @@ func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error
 
 	if configFile, _ := cmd.Flags().GetString("config"); configFile != "" {
 		viper.SetConfigFile(configFile)
+
+		if ext := filepath.Ext(configFile); len(ext) > 1 {
+			switch strings.ToLower(ext[1:]) {
+			case "yaml", "yml":
+				viper.SetConfigType("yaml")
+			case "json":
+				fallthrough
+			default:
+				viper.SetConfigType("json")
+			}
+		}
 	} else {
 		viper.SetConfigName("config")
 		viper.AddConfigPath("./")
