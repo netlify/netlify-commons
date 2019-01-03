@@ -15,7 +15,9 @@ type LoggingConfig struct {
 	File             string `mapstructure:"log_file" json:"log_file"`
 	DisableColors    bool   `mapstructure:"disable_colors" json:"disable_colors"`
 	QuoteEmptyFields bool   `mapstructure:"quote_empty_fields" json:"quote_empty_fields"`
+	TSFormat         string `mapstructure:"ts_format" json:"ts_format"`
 	BugSnag          *BugSnagConfig
+	Fields           map[string]interface{} `mapstructure:"fields" json:"fields"`
 }
 
 type BugSnagConfig struct {
@@ -24,16 +26,15 @@ type BugSnagConfig struct {
 }
 
 func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
+	tsFormat := time.RFC3339Nano
+	if config.TSFormat != "" {
+		tsFormat = config.TSFormat
 	}
-
 	// always use the full timestamp
 	logrus.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:    true,
 		DisableTimestamp: false,
-		TimestampFormat:  time.RFC3339Nano,
+		TimestampFormat:  tsFormat,
 		DisableColors:    config.DisableColors,
 		QuoteEmptyFields: config.QuoteEmptyFields,
 	})
@@ -61,7 +62,12 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		return nil, errors.Wrap(err, "Failed to configure bugsnag")
 	}
 
-	return logrus.WithField("hostname", hostname), nil
+	f := logrus.Fields{}
+	for k, v := range config.Fields {
+		f[k] = v
+	}
+
+	return logrus.WithFields(f), nil
 }
 
 func AddBugSnagHook(config *BugSnagConfig) error {
