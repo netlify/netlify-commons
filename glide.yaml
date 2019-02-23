@@ -15,11 +15,6 @@ import:
 - package: github.com/pkg/errors
   version: v0.8.0
 - package: github.com/shopify/logrus-bugsnag
-- package: github.com/signalfx/golib
-  version: v1.0.0
-  subpackages:
-  - datapoint
-  - sfxclient
 - package: github.com/sirupsen/logrus
   version: v1.0.5
 - package: github.com/spf13/cobra

@@ -17,8 +17,6 @@ type MetricsConfig struct {
 		AppKey string `mapstructure:"app_key" split_words:"true"`
 	} `mapstructure:"datadog"`
 
-	SFXToken string `mapstructure:"sfx_token" envconfig:"SFX_TOKEN"`
-
 	Nats *NatsConfig `mapstructure:"nats"`
 
 	Namespace  string            `mapstructure:"namespace"`
@@ -49,10 +47,6 @@ func ConfigureMetrics(mconf *MetricsConfig, log *logrus.Entry) error {
 		return err
 	}
 	ports, err = appendDatadogConfig(ports, mconf, log)
-	if err != nil {
-		return err
-	}
-	ports, err = appendSignalFXConfig(ports, mconf, log)
 	if err != nil {
 		return err
 	}
@@ -118,16 +112,4 @@ func appendDatadogConfig(ports []metrics.Transport, mconf *MetricsConfig, log *l
 	}
 	return append(ports, t), nil
 
-}
-
-func appendSignalFXConfig(ports []metrics.Transport, mconf *MetricsConfig, log *logrus.Entry) ([]metrics.Transport, error) {
-	if mconf.SFXToken == "" {
-		return ports, nil
-	}
-	log.Info("Configuring SignalFX transport for metrics")
-	t, err := transport.NewSignalFXTransport(&transport.SFXConfig{AuthToken: mconf.SFXToken, ReportSec: mconf.ReportSec, DisableTimerCounters: mconf.DisableTimerCounters})
-	if err != nil {
-		return nil, err
-	}
-	return append(ports, t), nil
 }

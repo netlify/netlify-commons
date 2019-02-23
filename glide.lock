@@ -1,28 +1,31 @@
-hash: 3e274ab6f5c1d51af6b38822967eb5fd28980916b47d5db4ea474b07442042ab
-updated: 2018-03-20T13:41:27.808372-04:00
+hash: 1a6f121b268a2dde784c3a73051246dee25d6fc5aa68e96fabb2bdc5db4d55ca
+updated: 2019-02-22T16:15:05.605406-08:00
 imports:
 - name: github.com/bugsnag/bugsnag-go
   version: 036f1af2a63f8133e596d1c127c86100b4642ba1
   subpackages:
   - errors
 - name: github.com/bugsnag/panicwrap
-  version: dd8df9a3778aaebc569794383e5c4ce87d6fd89e
+  version: 1d162ee1264c75b29b0f7733221bedfae7559079
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/fsnotify/fsnotify
-  version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+  version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
+- name: github.com/globalsign/mgo
+  version: eeefdecb41b842af6dc652aaea4026e8403e62df
+  subpackages:
+  - bson
+  - internal/json
+  - internal/sasl
+  - internal/scram
 - name: github.com/gogo/protobuf
-  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
+  version: ba06b47c162d49f2af050fb4c75bcbc86a159d5c
   subpackages:
   - gogoproto
   - proto
   - protoc-gen-gogo/descriptor
-- name: github.com/golang/protobuf
-  version: 4bd1920723d7b7c925de087aa32e2187708897f7
-  subpackages:
-  - proto
 - name: github.com/hashicorp/hcl
-  version: 23c074d0eceb2b8a5bfdbb271ab780cde70f05a8
+  version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
   subpackages:
   - hcl/ast
   - hcl/parser
@@ -38,15 +41,13 @@ imports:
 - name: github.com/joho/godotenv
   version: a79fa1e548e2c689c241d10173efd51e5d689d5b
 - name: github.com/kardianos/osext
-  version: ae77be60afb1dcacde03767a8c37337fad28ac14
+  version: 2bc1f35cddc0cc527b4bc3dce8578fc2a6c11384
 - name: github.com/kelseyhightower/envconfig
   version: f611eb38b3875cc3bd991ca91c51d06446afa14c
-- name: github.com/kr/logfmt
-  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/magiconair/properties
-  version: 8d7837e64d3c1ee4e54a880c5a920ab4316fc90a
+  version: 7757cc9fdb852f7579b24170bcacda2c7471bb6a
 - name: github.com/mitchellh/mapstructure
-  version: 06020f85339e21b2478f756a78e295255ffa4d6a
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/nats-io/go-nats
   version: 29f9728a183bf3fa7e809e14edac00b33be72088
   subpackages:
@@ -57,55 +58,37 @@ imports:
   subpackages:
   - pb
 - name: github.com/nats-io/nuid
-  version: 33c603157d6fd1b0ac2599bcc4a286b36479a06d
+  version: 3024a71c3cbe30667286099921591e6fcc328230
 - name: github.com/pelletier/go-toml
-  version: 4e9e0ee19b60b13eb79915933f44d8ed5f268bdd
+  version: 27c6b39a135b7dc87a14afb068809132fb7a9a8f
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/shopify/logrus-bugsnag
-  version: 6dbc35f2c30d1e37549f9673dd07912452ab28a5
-- name: github.com/signalfx/com_signalfx_metrics_protobuf
-  version: 93e507b42f43f458a109ca278d1542a26a0b87fc
-- name: github.com/signalfx/gohistogram
-  version: 1ccfd2ff508314074672f4450a917011a2060408
-- name: github.com/signalfx/golib
-  version: cb7680940d605b817db79790c241eed2a00fa6e6
-  subpackages:
-  - datapoint
-  - errors
-  - event
-  - eventcounter
-  - log
-  - sfxclient
-  - timekeeper
+  version: 577dee27f20dd8f1a529f82210094af593be12bd
 - name: github.com/sirupsen/logrus
   version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/spf13/afero
-  version: 5660eeed305fe5f69c8fc6cf899132a459a97064
+  version: f4711e4db9e9a1d3887343acb72b2bbfc2f686f5
   subpackages:
   - mem
 - name: github.com/spf13/cast
-  version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
+  version: 8c9545af88b134710ab1cd196795e7f2388358d7
 - name: github.com/spf13/cobra
   version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
 - name: github.com/spf13/jwalterweatherman
-  version: 12bd96e66386c1960ab0f74ced1362f66f552f7b
+  version: 94f6ae3ed3bceceafa716478c5fbf8d29ca601a1
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/spf13/viper
   version: b5e8006cbee93ec955a89ab31e0e3ce3204f3736
 - name: github.com/streadway/amqp
-  version: 7db842394ca79f338f781d47bc59115f44adb20b
+  version: 884228600bc96c993ab12fb81ba78bf0c280e88a
 - name: golang.org/x/crypto
   version: 9477e0b78b9ac3d0b03822fd95422e2fe07627cd
   subpackages:
   - bcrypt
   - blowfish
   - ssh/terminal
-- name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
-  subpackages:
-  - context
 - name: golang.org/x/sys
   version: f7928cfef4d09d1b080aa2b6fd3ca9ba1567c733
   subpackages:
@@ -117,23 +100,12 @@ imports:
   - windows/svc/eventlog
   - windows/svc/mgr
 - name: golang.org/x/text
-  version: b19bf474d317b857955b12035d2c5acb57ce8b01
+  version: 6c92c7dc7f53607809182301b96e4cc1975143f1
   subpackages:
   - transform
   - unicode/norm
-- name: gopkg.in/logfmt.v0
-  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
-- name: github.com/globalsign/mgo
-  version: 113d3961e7311526535a1ef7042196563d442761
-  subpackages:
-  - bson
-  - internal/json
-  - internal/sasl
-  - internal/scram
-- name: gopkg.in/stack.v1
-  version: 817915b46b97fd7bb80e8ab6b69f01a53ac3eebf
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
