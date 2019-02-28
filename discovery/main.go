@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"fmt"
 	"net"
 )
 
@@ -15,4 +16,19 @@ func DiscoverEndpoints(serviceDNS string) ([]*net.SRV, error) {
 		return nil, err
 	}
 	return remotes, nil
+}
+
+func DiscoverServersAsStrings(serviceDNS string) ([]string, error) {
+	urls := []string{}
+
+	endpoints, err := DiscoverEndpoints(serviceDNS)
+	if err != nil {
+		return urls, err
+	}
+
+	for _, endpoint := range endpoints {
+		urls = append(urls, fmt.Sprintf("%s:%d", endpoint.Target, endpoint.Port))
+	}
+
+	return urls, nil
 }
