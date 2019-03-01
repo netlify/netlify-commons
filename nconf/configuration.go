@@ -2,8 +2,8 @@ package nconf
 
 import (
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -16,11 +16,17 @@ func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error
 		return err
 	}
 
+	configFile, _ := cmd.Flags().GetString("config")
+	return LoadConfigWithFile(serviceName, configFile, input)
+}
+
+// LoadConfigWithFile loads the service configuration from an optional file, otherwise from the environment
+func LoadConfigWithFile(serviceName, configFile string, input interface{}) error {
 	viper.SetEnvPrefix(serviceName)
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	if configFile, _ := cmd.Flags().GetString("config"); configFile != "" {
+	if configFile != "" {
 		viper.SetConfigFile(configFile)
 
 		if ext := filepath.Ext(configFile); len(ext) > 1 {
