@@ -55,19 +55,3 @@ func SetLogFields(r *http.Request, fields logrus.Fields) logrus.FieldLogger {
 	entry.Logger = entry.Logger.WithFields(fields)
 	return entry.Logger
 }
-
-func getLogger(r *http.Request, log logrus.FieldLogger) logrus.FieldLogger {
-	if r.Header.Get(HeaderNFDebugLogging) == "" {
-		return log
-	}
-
-	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
-
-	if entry, ok := log.(*logrus.Entry); ok {
-		return logger.WithFields(entry.Data)
-	}
-
-	return logger
-}
-
