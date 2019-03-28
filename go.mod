@@ -24,17 +24,20 @@ require (
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/magiconair/properties v0.0.0-20190110142458-7757cc9fdb85 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
-	github.com/nats-io/gnatsd v1.4.1
+	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.3.0
 	github.com/nats-io/go-nats-streaming v0.3.4
 	github.com/nats-io/nats-streaming-server v0.12.2 // indirect
 	github.com/nats-io/nuid v0.0.0-20180712044959-3024a71c3cbe // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pascaldekloe/goe v0.1.0 // indirect
 	github.com/pelletier/go-toml v0.0.0-20181124002727-27c6b39a135b // indirect
+	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.0
 	github.com/prometheus/procfs v0.0.0-20190403104016-ea9eea638872 // indirect
+	github.com/satori/go.uuid v1.2.0
 	github.com/shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d
 	github.com/sirupsen/logrus v1.0.5
 	github.com/spf13/afero v1.2.1 // indirect
@@ -44,9 +47,11 @@ require (
 	github.com/spf13/pflag v1.0.0 // indirect
 	github.com/spf13/viper v1.0.2
 	github.com/stretchr/testify v1.2.2
+	github.com/tinylib/msgp v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.2 // indirect
 	golang.org/x/crypto v0.0.0-20161031180806-9477e0b78b9a // indirect
 	google.golang.org/appengine v1.5.0 // indirect
+	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
