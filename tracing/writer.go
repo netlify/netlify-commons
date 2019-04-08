@@ -1,6 +1,9 @@
 package tracing
 
 import (
+	"bufio"
+	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -31,4 +34,12 @@ func (w *trackingWriter) WriteHeader(code int) {
 
 func (w *trackingWriter) Header() http.Header {
 	return w.writer.Header()
+}
+
+func (w *trackingWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hj, ok := w.writer.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("webserver doesn't support hijacking")
+	}
+	return hj.Hijack()
 }
