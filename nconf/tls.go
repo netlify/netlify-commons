@@ -1,4 +1,4 @@
-package tls
+package nconf
 
 import (
 	"crypto/tls"
@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 )
 
-type Config struct {
+type TLSConfig struct {
 	CAFiles  []string `mapstructure:"ca_files" envconfig:"ca_files"`
 	KeyFile  string   `mapstructure:"key_file" split_words:"true"`
 	CertFile string   `mapstructure:"cert_file" split_words:"true"`
@@ -17,9 +17,10 @@ type Config struct {
 	CA   string `mapstructure:"ca"`
 
 	Insecure bool `default:"false"`
+	Enabled  bool `default:"false"`
 }
 
-func (cfg Config) TLSConfig() (*tls.Config, error) {
+func (cfg TLSConfig) TLSConfig() (*tls.Config, error) {
 	var tlsconf *tls.Config
 	var err error
 	if cfg.Cert != "" && cfg.Key != "" {

@@ -3,8 +3,29 @@ package messaging
 import (
 	"time"
 
+	"github.com/netlify/netlify-commons/nconf"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+func AddNatsLogHook(nc NatsWriter, config *nconf.NatsConfig, log *logrus.Entry) error {
+	if config.LogsSubject != "" {
+		lvls := []logrus.Level{}
+		if len(config.LogLevels) > 0 {
+			for _, lstr := range config.LogLevels {
+				lvl, err := logrus.ParseLevel(lstr)
+				if err != nil {
+					return errors.Wrapf(err, "Failed to parse '%s' into a level", lstr)
+				}
+				lvls = append(lvls, lvl)
+			}
+		}
+		hook := NewNatsHook(nc, config.LogsSubject, lvls)
+		log.Logger.Hooks.Add(hook)
+		log.Debugf("Added NATS hook to send logs to %s", config.LogsSubject)
+	}
+	return nil
+}
 
 type NatsWriter interface {
 	Publish(string, []byte) error

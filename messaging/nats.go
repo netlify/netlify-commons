@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/nats-io/go-nats"
-	"github.com/nats-io/go-nats-streaming"
+	stan "github.com/nats-io/go-nats-streaming"
+	"github.com/netlify/netlify-commons/nconf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -16,10 +17,10 @@ var silent *logrus.Entry
 func init() {
 	l := logrus.New()
 	l.Out = ioutil.Discard
-	silent = l.WithField("dead", "space")
+	silent = logrus.NewEntry(l)
 }
 
-func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn, error) {
+func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (*nats.Conn, error) {
 	if log == nil {
 		log = silent
 	}
@@ -41,26 +42,7 @@ func ConfigureNatsConnection(config *NatsConfig, log *logrus.Entry) (*nats.Conn,
 	return nc, nil
 }
 
-func AddNatsLogHook(nc NatsWriter, config *NatsConfig, log *logrus.Entry) error {
-	if config.LogsSubject != "" {
-		lvls := []logrus.Level{}
-		if len(config.LogLevels) > 0 {
-			for _, lstr := range config.LogLevels {
-				lvl, err := logrus.ParseLevel(lstr)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to parse '%s' into a level", lstr)
-				}
-				lvls = append(lvls, lvl)
-			}
-		}
-		hook := NewNatsHook(nc, config.LogsSubject, lvls)
-		log.Logger.Hooks.Add(hook)
-		log.Debugf("Added NATS hook to send logs to %s", config.LogsSubject)
-	}
-	return nil
-}
-
-func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
+func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
 	if config.TLS != nil {
 		tlsConfig, err := config.TLS.TLSConfig()
 		if err != nil {
@@ -74,7 +56,7 @@ func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) 
 	return nats.Connect(config.ServerString(), opts...)
 }
 
-func ConfigureNatsStreaming(config *NatsConfig, log *logrus.Entry) (stan.Conn, error) {
+func ConfigureNatsStreaming(config *nconf.NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
 	// connect to the underlying instance
 	nc, err := ConfigureNatsConnection(config, log)
 	if err != nil {
@@ -89,7 +71,7 @@ func ConfigureNatsStreaming(config *NatsConfig, log *logrus.Entry) (stan.Conn, e
 	return conn, nil
 }
 
-func ConnectToNatsStreaming(nc *nats.Conn, config *NatsConfig, log *logrus.Entry) (stan.Conn, error) {
+func ConnectToNatsStreaming(nc *nats.Conn, config *nconf.NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
 	if config.ClusterID == "" {
 		return nil, errors.New("Must provide a cluster ID to connect to streaming nats")
 	}
@@ -103,7 +85,7 @@ func ConnectToNatsStreaming(nc *nats.Conn, config *NatsConfig, log *logrus.Entry
 	return stan.Connect(config.ClusterID, config.ClientID, stan.NatsConn(nc))
 }
 
-func ErrorHandler(log *logrus.Entry) nats.Option {
+func ErrorHandler(log logrus.FieldLogger) nats.Option {
 	errLogger := log.WithField("component", "error-logger")
 	handler := func(conn *nats.Conn, sub *nats.Subscription, natsErr error) {
 		err := natsErr
