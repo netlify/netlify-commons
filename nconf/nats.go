@@ -17,9 +17,6 @@ type NatsConfig struct {
 	ClusterID string `mapstructure:"cluster_id" envconfig:"cluster_id"`
 	ClientID  string `mapstructure:"client_id" envconfig:"client_id"`
 	StartPos  string `mapstructure:"start_pos" split_words:"true"`
-
-	LogsSubject string   `mapstructure:"log_subject"`
-	LogLevels   []string `mapstructure:"log_levels"`
 }
 
 func (c *NatsConfig) LoadServerNames() error {
@@ -48,8 +45,7 @@ func (config *NatsConfig) ServerString() string {
 
 func (config *NatsConfig) Fields() logrus.Fields {
 	f := logrus.Fields{
-		"logs_subject": config.LogsSubject,
-		"servers":      strings.Join(config.Servers, ","),
+		"servers": strings.Join(config.Servers, ","),
 	}
 
 	if config.TLS != nil {
