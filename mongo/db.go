@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo"
+	"github.com/netlify/netlify-commons/nconf"
 	"github.com/sirupsen/logrus"
-
-	nftls "github.com/netlify/netlify-commons/tls"
 )
 
 const (
@@ -21,11 +20,11 @@ const (
 )
 
 type Config struct {
-	TLS         *nftls.Config `mapstructure:"tls_conf"`
-	DB          string        `mapstructure:"db"`
-	Servers     []string      `mapstructure:"servers"`
-	ReplSetName string        `mapstructure:"replset_name"`
-	ConnTimeout int64         `mapstructure:"conn_timeout"`
+	TLS         *nconf.TLSConfig `mapstructure:"tls_conf"`
+	DB          string           `mapstructure:"db"`
+	Servers     []string         `mapstructure:"servers"`
+	ReplSetName string           `mapstructure:"replset_name"`
+	ConnTimeout int64            `mapstructure:"conn_timeout"`
 }
 
 func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
@@ -35,7 +34,7 @@ func Connect(config *Config, log *logrus.Entry) (*mgo.Database, error) {
 		Timeout:        time.Second * time.Duration(config.ConnTimeout),
 	}
 
-	if config.TLS != nil {
+	if config.TLS != nil && config.TLS.Enabled {
 		tlsLog := log.WithFields(logrus.Fields{
 			"cert_file": config.TLS.CertFile,
 			"key_file":  config.TLS.KeyFile,
