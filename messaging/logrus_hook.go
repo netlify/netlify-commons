@@ -6,6 +6,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func AddNatsLogHook(nc NatsWriter, log *logrus.Entry, subject string, levels ...logrus.Level) {
+	if len(levels) == 0 {
+		levels = logrus.AllLevels
+	}
+	hook := NewNatsHook(nc, subject, levels)
+	log.Logger.Hooks.Add(hook)
+	log.Debugf("Added NATS hook to send logs to %s", subject)
+}
+
 type NatsWriter interface {
 	Publish(string, []byte) error
 }
