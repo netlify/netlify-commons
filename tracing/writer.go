@@ -17,6 +17,10 @@ type trackingWriter struct {
 	log      logrus.FieldLogger
 }
 
+func (w *trackingWriter) OriginalWriter() http.ResponseWriter {
+	return w.writer
+}
+
 func (w *trackingWriter) Write(in []byte) (int, error) {
 	w.rspBytes += len(in)
 	return w.writer.Write(in)
