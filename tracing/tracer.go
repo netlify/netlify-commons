@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	ext "github.com/opentracing/opentracing-go/ext"
@@ -21,29 +20,10 @@ const (
 )
 
 func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service string, next http.Handler) {
-	reqID := RequestID(r)
-	r, log = WrapWithLogger(r, reqID, log)
-	log.WithField("url", r.URL.String()).Info("Starting Request")
-
-	r, span := WrapWithSpan(r, reqID, service)
-
-	trackWriter := &trackingWriter{
-		writer: w,
-		log:    log,
-	}
-
-	start := time.Now()
-	next.ServeHTTP(trackWriter, r)
-	dur := time.Since(start)
-
-	log = GetLogger(r) // in case people have added fields
-	log.WithFields(logrus.Fields{
-		"status_code": trackWriter.status,
-		"rsp_bytes":   trackWriter.rspBytes,
-		"dur":         dur.String(),
-		"dur_ns":      dur.Nanoseconds(),
-	}).Info("Completed Request")
-	span.Finish()
+	w, r, rt := NewTracer(w, r, log, service)
+	rt.Start()
+	next.ServeHTTP(w, r)
+	rt.Finish()
 }
 
 func RequestID(r *http.Request) string {
