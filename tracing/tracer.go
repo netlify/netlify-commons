@@ -1,7 +1,6 @@
 package tracing
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
@@ -11,12 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	ddtrace_ext "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
-)
-
-type contextKey string
-
-const (
-	HeaderRequestUUID = "X-BB-CLIENT-REQUEST-UUID"
 )
 
 func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service string, next http.Handler) {
@@ -33,30 +26,6 @@ func RequestID(r *http.Request) string {
 		r.Header.Set(HeaderRequestUUID, id)
 	}
 	return id
-}
-
-func WrapWithLogger(r *http.Request, reqID string, log logrus.FieldLogger) (*http.Request, logrus.FieldLogger) {
-	if r.Header.Get(HeaderNFDebugLogging) != "" {
-		logger := logrus.New()
-		logger.SetLevel(logrus.DebugLevel)
-
-		if entry, ok := log.(*logrus.Entry); ok {
-			log = logger.WithFields(entry.Data)
-		}
-	}
-
-	log = log.WithFields(logrus.Fields{
-		"method":      r.Method,
-		"path":        r.URL.Path,
-		"remote_addr": r.RemoteAddr,
-		"referer":     r.Referer(),
-		"request_id":  reqID,
-	})
-
-	entry := &structuredLoggerEntry{log}
-	r = r.WithContext(context.WithValue(r.Context(), logKey, entry))
-
-	return r, log
 }
 
 func WrapWithSpan(r *http.Request, reqID, service string) (*http.Request, opentracing.Span) {

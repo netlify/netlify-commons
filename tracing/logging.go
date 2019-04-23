@@ -8,50 +8,61 @@ import (
 
 const (
 	logKey = contextKey("nf-log-key")
-
-	HeaderNFDebugLogging = "X-NF-Debug-Logging"
 )
 
-type structuredLoggerEntry struct {
-	Logger logrus.FieldLogger
-}
+func requestLogger(r *http.Request, log logrus.FieldLogger) logrus.FieldLogger {
+	if r.Header.Get(HeaderNFDebugLogging) != "" {
+		logger := logrus.New()
+		logger.SetLevel(logrus.DebugLevel)
 
-func getEntry(r *http.Request) *structuredLoggerEntry {
-	val := r.Context().Value(logKey)
-	if val == nil {
-		return nil
+		if entry, ok := log.(*logrus.Entry); ok {
+			log = logger.WithFields(entry.Data)
+		}
 	}
-	entry, ok := val.(*structuredLoggerEntry)
-	if ok {
-		return entry
-	}
-	return nil
+
+	reqID := RequestID(r)
+
+	log = log.WithFields(logrus.Fields{
+		"request_id": reqID,
+	})
+	return log
 }
 
 func GetLogger(r *http.Request) logrus.FieldLogger {
-	entry := getEntry(r)
+	entry := GetTracer(r)
 	if entry == nil {
 		return logrus.NewEntry(logrus.StandardLogger())
 	}
-	return entry.Logger
+	return entry.FieldLogger
 }
 
+// SetLogField will add the field to this log line and every one following
 func SetLogField(r *http.Request, key string, value interface{}) logrus.FieldLogger {
-	entry := getEntry(r)
+	entry := GetTracer(r)
 	if entry == nil {
 		return logrus.StandardLogger().WithField(key, value)
 	}
-
-	entry.Logger = entry.Logger.WithField(key, value)
-	return entry.Logger
+	return entry.SetLogField(key, value)
 }
 
+// SetLogFields will add the fields to this log line and every one following
 func SetLogFields(r *http.Request, fields logrus.Fields) logrus.FieldLogger {
-	entry := getEntry(r)
+	entry := GetTracer(r)
 	if entry == nil {
 		return logrus.StandardLogger().WithFields(fields)
 	}
 
-	entry.Logger = entry.Logger.WithFields(fields)
-	return entry.Logger
+	return entry.SetLogFields(fields)
+}
+
+// SetFinalField will add a field to the canonical line created at in Finish. It will add
+// it to this line, but not every log line in between
+func SetFinalField(r *http.Request, key string, value interface{}) logrus.FieldLogger {
+	entry := GetTracer(r)
+	if entry == nil {
+		return logrus.StandardLogger().WithField(key, value)
+	}
+
+	entry.FinalFields[key] = value
+	return entry.FieldLogger.WithField(key, value)
 }

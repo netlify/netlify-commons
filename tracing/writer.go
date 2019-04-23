@@ -9,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var _ http.Hijacker = (*trackingWriter)(nil)
+
 type trackingWriter struct {
 	writer   http.ResponseWriter
 	rspBytes int
