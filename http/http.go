@@ -1,4 +1,4 @@
-package safedial
+package http
 
 import (
 	"context"
