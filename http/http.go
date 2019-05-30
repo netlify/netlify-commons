@@ -94,7 +94,7 @@ func isLocal(info httptrace.DNSDoneInfo) string {
 	return ""
 }
 
-func newLocalBlocker(trans http.RoundTripper, log logrus.FieldLogger) *noLocalTransport {
+func SafeRountripper(trans http.RoundTripper, log logrus.FieldLogger) http.RoundTripper {
 	if trans == nil {
 		trans = http.DefaultTransport
 	}
@@ -108,7 +108,7 @@ func newLocalBlocker(trans http.RoundTripper, log logrus.FieldLogger) *noLocalTr
 }
 
 func SafeHTTPClient(client *http.Client, log logrus.FieldLogger) *http.Client {
-	client.Transport = newLocalBlocker(client.Transport, log)
+	client.Transport = SafeRountripper(client.Transport, log)
 
 	return client
 }
