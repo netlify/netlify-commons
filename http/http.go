@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -38,23 +37,6 @@ func isPrivateIP(ip net.IP) bool {
 		}
 	}
 	return false
-}
-
-func isLocalAddress(addr string) bool {
-	ip := net.ParseIP(addr)
-	return isPrivateIP(ip)
-}
-
-// SafeDialContext exchanges a DialContext for a SafeDialContext that will never dial a reserved IP range
-func SafeDialContext(dialContext func(ctx context.Context, network, addr string) (net.Conn, error)) func(ctx context.Context, network, addr string) (net.Conn, error) {
-	return func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if isLocalAddress(addr) {
-			return nil, errors.New("Connection to local network address denied")
-		}
-
-		return dialContext(ctx, network, addr)
-	}
-
 }
 
 type noLocalTransport struct {
