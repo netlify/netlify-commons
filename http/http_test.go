@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +45,7 @@ func TestSafeHTTPClient(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, counter.count)
 
-	client = SafeHttpClient(client)
+	client = SafeHTTPClient(client, logrus.New())
 
 	res, err = client.Get("http://localhost:9999")
 	assert.NotNil(t, err)

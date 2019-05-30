@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptrace"
+
+	"github.com/sirupsen/logrus"
 )
 
 var privateIPBlocks []*net.IPNet
@@ -55,45 +57,58 @@ func SafeDialContext(dialContext func(ctx context.Context, network, addr string)
 
 }
 
-// transport is an http.RoundTripper that keeps track of the in-flight
-// request and implements hooks to report HTTP tracing events.
-type tracingTransport struct {
-	trace     *httptrace.ClientTrace
-	transport http.RoundTripper
-	req       *http.Request
-	cancel    context.CancelFunc
+type noLocalTransport struct {
+	inner  http.RoundTripper
+	errlog logrus.FieldLogger
 }
 
-// RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
-// of the current request.
-func (t *tracingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	ctx, cancel := context.WithCancel(httptrace.WithClientTrace(req.Context(), t.trace))
-	t.req = req.WithContext(ctx)
-	t.cancel = cancel
-	return t.transport.RoundTrip(t.req)
+func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx, cancel := context.WithCancel(req.Context())
+
+	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
+		DNSDone: func(info httptrace.DNSDoneInfo) {
+			if endpoint := isLocal(info); endpoint != "" {
+				cancel()
+				if no.errlog != nil {
+					no.errlog.WithFields(logrus.Fields{
+						"original_url":     req.URL.String(),
+						"blocked_endpoint": endpoint,
+					})
+				}
+			}
+		},
+	})
+
+	req = req.WithContext(ctx)
+	return no.inner.RoundTrip(req)
 }
 
-// GotConn prints whether the connection has been used previously
-// for the current request.
-func (t *tracingTransport) DNSDone(info httptrace.DNSDoneInfo) {
+func isLocal(info httptrace.DNSDoneInfo) string {
 	fmt.Printf("Got dns info: %v\n", info)
 	for _, addr := range info.Addrs {
 		fmt.Printf("Checking addr: %v\n", addr)
 		if isPrivateIP(addr.IP) {
-			fmt.Printf("Got private IP %v\n", addr.IP)
-			t.cancel()
+			return fmt.Sprintf("%v", addr.IP)
 		}
 	}
+	return ""
 }
 
-func SafeHttpClient(client *http.Client) *http.Client {
-	transport := &tracingTransport{transport: client.Transport}
-	fmt.Printf("Transport in client is: %v\n", transport.transport)
-	if transport.transport == nil {
-		transport.transport = http.DefaultTransport
+func newLocalBlocker(trans http.RoundTripper, log logrus.FieldLogger) *noLocalTransport {
+	if trans == nil {
+		trans = http.DefaultTransport
 	}
-	transport.trace = &httptrace.ClientTrace{DNSDone: transport.DNSDone}
-	client.Transport = transport
+
+	ret := &noLocalTransport{
+		inner:  trans,
+		errlog: log.WithField("transport", "local_blocker"),
+	}
+
+	return ret
+}
+
+func SafeHTTPClient(client *http.Client, log logrus.FieldLogger) *http.Client {
+	client.Transport = newLocalBlocker(client.Transport, log)
 
 	return client
 }
