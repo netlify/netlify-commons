@@ -43,14 +43,19 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 }
 
 func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
-	if config.TLS != nil {
+	if config.Auth.Method == nconf.NatsAuthMethodUser {
+		opts = append(opts, nats.UserInfo(config.Auth.User, config.Auth.Password))
+	} else if config.Auth.Method == nconf.NatsAuthMethodToken {
+		opts = append(opts, nats.Token(config.Auth.Token))
+	} else if config.Auth.Method == nconf.NatsAuthMethodTLS || config.TLS != nil {
 		tlsConfig, err := config.TLS.TLSConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to configure TLS")
 		}
-		if tlsConfig != nil {
-			opts = append(opts, nats.Secure(tlsConfig))
-		}
+
+		opts = append(opts, nats.Secure(tlsConfig))
+	} else {
+		return nil, fmt.Errorf("Invalid auth method: '%s'", config.Auth.Method)
 	}
 
 	return nats.Connect(config.ServerString(), opts...)

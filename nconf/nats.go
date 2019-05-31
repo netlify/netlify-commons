@@ -8,14 +8,28 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	NatsAuthMethodUser  = "user"
+	NatsAuthMethodToken = "token"
+	NatsAuthMethodTLS   = "tls"
+)
+
+type NatsAuth struct {
+	Method   string `mapstructure:"method"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	Token    string `mapstructure:"token"`
+}
+
 type NatsConfig struct {
 	TLS           *TLSConfig `mapstructure:"tls_conf"`
-	DiscoveryName string     `split_words:"true" mapstructure:"discovery_name"`
+	DiscoveryName string     `mapstructure:"discovery_name" split_words:"true"`
 	Servers       []string   `mapstructure:"servers"`
+	Auth          NatsAuth   `mapstructure:"auth"`
 
 	// for streaming
-	ClusterID string `mapstructure:"cluster_id" envconfig:"cluster_id"`
-	ClientID  string `mapstructure:"client_id" envconfig:"client_id"`
+	ClusterID string `mapstructure:"cluster_id" split_words:"true"`
+	ClientID  string `mapstructure:"client_id" split_words:"true"`
 	StartPos  string `mapstructure:"start_pos" split_words:"true"`
 }
 
@@ -46,6 +60,10 @@ func (config *NatsConfig) ServerString() string {
 func (config *NatsConfig) Fields() logrus.Fields {
 	f := logrus.Fields{
 		"servers": strings.Join(config.Servers, ","),
+	}
+
+	if config.Auth.Method != "" {
+		f["auth_method"] = config.Auth.Method
 	}
 
 	if config.TLS != nil {
