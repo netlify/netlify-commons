@@ -65,6 +65,7 @@ func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, e
 	case nconf.NatsAuthMethodToken:
 		opts = append(opts, nats.Token(config.Auth.Token))
 	case nconf.NatsAuthMethodTLS:
+		// if using TLS auth, make sure the client certificate is loaded
 		if len(tlsConfig.Certificates) == 0 {
 			return nil, fmt.Errorf("TLS auth method is configured but no certificate was loaded")
 		}
