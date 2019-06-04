@@ -3,6 +3,7 @@ package messaging
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/nats-io/go-nats"
@@ -24,9 +25,14 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 	if log == nil {
 		log = silent
 	}
+
 	if config == nil {
 		log.Debug("Skipping nats connection because there is no config")
 		return nil, nil
+	}
+
+	if !config.TLS.Enabled {
+		log.Warn("Connection to NATS servers is NOT using TLS")
 	}
 
 	if err := config.LoadServerNames(); err != nil {
@@ -43,18 +49,26 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 }
 
 func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
-	if config.Auth.Method == nconf.NatsAuthMethodUser {
-		opts = append(opts, nats.UserInfo(config.Auth.User, config.Auth.Password))
-	} else if config.Auth.Method == nconf.NatsAuthMethodToken {
-		opts = append(opts, nats.Token(config.Auth.Token))
-	} else if config.Auth.Method == nconf.NatsAuthMethodTLS || config.TLS != nil {
-		tlsConfig, err := config.TLS.TLSConfig()
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to configure TLS")
-		}
+	tlsConfig, err := config.TLS.TLSConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to configure TLS config")
+	}
 
+	// If TLS is enabled, always add the Secure option: it will at least contain the RootCAs
+	if config.TLS.Enabled {
 		opts = append(opts, nats.Secure(tlsConfig))
-	} else {
+	}
+
+	switch strings.ToLower(config.Auth.Method) {
+	case nconf.NatsAuthMethodUser:
+		opts = append(opts, nats.UserInfo(config.Auth.User, config.Auth.Password))
+	case nconf.NatsAuthMethodToken:
+		opts = append(opts, nats.Token(config.Auth.Token))
+	case nconf.NatsAuthMethodTLS:
+		if len(tlsConfig.Certificates) == 0 {
+			return nil, fmt.Errorf("TLS auth method is configured but no certificate was loaded")
+		}
+	default:
 		return nil, fmt.Errorf("Invalid auth method: '%s'", config.Auth.Method)
 	}
 
