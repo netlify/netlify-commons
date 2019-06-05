@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type TLSConfig struct {
@@ -33,13 +32,10 @@ func (cfg TLSConfig) TLSConfig() (*tls.Config, error) {
 
 	// Load CA
 	if cfg.CA != "" {
-		logrus.Debugf("Loading CA value")
 		tlsConf.RootCAs, err = LoadCAFromValue(cfg.CA)
 	} else if len(cfg.CAFiles) > 0 {
-		logrus.WithField("ca_files", cfg.CAFiles).Debugf("Loading CA files")
 		tlsConf.RootCAs, err = LoadCAFromFiles(cfg.CAFiles)
 	} else {
-		logrus.Debugf("No CA provided. Use system certs")
 		tlsConf.RootCAs, err = x509.SystemCertPool()
 	}
 
@@ -49,18 +45,10 @@ func (cfg TLSConfig) TLSConfig() (*tls.Config, error) {
 
 	// Load Certs if any
 	var cert tls.Certificate
-	err = nil
 	if cfg.Cert != "" && cfg.Key != "" {
-		logrus.Debugf("Loading cert and key values")
 		cert, err = LoadCertFromValues(cfg.Cert, cfg.Key)
 		tlsConf.Certificates = append(tlsConf.Certificates, cert)
 	} else if cfg.CertFile != "" && cfg.KeyFile != "" {
-		logrus.WithFields(
-			logrus.Fields{
-				"cert_file": cfg.CertFile,
-				"key_file":  cfg.KeyFile,
-			},
-		).Debugf("Loading cert and key files")
 		cert, err = LoadCertFromFiles(cfg.CertFile, cfg.KeyFile)
 		tlsConf.Certificates = append(tlsConf.Certificates, cert)
 	}
