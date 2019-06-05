@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -51,12 +52,12 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
 	tlsConfig, err := config.TLS.TLSConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to configure TLS config")
+		return nil, errors.Wrap(err, "Failed to configure TLS")
 	}
 
-	// If TLS is enabled, always add the Secure option: it will at least contain the RootCAs
+	// If TLS is enabled, make the connection to NATS secure
 	if config.TLS.Enabled {
-		opts = append(opts, nats.Secure(tlsConfig))
+		opts = append(opts, NatsRootCAs(tlsConfig))
 	}
 
 	switch strings.ToLower(config.Auth.Method) {
@@ -69,6 +70,7 @@ func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, e
 		if tlsConfig == nil || len(tlsConfig.Certificates) == 0 {
 			return nil, fmt.Errorf("TLS auth method is configured but no certificate was loaded")
 		}
+		opts = append(opts, nats.Secure(tlsConfig))
 	default:
 		return nil, fmt.Errorf("Invalid auth method: '%s'", config.Auth.Method)
 	}
@@ -128,4 +130,26 @@ func ErrorHandler(log logrus.FieldLogger) nats.Option {
 		l.WithError(err).Error("Error while consuming from " + sub.Subject)
 	}
 	return nats.ErrorHandler(handler)
+}
+
+// NatsRootCAs is a NATS helper option to provide the RootCAs pool from a tls.Config struct. If Secure is
+// not already set this will set it as well.
+func NatsRootCAs(tlsConf *tls.Config) nats.Option {
+	return func(o *nats.Options) error {
+		if tlsConf.RootCAs == nil {
+			return fmt.Errorf("nats: the RootCAs pool from the given tls.Config is nil")
+		}
+
+		if o.TLSConfig == nil {
+			o.TLSConfig = &tls.Config{
+				MinVersion:         tls.VersionTLS12,
+				InsecureSkipVerify: tlsConf.InsecureSkipVerify,
+			}
+		}
+
+		o.TLSConfig.RootCAs = tlsConf.RootCAs
+		o.Secure = true
+
+		return nil
+	}
 }
