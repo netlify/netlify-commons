@@ -33,7 +33,7 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 	}
 
 	if !config.TLS.Enabled {
-		log.Warn("Connection to NATS servers is NOT using TLS")
+		log.Warn("Connection to NATS servers is not using TLS")
 	}
 
 	if err := config.LoadServerNames(); err != nil {
