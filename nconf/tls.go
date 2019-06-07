@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 )
 
 type TLSConfig struct {
@@ -21,88 +23,78 @@ type TLSConfig struct {
 }
 
 func (cfg TLSConfig) TLSConfig() (*tls.Config, error) {
-	var tlsconf *tls.Config
 	var err error
+
+	tlsConf := &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: cfg.Insecure,
+	}
+
+	// Load CA
+	if cfg.CA != "" {
+		tlsConf.RootCAs, err = LoadCAFromValue(cfg.CA)
+	} else if len(cfg.CAFiles) > 0 {
+		tlsConf.RootCAs, err = LoadCAFromFiles(cfg.CAFiles)
+	} else {
+		tlsConf.RootCAs, err = x509.SystemCertPool()
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Error setting up Root CA pool")
+	}
+
+	// Load Certs if any
+	var cert tls.Certificate
 	if cfg.Cert != "" && cfg.Key != "" {
-		tlsconf, err = LoadFromValues(cfg.Cert, cfg.Key, cfg.CA)
+		cert, err = LoadCertFromValues(cfg.Cert, cfg.Key)
+		tlsConf.Certificates = append(tlsConf.Certificates, cert)
 	} else if cfg.CertFile != "" && cfg.KeyFile != "" {
-		tlsconf, err = LoadFromFiles(cfg.CertFile, cfg.KeyFile, cfg.CAFiles)
+		cert, err = LoadCertFromFiles(cfg.CertFile, cfg.KeyFile)
+		tlsConf.Certificates = append(tlsConf.Certificates, cert)
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error loading certificate KeyPair")
 	}
 
-	if tlsconf != nil {
-		tlsconf.InsecureSkipVerify = cfg.Insecure
+	// Backwards compatibility: if TLS is not explicitly enabled, return nil if no certificate was provided
+	// Old code disabled TLS by not providing a certificate, which returned nil when calling TLSConfig()
+	if !cfg.Enabled && len(tlsConf.Certificates) == 0 {
+		return nil, nil
 	}
 
-	return tlsconf, nil
+	return tlsConf, nil
 }
 
-func LoadFromValues(certPEM, keyPEM, ca string) (*tls.Config, error) {
-	var pool *x509.CertPool
-	// If no CA cert if provided, use system pool
-	if ca == "" {
-		p, err := x509.SystemCertPool()
+func LoadCertFromValues(certPEM, keyPEM string) (tls.Certificate, error) {
+	return tls.X509KeyPair([]byte(certPEM), []byte(keyPEM))
+}
+
+func LoadCertFromFiles(certFile, keyFile string) (tls.Certificate, error) {
+	return tls.LoadX509KeyPair(certFile, keyFile)
+}
+
+func LoadCAFromFiles(cafiles []string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+
+	for _, caFile := range cafiles {
+		caData, err := ioutil.ReadFile(caFile)
 		if err != nil {
 			return nil, err
 		}
-		pool = p
-	} else {
-		pool = x509.NewCertPool()
-		if !pool.AppendCertsFromPEM([]byte(ca)) {
-			return nil, fmt.Errorf("Failed to add CA cert")
+
+		if !pool.AppendCertsFromPEM(caData) {
+			return nil, fmt.Errorf("Failed to add CA cert at %s", caFile)
 		}
 	}
 
-	cert, err := tls.X509KeyPair([]byte(certPEM), []byte(keyPEM))
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs:      pool,
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
-	}
-
-	return tlsConfig, nil
+	return pool, nil
 }
 
-func LoadFromFiles(certFile, keyFile string, cafiles []string) (*tls.Config, error) {
-	var pool *x509.CertPool
-	if len(cafiles) == 0 {
-		p, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-		pool = p
-	} else {
-		pool = x509.NewCertPool()
-
-		for _, caFile := range cafiles {
-			caData, err := ioutil.ReadFile(caFile)
-			if err != nil {
-				return nil, err
-			}
-
-			if !pool.AppendCertsFromPEM(caData) {
-				return nil, fmt.Errorf("Failed to add CA cert at %s", caFile)
-			}
-		}
+func LoadCAFromValue(ca string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM([]byte(ca)) {
+		return nil, fmt.Errorf("Failed to add CA cert")
 	}
-
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs:      pool,
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
-	}
-
-	return tlsConfig, nil
+	return pool, nil
 }
