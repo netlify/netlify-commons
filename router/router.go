@@ -4,23 +4,12 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/netlify/netlify-commons/tracing"
-	"github.com/rs/cors"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
 )
 
 type chiWrapper struct {
 	chi chi.Router
-}
-
-// Options configures specifics of the default router
-type Options struct {
-	EnableCORS      bool
-	Version         string
-	HealthCheckPath string
-	HealthChecker   APIHandler
-	Description     string
 }
 
 // Router wraps the chi router to make it slightly more accessible
@@ -47,33 +36,15 @@ type Router interface {
 }
 
 //  creates a router with sensible defaults (xff, request id, cors)
-func New(serviceName string, log logrus.FieldLogger, options Options) Router {
+func New(log logrus.FieldLogger, options ...Option) Router {
 	r := &chiWrapper{chi.NewRouter()}
 
 	xffmw, _ := xff.Default()
 	r.Use(xffmw.Handler)
-	// r.Use(middlewareFunc(Recoverer)) TODO
-
-	if options.EnableCORS {
-		corsMiddleware := cors.New(cors.Options{
-			AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
-			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-			ExposedHeaders:   []string{"Link", "X-Total-Count"},
-			AllowCredentials: true,
-		})
-		r.Use(corsMiddleware.Handler)
+	for _, opt := range options {
+		opt(r)
 	}
 
-	if options.HealthCheckPath != "" {
-		r.Use(HealthCheck(options.HealthCheckPath, options.HealthChecker))
-	}
-
-	version := "unknown"
-	if options.Version != "" {
-		version = options.Version
-	}
-	r.Use(VersionHeader(serviceName, version))
-	r.Use(tracing.Middleware(log, serviceName))
 	return r
 }
 

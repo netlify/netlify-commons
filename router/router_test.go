@@ -17,7 +17,7 @@ func TestCORS(t *testing.T) {
 	req.Header.Set("Access-Control-Request-Method", "GET")
 	req.Header.Set("Access-Control-Request-Headers", "Content-Type")
 	t.Run("enabled", func(t *testing.T) {
-		rsp := do(t, &Options{EnableCORS: true}, "", "/", nil, req)
+		rsp := do(t, []Option{OptEnableCORS}, "", "/", nil, req)
 		assert.Equal(t, http.StatusOK, rsp.Code)
 	})
 	t.Run("disabled", func(t *testing.T) {
@@ -45,17 +45,20 @@ func TestHealthEndpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	scenarios := map[string]struct {
-		opts *Options
+		opts []Option
 		code int
 	}{
-		"disabled": {&Options{HealthCheckPath: ""}, http.StatusNotFound},
-		"default":  {&Options{HealthCheckPath: "/health"}, http.StatusOK},
-		"custom": {&Options{
-			HealthCheckPath: "/health",
-			HealthChecker: func(_ http.ResponseWriter, r *http.Request) *HTTPError {
+		"disabled": {[]Option{OptHealthCheck("", nil)}, http.StatusNotFound},
+		"default":  {[]Option{OptHealthCheck("/health", nil)}, http.StatusOK},
+		"custom": {[]Option{OptHealthCheck(
+			"/health",
+			func(_ http.ResponseWriter, r *http.Request) *HTTPError {
 				return UnauthorizedError("")
-			}}, http.StatusUnauthorized},
+			})},
+			http.StatusUnauthorized},
 	}
+
+
 	for name, scene := range scenarios {
 		t.Run(name, func(t *testing.T) {
 			rsp := do(t, scene.opts, "", "/", nil, req)
@@ -79,20 +82,18 @@ func TestVersionHeader(t *testing.T) {
 	for name, scene := range scenes {
 
 		t.Run(name, func(t *testing.T) {
-			opts := &Options{
-				Version: scene.version,
-			}
+			opts := []Option{OptVersionHeader(scene.svc, scene.version)}
 			rsp := do(t, opts, scene.svc, "/", nil, req)
 			assert.Equal(t, scene.expected, rsp.Header().Get(scene.header), t.Name())
 		})
 	}
 }
 
-func do(t *testing.T, opts *Options, svcName, path string, handler APIHandler, req *http.Request) *httptest.ResponseRecorder {
+func do(t *testing.T, opts []Option, svcName, path string, handler APIHandler, req *http.Request) *httptest.ResponseRecorder {
 	if opts == nil {
-		opts = new(Options)
+		opts = []Option{}
 	}
-	r := New(svcName, logrus.WithField("test", t.Name()), *opts)
+	r := New(logrus.WithField("test", t.Name()), opts...)
 
 	if handler == nil {
 		handler = func(w http.ResponseWriter, r *http.Request) *HTTPError {
