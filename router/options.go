@@ -1,40 +1,35 @@
 package router
 
 import (
-	"github.com/netlify/netlify-commons/tracing"
-	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
-type Option func(r Router)
+type Option func(r *chiWrapper)
 
-func OptEnableCORS(r Router) {
-	corsMiddleware := cors.New(cors.Options{
-		AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link", "X-Total-Count"},
-		AllowCredentials: true,
-	})
-	r.Use(corsMiddleware.Handler)
+func OptEnableCORS(r *chiWrapper) {
+	r.enableCORS = true
 }
 
 func OptHealthCheck(path string, checker APIHandler) Option {
-	return func(r Router) {
-		r.Use(HealthCheck(path, checker))
+	return func(r *chiWrapper) {
+		r.healthEndpoint = path
+		r.healthHandler = checker
 	}
 }
 
 func OptVersionHeader(svcName, version string) Option {
-	return func(r Router) {
-		r.Use(VersionHeader(svcName, version))
-
+	return func(r *chiWrapper) {
+		if version == "" {
+			version = "unknown"
+		}
+		r.version = version
+		r.svcName = svcName
 	}
 }
 
 func OptTracingMiddleware(log logrus.FieldLogger, svcName string) Option {
-	return func(r Router) {
-		r.Use(tracing.Middleware(log, svcName))
+	return func(r *chiWrapper) {
+		r.svcName = svcName
+		r.enableTracing = true
 	}
 }
-
-

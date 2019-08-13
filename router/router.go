@@ -3,6 +3,9 @@ package router
 import (
 	"net/http"
 
+	"github.com/netlify/netlify-commons/tracing"
+	"github.com/rs/cors"
+
 	"github.com/go-chi/chi"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
@@ -10,6 +13,15 @@ import (
 
 type chiWrapper struct {
 	chi chi.Router
+
+	version string
+	svcName string
+
+	healthEndpoint string
+	healthHandler  APIHandler
+
+	enableTracing bool
+	enableCORS    bool
 }
 
 // Router wraps the chi router to make it slightly more accessible
@@ -37,12 +49,32 @@ type Router interface {
 
 //  creates a router with sensible defaults (xff, request id, cors)
 func New(log logrus.FieldLogger, options ...Option) Router {
-	r := &chiWrapper{chi.NewRouter()}
+	r := &chiWrapper{
+		chi:     chi.NewRouter(),
+		version: "unknown",
+	}
 
 	xffmw, _ := xff.Default()
 	r.Use(xffmw.Handler)
 	for _, opt := range options {
 		opt(r)
+	}
+	r.Use(VersionHeader(r.svcName, r.version))
+	if r.enableCORS {
+		corsMiddleware := cors.New(cors.Options{
+			AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+			ExposedHeaders:   []string{"Link", "X-Total-Count"},
+			AllowCredentials: true,
+		})
+		r.Use(corsMiddleware.Handler)
+	}
+
+	if r.healthEndpoint != "" {
+		r.Use(HealthCheck(r.healthEndpoint, r.healthHandler))
+	}
+	if r.enableTracing {
+		r.Use(tracing.Middleware(log, r.svcName))
 	}
 
 	return r
@@ -51,7 +83,7 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 // Route allows creating a generic route
 func (r *chiWrapper) Route(pattern string, fn func(Router)) {
 	r.chi.Route(pattern, func(c chi.Router) {
-		fn(&chiWrapper{c})
+		fn(&chiWrapper{chi: c})
 	})
 }
 
