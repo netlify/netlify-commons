@@ -4,34 +4,31 @@ import (
 	"os"
 	"time"
 
-	bugsnag "github.com/bugsnag/bugsnag-go"
 	"github.com/pkg/errors"
-	"github.com/shopify/logrus-bugsnag"
 	"github.com/sirupsen/logrus"
 )
 
 type LoggingConfig struct {
-	Level            string `mapstructure:"log_level" json:"log_level"`
-	File             string `mapstructure:"log_file" json:"log_file"`
-	DisableColors    bool   `mapstructure:"disable_colors" json:"disable_colors"`
-	QuoteEmptyFields bool   `mapstructure:"quote_empty_fields" json:"quote_empty_fields"`
-	TSFormat         string `mapstructure:"ts_format" json:"ts_format"`
-	BugSnag          *BugSnagConfig
+	Level            string                 `mapstructure:"log_level" json:"log_level"`
+	File             string                 `mapstructure:"log_file" json:"log_file"`
+	DisableColors    bool                   `mapstructure:"disable_colors" split_words:"true" json:"disable_colors"`
+	QuoteEmptyFields bool                   `mapstructure:"quote_empty_fields" split_words:"true" json:"quote_empty_fields"`
+	TSFormat         string                 `mapstructure:"ts_format" json:"ts_format"`
 	Fields           map[string]interface{} `mapstructure:"fields" json:"fields"`
-}
+	UseNewLogger     bool                   `mapstructure:"use_new_logger", split_words:"true"`
 
-type BugSnagConfig struct {
-	Environment string
-	APIKey      string `envconfig:"api_key"`
+	BugSnag *BugSnagConfig
 }
 
 func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
+	logger := logrus.New()
+
 	tsFormat := time.RFC3339Nano
 	if config.TSFormat != "" {
 		tsFormat = config.TSFormat
 	}
 	// always use the full timestamp
-	logrus.SetFormatter(&logrus.TextFormatter{
+	logger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:    true,
 		DisableTimestamp: false,
 		TimestampFormat:  tsFormat,
@@ -45,8 +42,8 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		if errOpen != nil {
 			return nil, errOpen
 		}
-		logrus.SetOutput(f)
-		logrus.Infof("Set output file to %s", config.File)
+		logger.SetOutput(f)
+		logger.Infof("Set output file to %s", config.File)
 	}
 
 	if config.Level != "" {
@@ -54,8 +51,8 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		if err != nil {
 			return nil, err
 		}
-		logrus.SetLevel(level)
-		logrus.Debug("Set log level to: " + logrus.GetLevel().String())
+		logger.SetLevel(level)
+		logger.Debug("Set log level to: " + logger.GetLevel().String())
 	}
 
 	if err := AddBugSnagHook(config.BugSnag); err != nil {
@@ -67,24 +64,5 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		f[k] = v
 	}
 
-	return logrus.WithFields(f), nil
-}
-
-func AddBugSnagHook(config *BugSnagConfig) error {
-	if config == nil || config.APIKey == "" {
-		return nil
-	}
-
-	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:       config.APIKey,
-		ReleaseStage: config.Environment,
-		PanicHandler: func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
-	})
-	hook, err := logrus_bugsnag.NewBugsnagHook()
-	if err != nil {
-		return err
-	}
-	logrus.AddHook(hook)
-	logrus.Debug("Added bugsnag hook")
-	return nil
+	return logger.WithFields(f), nil
 }
