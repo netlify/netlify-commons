@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nats-io/go-nats"
-	stan "github.com/nats-io/go-nats-streaming"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/stan.go"
 	"github.com/netlify/netlify-commons/nconf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
