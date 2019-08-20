@@ -1,6 +1,9 @@
 package nconf
 
 import (
+	"fmt"
+
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
@@ -10,18 +13,18 @@ type RootArgs struct {
 	EnvFile string
 }
 
-func (args *RootArgs) Setup(config interface{}, version string) logrus.FieldLogger {
+func (args *RootArgs) Setup(config interface{}, version string) (logrus.FieldLogger, error) {
 	// first load the logger
 	logConfig := &struct {
 		Log *LoggingConfig
 	}{}
 	if err := LoadFromEnv(args.Prefix, args.EnvFile, logConfig); err != nil {
-		logrus.WithError(err).Fatal("Failed to load the logging configuration")
+		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
 	log, err := ConfigureLogging(logConfig.Log)
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed to create the logger")
+		return nil, errors.Wrap(err, "Failed to create the logger")
 	}
 	if version == "" {
 		version = "unknown"
@@ -31,11 +34,24 @@ func (args *RootArgs) Setup(config interface{}, version string) logrus.FieldLogg
 	if config != nil {
 		// second load the config for this project
 		if err := LoadFromEnv(args.Prefix, args.EnvFile, config); err != nil {
-			log.WithError(err).Fatal("Failed to load the config object")
+			return log, errors.Wrap(err, "Failed to load the config object")
 		}
 		log.Debug("Loaded configuration")
 	}
-	return log
+	return log, nil
+}
+
+func (args *RootArgs) MustSetup(config interface{}, version string) logrus.FieldLogger {
+	logger, err := args.Setup(config, version)
+	if err != nil {
+		if logger != nil {
+			logger.WithError(err).Fatal("Failed to setup configuration")
+		} else {
+			panic(fmt.Sprintf("Failed to setup configuratio: %s", err.Error()))
+		}
+	}
+
+	return logger
 }
 
 func (args *RootArgs) ConfigFlag() *pflag.Flag {
