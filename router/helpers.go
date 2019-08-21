@@ -19,3 +19,9 @@ func SendJSON(w http.ResponseWriter, status int, obj interface{}) error {
 	_, err = w.Write(b)
 	return err
 }
+
+// HandlerStatusOK is a APIHandler that just returns a 200 OK.
+func HandlerStatusOK(w http.ResponseWriter, _ *http.Request) *HTTPError {
+	w.WriteHeader(http.StatusOK)
+	return nil
+}

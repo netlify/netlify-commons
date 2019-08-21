@@ -71,7 +71,12 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 	}
 
 	if r.healthEndpoint != "" {
-		r.Use(HealthCheck(r.healthEndpoint, r.healthHandler))
+		h := r.healthHandler
+		if h == nil {
+			h = HandlerStatusOK
+		}
+
+		r.Get(r.healthEndpoint, h)
 	}
 	if r.enableTracing {
 		r.Use(tracing.Middleware(log, r.svcName))

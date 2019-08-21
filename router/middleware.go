@@ -79,17 +79,3 @@ func Recoverer(w http.ResponseWriter, r *http.Request, next http.Handler) {
 
 	next.ServeHTTP(w, r)
 }
-
-func HealthCheck(route string, f APIHandler) Middleware {
-	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
-		if r.URL.Path == route {
-			if f == nil {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			HandleError(f(w, r), w, r)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
