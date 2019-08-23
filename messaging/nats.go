@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nats-io/go-nats"
-	stan "github.com/nats-io/go-nats-streaming"
-	"github.com/netlify/netlify-commons/nconf"
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/stan.go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +21,7 @@ func init() {
 	silent = logrus.NewEntry(l)
 }
 
-func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (*nats.Conn, error) {
+func ConfigureNatsConnection(config *NatsConfig, log logrus.FieldLogger) (*nats.Conn, error) {
 	if log == nil {
 		log = silent
 	}
@@ -49,7 +48,7 @@ func ConfigureNatsConnection(config *nconf.NatsConfig, log logrus.FieldLogger) (
 	return nc, nil
 }
 
-func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
+func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) {
 	tlsConfig, err := config.TLS.TLSConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to configure TLS")
@@ -61,11 +60,11 @@ func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, e
 	}
 
 	switch strings.ToLower(config.Auth.Method) {
-	case nconf.NatsAuthMethodUser:
+	case NatsAuthMethodUser:
 		opts = append(opts, nats.UserInfo(config.Auth.User, config.Auth.Password))
-	case nconf.NatsAuthMethodToken:
+	case NatsAuthMethodToken:
 		opts = append(opts, nats.Token(config.Auth.Token))
-	case nconf.NatsAuthMethodTLS:
+	case NatsAuthMethodTLS:
 		// if using TLS auth, make sure the client certificate is loaded
 		if tlsConfig == nil || len(tlsConfig.Certificates) == 0 {
 			return nil, fmt.Errorf("TLS auth method is configured but no certificate was loaded")
@@ -78,7 +77,7 @@ func ConnectToNats(config *nconf.NatsConfig, opts ...nats.Option) (*nats.Conn, e
 	return nats.Connect(config.ServerString(), opts...)
 }
 
-func ConfigureNatsStreaming(config *nconf.NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
+func ConfigureNatsStreaming(config *NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
 	// connect to the underlying instance
 	nc, err := ConfigureNatsConnection(config, log)
 	if err != nil {
@@ -93,7 +92,7 @@ func ConfigureNatsStreaming(config *nconf.NatsConfig, log logrus.FieldLogger) (s
 	return conn, nil
 }
 
-func ConnectToNatsStreaming(nc *nats.Conn, config *nconf.NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
+func ConnectToNatsStreaming(nc *nats.Conn, config *NatsConfig, log logrus.FieldLogger) (stan.Conn, error) {
 	if config.ClusterID == "" {
 		return nil, errors.New("Must provide a cluster ID to connect to streaming nats")
 	}
