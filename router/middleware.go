@@ -87,7 +87,9 @@ func HealthCheck(route string, f APIHandler) Middleware {
 				w.WriteHeader(http.StatusOK)
 				return
 			}
-			HandleError(f(w, r), w, r)
+			if err := f(w, r); err != nil {
+				HandleError(f(w, r), w, r)
+			}
 			return
 		}
 		next.ServeHTTP(w, r)
