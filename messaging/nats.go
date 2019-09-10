@@ -70,6 +70,8 @@ func ConnectToNats(config *NatsConfig, opts ...nats.Option) (*nats.Conn, error) 
 			return nil, fmt.Errorf("TLS auth method is configured but no certificate was loaded")
 		}
 		opts = append(opts, nats.Secure(tlsConfig))
+	case "":
+		// noop ~ we aren't using any auth method
 	default:
 		return nil, fmt.Errorf("Invalid auth method: '%s'", config.Auth.Method)
 	}
