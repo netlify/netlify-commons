@@ -42,9 +42,9 @@ type NatsConfig struct {
 }
 
 type NatsClientConfig struct {
-	NatsConfig
-	Subject string `mapstructure:"command_subject"`
-	Group   string `mapstructure:"command_group"`
+	NatsConfig `mapstructure:",squash"`
+	Subject    string `mapstructure:"command_subject"`
+	Group      string `mapstructure:"command_group"`
 
 	// StartAt will configure where the client should resume the stream:
 	// - `all`: all the messages available
