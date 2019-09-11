@@ -36,10 +36,11 @@ type Settings struct {
 }
 
 type BuildConfig struct {
-	Command     string            `toml:"command" json:"command" yaml:"command"`
-	Base        string            `toml:"base" json:"base" yaml:"base"`
-	Publish     string            `toml:"publish" json:"publish" yaml:"publish"`
-	Environment map[string]string `toml:"environment" json:"environment" yaml:"environment"`
+	Command       string            `toml:"command"`
+	Base          string            `toml:"base"`
+	Publish       string            `toml:"publish"`
+	IgnoreCommand string            `toml:"ignore-command"`
+	Environment   map[string]string `toml:"environment"`
 }
 
 type DeployContext struct {
