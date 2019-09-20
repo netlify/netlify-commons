@@ -28,8 +28,8 @@ type Banlist struct {
 	path         string
 }
 
-func New(log logrus.FieldLogger, path string) *Banlist {
-	bl := newBanlist(log, path)
+func New(log logrus.FieldLogger, filepath string) *Banlist {
+	bl := newBanlist(log, filepath)
 	bl.listen()
 	bl.runUpdate()
 	return bl

@@ -39,7 +39,7 @@ func TestBanlistNoPaths(t *testing.T) {
 		Domains: []string{"something.com"},
 	})
 
-	assert.Len(t, bl.urls(), 0)
+	assert.Empty(t, bl.urls())
 	domains := bl.domains()
 	assert.Len(t, domains, 1)
 	_, ok := domains["something.com"]
@@ -56,7 +56,7 @@ func TestBanlistNoDomains(t *testing.T) {
 	_, ok := urls["something.com/path/to/thing"]
 	assert.True(t, ok)
 
-	assert.Len(t, bl.domains(), 0)
+	assert.Empty(t, bl.domains())
 }
 func TestBanlistBanning(t *testing.T) {
 	bl := testList(t, &Config{
