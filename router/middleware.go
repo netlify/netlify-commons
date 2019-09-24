@@ -38,15 +38,18 @@ func CheckAuth(secret string) Middleware {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				HandleError(UnauthorizedError("This endpoint requires a Bearer token"), w, r)
+				return
 			}
 
 			matches := bearerRegexp.FindStringSubmatch(authHeader)
 			if len(matches) != 2 {
 				HandleError(UnauthorizedError("This endpoint requires a Bearer token"), w, r)
+				return
 			}
 
 			if secret != matches[1] {
 				HandleError(UnauthorizedError("This endpoint requires a Bearer token"), w, r)
+				return
 			}
 		}
 
