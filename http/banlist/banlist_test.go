@@ -13,10 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	logrus.SetLevel(logrus.DebugLevel)
-}
-
 func TestBanlistMissingFile(t *testing.T) {
 	bl := newBanlist(tl(t), "not a path")
 	require.Error(t, bl.update())
@@ -87,7 +83,9 @@ func TestBanlistBanning(t *testing.T) {
 }
 
 func tl(t *testing.T) logrus.FieldLogger {
-	return logrus.WithField("test", t.Name())
+	l := logrus.New()
+	l.SetLevel(logrus.DebugLevel)
+	return l.WithField("test", t.Name())
 }
 
 func testList(t *testing.T, config *Config) *Banlist {
