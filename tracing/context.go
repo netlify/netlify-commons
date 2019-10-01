@@ -13,8 +13,8 @@ func WrapWithTracer(r *http.Request, rt *RequestTracer) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), tracerKey, rt))
 }
 
-func GetTracer(r *http.Request) *RequestTracer {
-	val := r.Context().Value(tracerKey)
+func GetFromContext(ctx context.Context) *RequestTracer {
+	val := ctx.Value(tracerKey)
 	if val == nil {
 		return nil
 	}
@@ -23,4 +23,8 @@ func GetTracer(r *http.Request) *RequestTracer {
 		return entry
 	}
 	return nil
+}
+
+func GetTracer(r *http.Request) *RequestTracer {
+	return GetFromContext(r.Context())
 }
