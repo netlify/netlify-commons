@@ -40,4 +40,5 @@ require (
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 )
