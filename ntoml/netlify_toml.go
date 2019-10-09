@@ -62,18 +62,6 @@ type RedirectCondition struct {
 	Role     []string `toml:"role" json:"role" yaml:"role"`
 }
 
-func checkExistingFileAsync(path string) (c chan bool) {
-	c = make(chan bool)
-	go func() {
-		if fi, err := os.Stat(path); os.IsNotExist(err) || fi.IsDir() {
-			c <- false
-		} else {
-			c <- true
-		}
-	}()
-	return
-}
-
 type FoundNoConfigPathError struct {
 	checked []string
 }
@@ -94,15 +82,11 @@ func (f *FoundMoreThanOneConfigPathError) Error() string {
 func findOnlyOneExistingPath(base string, paths ...string) (path string, err error) {
 	joinedPaths := make([]string, 0, len(paths))
 	foundPaths := make([]string, 0, len(paths))
-	channels := make([]chan bool, 0, len(paths))
 	for _, possiblePath := range paths {
 		p := filepath.Join(base, possiblePath)
 		joinedPaths = append(joinedPaths, p)
-		channels = append(channels, checkExistingFileAsync(p))
-	}
-	for i, channel := range channels {
-		if exists := <-channel; exists {
-			foundPaths = append(foundPaths, joinedPaths[i])
+		if fi, err := os.Stat(p); !os.IsNotExist(err) && !fi.IsDir() {
+			foundPaths = append(foundPaths, p)
 		}
 	}
 	if len(foundPaths) == 0 {
