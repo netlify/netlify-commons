@@ -14,8 +14,72 @@ func TestMissingFile(t *testing.T) {
 	assert.True(t, os.IsNotExist(err))
 }
 
-func TestLoadingExample(t *testing.T) {
+func TestLoadingExampleToml(t *testing.T) {
 	tmp := testToml(t)
+	defer os.Remove(t.Name())
+
+	conf, err := LoadFrom(tmp.Name())
+	require.NoError(t, err)
+
+	expected := &NetlifyToml{
+		Settings: Settings{
+			ID:   "this-is-a-site",
+			Path: ".",
+		},
+		Redirects: []Redirect{
+			{Origin: "/other", Destination: "/otherpage.html", Force: true},
+		},
+		Build: &BuildConfig{
+			Command: "echo 'not a thing'",
+		},
+		Context: map[string]DeployContext{
+			"deploy-preview": {BuildConfig{
+				Command: "hugo version && npm run build-preview",
+			}},
+			"branch-deploy": {BuildConfig{
+				Command:     "hugo version && npm run build-branch",
+				Environment: map[string]string{"HUGO_VERSION": "0.20.5"},
+			}},
+		},
+	}
+
+	assert.Equal(t, expected, conf)
+}
+
+func TestLoadingExampleJSON(t *testing.T) {
+	tmp := testJSON(t)
+	defer os.Remove(t.Name())
+
+	conf, err := LoadFrom(tmp.Name())
+	require.NoError(t, err)
+
+	expected := &NetlifyToml{
+		Settings: Settings{
+			ID:   "this-is-a-site",
+			Path: ".",
+		},
+		Redirects: []Redirect{
+			{Origin: "/other", Destination: "/otherpage.html", Force: true},
+		},
+		Build: &BuildConfig{
+			Command: "echo 'not a thing'",
+		},
+		Context: map[string]DeployContext{
+			"deploy-preview": {BuildConfig{
+				Command: "hugo version && npm run build-preview",
+			}},
+			"branch-deploy": {BuildConfig{
+				Command:     "hugo version && npm run build-branch",
+				Environment: map[string]string{"HUGO_VERSION": "0.20.5"},
+			}},
+		},
+	}
+
+	assert.Equal(t, expected, conf)
+}
+
+func TestLoadingExampleYAML(t *testing.T) {
+	tmp := testYAML(t)
 	defer os.Remove(t.Name())
 
 	conf, err := LoadFrom(tmp.Name())
@@ -67,7 +131,7 @@ func TestSaveTomlFile(t *testing.T) {
 }
 
 func testToml(t *testing.T) *os.File {
-	tmp, err := ioutil.TempFile("", "netlify-ctl")
+	tmp, err := ioutil.TempFile("", "netlify-ctl-*.toml")
 	require.NoError(t, err)
 
 	data := `
@@ -93,6 +157,76 @@ func testToml(t *testing.T) *os.File {
   [context.branch-deploy.environment]
     HUGO_VERSION = "0.20.5"
 `
+	require.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(data), 0664))
+
+	return tmp
+}
+
+func testJSON(t *testing.T) *os.File {
+	tmp, err := ioutil.TempFile("", "netlify-ctl-*.json")
+	require.NoError(t, err)
+
+	data := `
+{
+  "settings": {
+    "id": "this-is-a-site",
+    "path": "."
+  },
+  "redirects": [
+    {
+      "origin": "/other",
+      "destination": "/otherpage.html",
+      "force": true
+    }
+  ],
+  "build": {
+    "command": "echo 'not a thing'"
+  },
+  "context": {
+    "deploy-preview": {
+      "command": "hugo version && npm run build-preview"
+    },
+    "branch-deploy": {
+      "command": "hugo version && npm run build-branch",
+      "environment": {
+        "HUGO_VERSION": "0.20.5"
+      }
+    }
+  }
+}
+`
+
+	require.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(data), 0664))
+
+	return tmp
+}
+
+func testYAML(t *testing.T) *os.File {
+	tmp, err := ioutil.TempFile("", "netlify-ctl-*.yaml")
+	require.NoError(t, err)
+
+	data := `
+settings:
+  id: "this-is-a-site"
+  path: "."
+
+redirects:
+  - origin: "/other"
+    destination: "/otherpage.html"
+    force: true
+
+build:
+  command: "echo 'not a thing'"
+
+context:
+  deploy-preview:
+    command: "hugo version && npm run build-preview"
+  branch-deploy:
+    command: "hugo version && npm run build-branch"
+    environment:
+      HUGO_VERSION: "0.20.5"
+`
+
 	require.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(data), 0664))
 
 	return tmp
