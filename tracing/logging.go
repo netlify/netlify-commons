@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -28,12 +29,16 @@ func requestLogger(r *http.Request, log logrus.FieldLogger) logrus.FieldLogger {
 	return log
 }
 
-func GetLogger(r *http.Request) logrus.FieldLogger {
-	entry := GetTracer(r)
+func GetLoggerFromContext(ctx context.Context) logrus.FieldLogger {
+	entry := GetFromContext(ctx)
 	if entry == nil {
 		return logrus.NewEntry(logrus.StandardLogger())
 	}
 	return entry.FieldLogger
+}
+
+func GetLogger(r *http.Request) logrus.FieldLogger {
+	return GetLoggerFromContext(r.Context())
 }
 
 // SetLogField will add the field to this log line and every one following
