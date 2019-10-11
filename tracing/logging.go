@@ -38,11 +38,7 @@ func GetLoggerFromContext(ctx context.Context) logrus.FieldLogger {
 }
 
 func GetLogger(r *http.Request) logrus.FieldLogger {
-	entry := GetLoggerFromContext(r.Context())
-	if entry == nil {
-		return logrus.NewEntry(logrus.StandardLogger())
-	}
-	return entry
+	return GetLoggerFromContext(r.Context())
 }
 
 // SetLogField will add the field to this log line and every one following
