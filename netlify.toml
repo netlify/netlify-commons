@@ -1,0 +1,3 @@
+[build]
+command = "godoc-static -mod github.com/netlify/netlify-commons -path ."
+publish = "dist"

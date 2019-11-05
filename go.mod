@@ -20,6 +20,7 @@ require (
 	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
 	github.com/nats-io/nats.go v1.8.1
 	github.com/nats-io/stan.go v0.5.0
+	github.com/netlify/godoc-static v0.0.0-20191105233946-4e438693d304
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pelletier/go-toml v1.3.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
