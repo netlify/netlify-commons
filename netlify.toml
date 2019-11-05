@@ -1,3 +1,7 @@
 [build]
 command = "godoc-static -mod github.com/netlify/netlify-commons -path ."
 publish = "dist"
+
+[build.environment]
+  # Change this path with the path to your repository
+  GO_IMPORT_PATH = "github.com/netlify/netlify-commons"
