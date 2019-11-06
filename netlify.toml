@@ -1,8 +1,3 @@
 [build]
-command = "go mod download && godoc-static -mod github.com/netlify/netlify-commons -path ."
+command = "go get github.com/netlify/godoc-static && godoc-static -mod github.com/netlify/netlify-commons -path ."
 publish = "dist"
-
-[build.environment]
-  # Change this path with the path to your repository
-  GO_IMPORT_PATH = "github.com/netlify/netlify-commons"
-  GO111MODULE = "on"
