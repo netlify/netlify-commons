@@ -1,3 +1,6 @@
 [build]
 command = "GO111MODULES=off go get github.com/netlify/godoc-static && godoc-static -mod github.com/netlify/netlify-commons -path ."
 publish = "dist"
+
+[build.environment]
+GO_IMPORT_PATH = "github.com/netlify/netlify-commons"
