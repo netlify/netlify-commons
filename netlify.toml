@@ -1,5 +1,5 @@
 [build]
-command = "godoc-static -mod github.com/netlify/netlify-commons -path ."
+command = "go mod download && godoc-static -mod github.com/netlify/netlify-commons -path ."
 publish = "dist"
 
 [build.environment]
