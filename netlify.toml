@@ -1,5 +1,5 @@
 [build]
-command = "go get -u -v github.com/netlify/godoc-static && ls -la /opt/buildhome/.gimme/versions/go1.12.linux.amd64/bin"
+command = "go get -u -v github.com/netlify/godoc-static && go env"
 publish = "dist"
 
 [build.environment]
