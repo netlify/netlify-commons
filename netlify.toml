@@ -1,5 +1,5 @@
 [build]
-command = "go get -u -v github.com/netlify/godoc-static && export PATH=$GOPATH/bin:$PATH && go env && ls -la $GOPATH/bin && godoc-static -mod $GO_IMPORT_PATH -path ."
+command = "go get -u -v github.com/netlify/godoc-static && PATH=$GOPATH/bin:$PATH godoc-static -mod $GO_IMPORT_PATH -path ."
 publish = "dist"
 
 [build.environment]
