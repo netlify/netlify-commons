@@ -1,3 +1,3 @@
 [build]
-command = "go get github.com/netlify/godoc-static && godoc-static -mod github.com/netlify/netlify-commons -path ."
+command = "GO111MODULES=off go get github.com/netlify/godoc-static && godoc-static -mod github.com/netlify/netlify-commons -path ."
 publish = "dist"
