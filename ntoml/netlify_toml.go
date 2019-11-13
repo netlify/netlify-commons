@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
@@ -64,20 +65,22 @@ type RedirectCondition struct {
 }
 
 type FoundNoConfigPathError struct {
+	base    string
 	checked []string
 }
 
 func (f *FoundNoConfigPathError) Error() string {
-	return fmt.Sprintf("none of the checked paths exist. checked = %v", f.checked)
+	return fmt.Sprintf("No Netlify configuration file found.")
 }
 
 type FoundMoreThanOneConfigPathError struct {
+	base    string
 	checked []string
 	found   []string
 }
 
 func (f *FoundMoreThanOneConfigPathError) Error() string {
-	return fmt.Sprintf("more than one of the checked paths exist. checked = %v, found = %v", f.checked, f.found)
+	return fmt.Sprintf("Multiple potential Netlify configuration files in \"%s\": %s", f.base, strings.Join(f.found, ", "))
 }
 
 func findOnlyOneExistingPath(base string, paths ...string) (path string, err error) {
@@ -91,10 +94,14 @@ func findOnlyOneExistingPath(base string, paths ...string) (path string, err err
 		}
 	}
 	if len(foundPaths) == 0 {
-		return "", &FoundNoConfigPathError{checked: paths}
+		return "", &FoundNoConfigPathError{base: base, checked: paths}
 	}
 	if len(foundPaths) > 1 {
-		return "", &FoundMoreThanOneConfigPathError{checked: paths, found: foundPaths}
+		foundFilenames := make([]string, 0, len(foundPaths))
+		for _, foundPath := range foundPaths {
+			foundFilenames = append(foundFilenames, filepath.Base(foundPath))
+		}
+		return "", &FoundMoreThanOneConfigPathError{base: base, checked: paths, found: foundFilenames}
 	}
 	return foundPaths[0], nil
 }
