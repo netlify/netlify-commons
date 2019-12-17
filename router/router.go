@@ -44,6 +44,9 @@ type Router interface {
 	Post(pattern string, h APIHandler)
 	Put(pattern string, h APIHandler)
 
+	// Mount attaches another http.Handler along ./pattern/*
+	Mount(pattern string, h http.Handler)
+
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
@@ -128,9 +131,15 @@ func (r *chiWrapper) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.chi.ServeHTTP(w, req)
 }
 
-// ======================================
-// Custom error handler
-// ======================================
+// Mount attaches another http.Handler along ./pattern/*
+func (r *chiWrapper) Mount(pattern string, h http.Handler) {
+	r.chi.Mount(pattern, h)
+}
+
+// =======================================
+// HTTP handler with custom error payload
+// =======================================
+
 type APIHandler func(w http.ResponseWriter, r *http.Request) *HTTPError
 
 func HandlerFunc(fn APIHandler) http.HandlerFunc {
