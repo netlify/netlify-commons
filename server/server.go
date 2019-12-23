@@ -30,11 +30,11 @@ type APIDefinition interface {
 	AddRoutes(r router.Router)
 }
 
-func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, error) {
+func New(log logrus.FieldLogger, projectName string, config Config, api APIDefinition) (*Server, error) {
 	r := router.New(
 		log,
 		router.OptHealthCheck(config.HealthPath, nil),
-		router.OptTracingMiddleware(log, "PROJECTNAME"),
+		router.OptTracingMiddleware(log, projectName),
 	)
 
 	api.AddRoutes(r)
