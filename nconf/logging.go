@@ -20,7 +20,7 @@ type LoggingConfig struct {
 	BugSnag *BugSnagConfig
 }
 
-func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
+func ConfigureLogging(config *LoggingConfig, version string) (*logrus.Entry, error) {
 	logger := logrus.New()
 
 	tsFormat := time.RFC3339Nano
@@ -55,7 +55,7 @@ func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 		logger.Debug("Set log level to: " + logger.GetLevel().String())
 	}
 
-	if err := AddBugSnagHook(config.BugSnag); err != nil {
+	if err := AddBugSnagHook(config.BugSnag, version); err != nil {
 		return nil, errors.Wrap(err, "Failed to configure bugsnag")
 	}
 

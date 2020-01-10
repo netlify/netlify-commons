@@ -11,7 +11,7 @@ type BugSnagConfig struct {
 	APIKey      string `envconfig:"api_key"`
 }
 
-func AddBugSnagHook(config *BugSnagConfig) error {
+func AddBugSnagHook(config *BugSnagConfig, version string) error {
 	if config == nil || config.APIKey == "" {
 		return nil
 	}
@@ -19,6 +19,7 @@ func AddBugSnagHook(config *BugSnagConfig) error {
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:       config.APIKey,
 		ReleaseStage: config.Environment,
+		AppVersion:   version,
 		PanicHandler: func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
 	})
 	hook, err := logrus_bugsnag.NewBugsnagHook()

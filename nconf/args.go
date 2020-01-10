@@ -22,7 +22,7 @@ func (args *RootArgs) Setup(config interface{}, version string) (logrus.FieldLog
 		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
-	log, err := ConfigureLogging(logConfig.Log)
+	log, err := ConfigureLogging(logConfig.Log, version)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create the logger")
 	}
