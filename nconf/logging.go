@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,11 +15,9 @@ type LoggingConfig struct {
 	TSFormat         string                 `mapstructure:"ts_format" json:"ts_format"`
 	Fields           map[string]interface{} `mapstructure:"fields" json:"fields"`
 	UseNewLogger     bool                   `mapstructure:"use_new_logger",split_words:"true"`
-
-	BugSnag *BugSnagConfig
 }
 
-func ConfigureLogging(config *LoggingConfig, version string) (*logrus.Entry, error) {
+func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 	logger := logrus.New()
 
 	tsFormat := time.RFC3339Nano
@@ -53,10 +50,6 @@ func ConfigureLogging(config *LoggingConfig, version string) (*logrus.Entry, err
 		}
 		logger.SetLevel(level)
 		logger.Debug("Set log level to: " + logger.GetLevel().String())
-	}
-
-	if err := AddBugSnagHook(config.BugSnag, version); err != nil {
-		return nil, errors.Wrap(err, "Failed to configure bugsnag")
 	}
 
 	f := logrus.Fields{}

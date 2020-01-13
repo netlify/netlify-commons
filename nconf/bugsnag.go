@@ -9,9 +9,10 @@ import (
 type BugSnagConfig struct {
 	Environment string
 	APIKey      string `envconfig:"api_key"`
+	LogHook     bool   `envconfig:"log_hook"`
 }
 
-func AddBugSnagHook(config *BugSnagConfig, version string) error {
+func SetupBugSnag(config *BugSnagConfig, version string) error {
 	if config == nil || config.APIKey == "" {
 		return nil
 	}
@@ -22,11 +23,15 @@ func AddBugSnagHook(config *BugSnagConfig, version string) error {
 		AppVersion:   version,
 		PanicHandler: func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
 	})
-	hook, err := logrus_bugsnag.NewBugsnagHook()
-	if err != nil {
-		return err
+
+	if config.LogHook {
+		hook, err := logrus_bugsnag.NewBugsnagHook()
+		if err != nil {
+			return err
+		}
+		logrus.AddHook(hook)
+		logrus.Debug("Added bugsnag log hook")
 	}
-	logrus.AddHook(hook)
-	logrus.Debug("Added bugsnag hook")
+
 	return nil
 }

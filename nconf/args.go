@@ -14,15 +14,16 @@ type RootArgs struct {
 }
 
 func (args *RootArgs) Setup(config interface{}, version string) (logrus.FieldLogger, error) {
-	// first load the logger
-	logConfig := &struct {
-		Log *LoggingConfig
+	// first load the logger and BugSnag config
+	rootConfig := &struct {
+		Log     *LoggingConfig
+		BugSnag *BugSnagConfig
 	}{}
-	if err := LoadFromEnv(args.Prefix, args.EnvFile, logConfig); err != nil {
+	if err := LoadFromEnv(args.Prefix, args.EnvFile, rootConfig); err != nil {
 		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
-	log, err := ConfigureLogging(logConfig.Log, version)
+	log, err := ConfigureLogging(rootConfig.Log)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create the logger")
 	}
@@ -30,6 +31,10 @@ func (args *RootArgs) Setup(config interface{}, version string) (logrus.FieldLog
 		version = "unknown"
 	}
 	log = log.WithField("version", version)
+
+	if err := SetupBugSnag(rootConfig.BugSnag, version); err != nil {
+		return nil, errors.Wrap(err, "Failed to configure bugsnag")
+	}
 
 	if config != nil {
 		// second load the config for this project
