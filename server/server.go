@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/netlify/netlify-commons/nconf"
@@ -90,6 +91,10 @@ func (s *Server) ListenAndServe() error {
 		return nil
 	}
 	return err
+}
+
+func (s *Server) TestServer() *httptest.Server {
+	return httptest.NewServer(s.svr.Handler)
 }
 
 type apiFunc struct {
