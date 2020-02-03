@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/netlify/netlify-commons/router"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/netlify/netlify-commons/router"
 )
 
 func init() {
@@ -27,7 +27,7 @@ func TestServerHealth(t *testing.T) {
 	})
 
 	cfg := testConfig()
-	svr, err := New(tl(t), cfg, apiDef)
+	svr, err := New(tl(t), "testing", cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
