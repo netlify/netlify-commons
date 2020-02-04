@@ -1,16 +1,15 @@
 package server
 
 import (
+	"github.com/netlify/netlify-commons/router"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/netlify/netlify-commons/router"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -20,11 +19,16 @@ func init() {
 }
 
 func TestServerHealth(t *testing.T) {
-	apiDef := APIFunc(func(r router.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) *router.HTTPError {
+	apiDef := APIFunc(
+		func(r router.Router) error {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) *router.HTTPError {
+				return nil
+			})
 			return nil
-		})
-	})
+		},
+		func() {
+		},
+	)
 
 	cfg := testConfig()
 	svr, err := New(tl(t), "testing", cfg, apiDef)

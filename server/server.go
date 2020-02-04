@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/netlify/netlify-commons/nconf"
@@ -17,6 +18,7 @@ import (
 type Server struct {
 	log logrus.FieldLogger
 	svr *http.Server
+	api APIDefinition
 }
 
 type Config struct {
@@ -25,9 +27,10 @@ type Config struct {
 	TLS        nconf.TLSConfig
 }
 
-// APIDefinition is used to define the routes used by the API
+// APIDefinition is used to control lifecycle of the API
 type APIDefinition interface {
-	AddRoutes(r router.Router)
+	Start(r router.Router) error
+	Stop()
 }
 
 func New(log logrus.FieldLogger, projectName string, config Config, api APIDefinition) (*Server, error) {
@@ -37,7 +40,9 @@ func New(log logrus.FieldLogger, projectName string, config Config, api APIDefin
 		router.OptTracingMiddleware(log, projectName),
 	)
 
-	api.AddRoutes(r)
+	if err := api.Start(r); err != nil {
+		return nil, errors.Wrap(err, "Failed to start API")
+	}
 
 	s := Server{
 		log: log.WithField("component", "server"),
@@ -45,6 +50,7 @@ func New(log logrus.FieldLogger, projectName string, config Config, api APIDefin
 			Addr:    fmt.Sprintf(":%d", config.Port),
 			Handler: r,
 		},
+		api: api,
 	}
 
 	if config.TLS.Enabled {
@@ -77,20 +83,40 @@ func (s *Server) ListenAndServe() error {
 	} else {
 		err = s.svr.ListenAndServe()
 	}
+
+	// Now that server is no longer listening, shutdown the API
+	s.log.Info("Listener shutdown, stopping API")
+
+	s.api.Stop()
+
+	s.log.Debug("Completed shutting down the underlying API")
+
 	if err == http.ErrServerClosed {
 		return nil
 	}
 	return err
 }
 
+func (s *Server) TestServer() *httptest.Server {
+	return httptest.NewServer(s.svr.Handler)
+}
+
 type apiFunc struct {
-	f func(router.Router)
+	start func(router.Router) error
+	stop  func()
 }
 
-func (a apiFunc) AddRoutes(r router.Router) {
-	a.f(r)
+func (a apiFunc) Start(r router.Router) error {
+	return a.start(r)
 }
 
-func APIFunc(f func(router.Router)) APIDefinition {
-	return apiFunc{f}
+func (a apiFunc) Stop() {
+	a.stop()
+}
+
+func APIFunc(start func(router.Router) error, stop func()) APIDefinition {
+	return apiFunc{
+		start: start,
+		stop:  stop,
+	}
 }
