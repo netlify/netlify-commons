@@ -2,8 +2,11 @@ package http
 
 import (
 	"context"
-	"errors"
 	"net"
+	"net/http"
+	"net/http/httptrace"
+
+	"github.com/sirupsen/logrus"
 )
 
 var privateIPBlocks []*net.IPNet
@@ -26,8 +29,8 @@ func init() {
 	}
 }
 
-func isPrivateIP(ip net.IP) bool {
-	for _, block := range privateIPBlocks {
+func blocksContain(blocks []*net.IPNet, ip net.IP) bool {
+	for _, block := range blocks {
 		if block.Contains(ip) {
 			return true
 		}
@@ -35,18 +38,66 @@ func isPrivateIP(ip net.IP) bool {
 	return false
 }
 
-func isLocalAddress(addr string) bool {
-	ip := net.ParseIP(addr)
-	return isPrivateIP(ip)
+func isPrivateIP(ip net.IP) bool {
+	return blocksContain(privateIPBlocks, ip)
 }
 
-// SafeDialContext exchanges a DialContext for a SafeDialContext that will never dial a reserved IP range
-func SafeDialContext(dialContext func(ctx context.Context, network, addr string) (net.Conn, error)) func(ctx context.Context, network, addr string) (net.Conn, error) {
-	return func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if isLocalAddress(addr) {
-			return nil, errors.New("Connection to local network address denied")
-		}
+type noLocalTransport struct {
+	inner         http.RoundTripper
+	errlog        logrus.FieldLogger
+	allowedBlocks []*net.IPNet
+}
 
-		return dialContext(ctx, network, addr)
+func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx, cancel := context.WithCancel(req.Context())
+
+	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
+		ConnectStart: func(network, addr string) {
+			host, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				cancel()
+				no.errlog.WithError(err).Error("Cancelled request due to error in address parsing")
+				return
+			}
+			ip := net.ParseIP(host)
+			if ip == nil {
+				cancel()
+				no.errlog.WithError(err).Error("Cancelled request due to error in ip parsing")
+				return
+			}
+
+			if blocksContain(no.allowedBlocks, ip) {
+				return
+			}
+
+			if isPrivateIP(ip) {
+				cancel()
+				no.errlog.Error("Cancelled attempted request to ip in private range")
+				return
+			}
+		},
+	})
+
+	req = req.WithContext(ctx)
+	return no.inner.RoundTrip(req)
+}
+
+func SafeRoundtripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) http.RoundTripper {
+	if trans == nil {
+		trans = http.DefaultTransport
 	}
+
+	ret := &noLocalTransport{
+		inner:         trans,
+		errlog:        log.WithField("transport", "local_blocker"),
+		allowedBlocks: allowedBlocks,
+	}
+
+	return ret
+}
+
+func SafeHTTPClient(client *http.Client, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) *http.Client {
+	client.Transport = SafeRoundtripper(client.Transport, log, allowedBlocks...)
+
+	return client
 }
