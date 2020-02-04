@@ -11,11 +11,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type countServer struct {
-	count int
-}
+func TestIsPrivateIP(t *testing.T) {
+	tests := []struct {
+		ip       string
+		expected bool
+	}{
+		{"216.58.194.206", false},
+		{"127.0.0.1", true},
+		{"10.0.0.1", true},
+		{"192.168.0.1", true},
+		{"172.16.0.0", true},
+		{"169.254.169.254", true},
+	}
 
-func (c *countServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	for _, tt := range tests {
+		ip := net.ParseIP(tt.ip)
+		assert.Equal(t, tt.expected, isPrivateIP(ip))
+	}
 }
 
 func TestSafeHTTPClient(t *testing.T) {
