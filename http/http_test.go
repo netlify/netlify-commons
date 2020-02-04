@@ -1,9 +1,10 @@
 package http
 
 import (
-	"context"
-	"fmt"
+	"net"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -15,41 +16,45 @@ type countServer struct {
 }
 
 func (c *countServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c.count++
-	w.Write([]byte("Done"))
 }
 
 func TestSafeHTTPClient(t *testing.T) {
-	client := &http.Client{}
-
-	counter := &countServer{}
-	s := &http.Server{
-		Addr:    ":9999",
-		Handler: counter,
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Done"))
+	}))
+	defer ts.Close()
+	tsURL, err := url.Parse(ts.URL)
+	if err != nil {
+		t.Fatal(err)
 	}
-	go func() {
-		s.ListenAndServe()
+
+	client := SafeHTTPClient(&http.Client{}, logrus.New())
+
+	// It blocks the local IP
+	_, err = client.Get(ts.URL)
+	assert.NotNil(t, err)
+
+	// It blocks localhost
+	_, err = client.Get("http://localhost:" + tsURL.Port())
+	assert.NotNil(t, err)
+
+	// It succeeds when the local IP range used by the testserver is removed from
+	// the blacklist.
+	ipNet := unshiftMatch(net.ParseIP(tsURL.Hostname()))
+	defer func() {
+		privateIPBlocks = append(privateIPBlocks, ipNet)
 	}()
 
-	res, err := client.Get("http://localhost:9999")
+	_, err = client.Get(ts.URL)
 	assert.Nil(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-	assert.Equal(t, 1, counter.count)
+}
 
-	client = SafeHTTPClient(client, logrus.New())
-
-	res, err = client.Get("http://localhost:9999")
-	assert.NotNil(t, err)
-	assert.Nil(t, res)
-	assert.Equal(t, 1, counter.count)
-
-	fmt.Println("Trying ip based req")
-	res, err = client.Get("http://169.254.169.254:9999")
-	fmt.Printf("Got res %v and err %v", res, err)
-	assert.NotNil(t, err)
-	assert.Nil(t, res)
-	assert.Equal(t, 1, counter.count)
-
-	fmt.Println("Closing down")
-	s.Shutdown(context.TODO())
+func unshiftMatch(ip net.IP) *net.IPNet {
+	for i, ipNet := range privateIPBlocks {
+		if ipNet.Contains(ip) {
+			privateIPBlocks = append(privateIPBlocks[:i], privateIPBlocks[i+1:]...)
+			return ipNet
+		}
+	}
+	return nil
 }
