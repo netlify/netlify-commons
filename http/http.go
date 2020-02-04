@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptrace"
@@ -49,23 +48,22 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
 		ConnectStart: func(network, addr string) {
-			fmt.Printf("Checking network %v\n", addr)
 			host, _, err := net.SplitHostPort(addr)
 			if err != nil {
 				cancel()
-				fmt.Printf("Canceleing dur to error in addr parsing %v", err)
+				no.errlog.WithError(err).Error("Cancelled request due to error in address parsing")
 				return
 			}
 			ip := net.ParseIP(host)
 			if ip == nil {
 				cancel()
-				fmt.Printf("Canceleing dur to error in ip parsing %v", host)
+				no.errlog.WithError(err).Error("Cancelled request due to error in ip parsing")
 				return
 			}
 
 			if isPrivateIP(ip) {
 				cancel()
-				fmt.Println("Canceleing dur to private ip range")
+				no.errlog.Error("Cancelled attempted request to ip in private range")
 				return
 			}
 
