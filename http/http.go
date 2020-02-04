@@ -29,8 +29,8 @@ func init() {
 	}
 }
 
-func isPrivateIP(ip net.IP) bool {
-	for _, block := range privateIPBlocks {
+func blocksContain(blocks []*net.IPNet, ip net.IP) bool {
+	for _, block := range blocks {
 		if block.Contains(ip) {
 			return true
 		}
@@ -38,9 +38,14 @@ func isPrivateIP(ip net.IP) bool {
 	return false
 }
 
+func isPrivateIP(ip net.IP) bool {
+	return blocksContain(privateIPBlocks, ip)
+}
+
 type noLocalTransport struct {
-	inner  http.RoundTripper
-	errlog logrus.FieldLogger
+	inner         http.RoundTripper
+	errlog        logrus.FieldLogger
+	allowedBlocks []*net.IPNet
 }
 
 func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -61,12 +66,15 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 				return
 			}
 
+			if blocksContain(no.allowedBlocks, ip) {
+				return
+			}
+
 			if isPrivateIP(ip) {
 				cancel()
 				no.errlog.Error("Cancelled attempted request to ip in private range")
 				return
 			}
-
 		},
 	})
 
@@ -74,21 +82,22 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return no.inner.RoundTrip(req)
 }
 
-func SafeRountripper(trans http.RoundTripper, log logrus.FieldLogger) http.RoundTripper {
+func SafeRountripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) http.RoundTripper {
 	if trans == nil {
 		trans = http.DefaultTransport
 	}
 
 	ret := &noLocalTransport{
-		inner:  trans,
-		errlog: log.WithField("transport", "local_blocker"),
+		inner:         trans,
+		errlog:        log.WithField("transport", "local_blocker"),
+		allowedBlocks: allowedBlocks,
 	}
 
 	return ret
 }
 
-func SafeHTTPClient(client *http.Client, log logrus.FieldLogger) *http.Client {
-	client.Transport = SafeRountripper(client.Transport, log)
+func SafeHTTPClient(client *http.Client, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) *http.Client {
+	client.Transport = SafeRountripper(client.Transport, log, allowedBlocks...)
 
 	return client
 }

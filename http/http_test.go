@@ -42,21 +42,23 @@ func TestSafeHTTPClient(t *testing.T) {
 
 	client := SafeHTTPClient(&http.Client{}, logrus.New())
 
-	// It blocks the local IP
+	// It blocks the local IP.
 	_, err = client.Get(ts.URL)
 	assert.NotNil(t, err)
 
-	// It blocks localhost
+	// It blocks localhost.
 	_, err = client.Get("http://localhost:" + tsURL.Port())
 	assert.NotNil(t, err)
 
 	// It succeeds when the local IP range used by the testserver is removed from
 	// the blacklist.
 	ipNet := popMatchingBlock(net.ParseIP(tsURL.Hostname()))
-	defer func() {
-		privateIPBlocks = append(privateIPBlocks, ipNet)
-	}()
+	_, err = client.Get(ts.URL)
+	assert.Nil(t, err)
+	privateIPBlocks = append(privateIPBlocks, ipNet)
 
+	// It allows whitelisting for local development.
+	client = SafeHTTPClient(&http.Client{}, logrus.New(), ipNet)
 	_, err = client.Get(ts.URL)
 	assert.Nil(t, err)
 }
