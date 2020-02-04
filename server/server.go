@@ -85,7 +85,11 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	// Now that server is no longer listening, shutdown the API
+	s.log.Info("Listener shutdown, stopping API")
+
 	s.api.Stop()
+
+	s.log.Debug("Completed shutting down the underlying API")
 
 	if err == http.ErrServerClosed {
 		return nil
