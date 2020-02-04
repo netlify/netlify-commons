@@ -40,7 +40,7 @@ func TestSafeHTTPClient(t *testing.T) {
 
 	// It succeeds when the local IP range used by the testserver is removed from
 	// the blacklist.
-	ipNet := unshiftMatch(net.ParseIP(tsURL.Hostname()))
+	ipNet := popMatchingBlock(net.ParseIP(tsURL.Hostname()))
 	defer func() {
 		privateIPBlocks = append(privateIPBlocks, ipNet)
 	}()
@@ -49,7 +49,7 @@ func TestSafeHTTPClient(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func unshiftMatch(ip net.IP) *net.IPNet {
+func popMatchingBlock(ip net.IP) *net.IPNet {
 	for i, ipNet := range privateIPBlocks {
 		if ipNet.Contains(ip) {
 			privateIPBlocks = append(privateIPBlocks[:i], privateIPBlocks[i+1:]...)
