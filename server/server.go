@@ -33,10 +33,22 @@ type APIDefinition interface {
 	Stop()
 }
 
+// HealthChecker is used to run a custom health check
+// Implement it on your API if you want it to be checked
+// when the healthcheck is called
+type HealthChecker interface {
+	Healthy(w http.ResponseWriter, r *http.Request) *router.HTTPError
+}
+
 func New(log logrus.FieldLogger, projectName string, config Config, api APIDefinition) (*Server, error) {
+	var healthHandler router.APIHandler
+	if checker, ok := api.(HealthChecker); ok {
+		healthHandler = checker.Healthy
+	}
+
 	r := router.New(
 		log,
-		router.OptHealthCheck(config.HealthPath, nil),
+		router.OptHealthCheck(config.HealthPath, healthHandler),
 		router.OptTracingMiddleware(log, projectName),
 	)
 
