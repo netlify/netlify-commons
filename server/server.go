@@ -16,9 +16,10 @@ import (
 // Server handles the setup and shutdown of the http server
 // for an API
 type Server struct {
-	log logrus.FieldLogger
-	svr *http.Server
-	api APIDefinition
+	log  logrus.FieldLogger
+	svr  *http.Server
+	api  APIDefinition
+	done chan (bool)
 }
 
 type Config struct {
@@ -62,7 +63,8 @@ func New(log logrus.FieldLogger, projectName string, config Config, api APIDefin
 			Addr:    fmt.Sprintf(":%d", config.Port),
 			Handler: r,
 		},
-		api: api,
+		api:  api,
+		done: make(chan bool),
 	}
 
 	if config.TLS.Enabled {
@@ -80,6 +82,8 @@ func New(log logrus.FieldLogger, projectName string, config Config, api APIDefin
 func (s *Server) Shutdown(to time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), to)
 	defer cancel()
+	defer close(s.done)
+
 	if err := s.svr.Shutdown(ctx); err != nil && err != http.ErrServerClosed {
 		return err
 	}
@@ -95,9 +99,13 @@ func (s *Server) ListenAndServe() error {
 	} else {
 		err = s.svr.ListenAndServe()
 	}
+	// Now that server is no longer listening
+	s.log.Info("Listener shutdown, waiting for connections to drain")
 
-	// Now that server is no longer listening, shutdown the API
-	s.log.Info("Listener shutdown, stopping API")
+	// Wait until Shutdown returns
+	<-s.done
+
+	s.log.Info("Connections are drained, shutting down API")
 
 	s.api.Stop()
 
