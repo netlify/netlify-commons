@@ -109,7 +109,7 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			return
 		}
-		// do not call Error() method will cause a panic if a custom error is passed
+		// do not call Error() method will cause a panic if a custom error is passed an is a nil interface
 		log.WithError(e).Errorf("Unhandled server error: %s", e)
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
