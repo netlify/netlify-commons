@@ -88,8 +88,10 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 	log := tracing.GetLogger(r)
 	errorID := tracing.RequestID(r)
 	switch e := err.(type) {
+	case nil:
+		return
 	case *HTTPError:
-		// assert to *HTTPError no check nil
+		// assert to *HTTPError to check nil intrface
 		httpErr := err.(*HTTPError)
 		if httpErr == nil {
 			return
@@ -106,10 +108,8 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			HandleError(jsonErr, w, r)
 		}
 	default:
-		if err == nil {
-			return
-		}
-		// do not call Error() method will cause a panic if a custom error is passed an is a nil interface
+		// do not call the Error() method, this will cause a panic if a custom error is passed in is a nil interface
+		// instead rely on the fmt package to look for the error interface when printing values
 		log.WithError(e).Errorf("Unhandled server error: %s", e)
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
