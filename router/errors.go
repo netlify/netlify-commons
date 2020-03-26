@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/netlify/netlify-commons/tracing"
 )
@@ -108,9 +109,11 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			HandleError(jsonErr, w, r)
 		}
 	default:
-		// do not call the Error() method, this will cause a panic if a custom error is passed in is a nil interface
-		// instead rely on the fmt package to look for the error interface when printing values
-		log.WithError(e).Errorf("Unhandled server error: %s", e)
+		// this is 5ns slower than using unsafe but a unhandled internal server error should not happen that often
+		if reflect.ValueOf(err).IsNil() {
+			return
+		}
+		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, writeErr := w.Write([]byte(`{"code":500,"msg":"Internal server error","error_id":"` + errorID + `"}`)); writeErr != nil {

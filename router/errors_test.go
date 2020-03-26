@@ -115,6 +115,6 @@ func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
 
 	HandleError(oe, w, r)
 
-	assert.Equal(t, "Unhandled server error: <nil>", loggerOutput.AllEntries()[0].Message)
+	require.Len(t, loggerOutput.AllEntries(), 0)
 	assert.Empty(t, w.Header())
 }
