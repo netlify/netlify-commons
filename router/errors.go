@@ -109,7 +109,8 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			return
 		}
-		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
+		// do not call Error() method will cause a panic if a custom error is passed
+		log.WithError(e).Errorf("Unhandled server error: %s", e)
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, writeErr := w.Write([]byte(`{"code":500,"msg":"Internal server error","error_id":"` + errorID + `"}`)); writeErr != nil {

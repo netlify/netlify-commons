@@ -99,7 +99,7 @@ type OtherError struct {
 }
 
 func (e *OtherError) Error() string {
-	return "Other Error"
+	return e.error
 }
 
 func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
@@ -115,6 +115,6 @@ func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
 
 	HandleError(oe, w, r)
 
-	assert.Equal(t, "Unhandled server error: Other Error", loggerOutput.AllEntries()[0].Message)
+	assert.Equal(t, "Unhandled server error: <nil>", loggerOutput.AllEntries()[0].Message)
 	assert.Empty(t, w.Header())
 }
