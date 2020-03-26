@@ -93,3 +93,28 @@ func TestHandleError_HTTPError(t *testing.T) {
 	require.Len(t, loggerOutput.AllEntries(), 1)
 	assert.Equal(t, httpErr.InternalMessage, loggerOutput.AllEntries()[0].Message)
 }
+
+type OtherError struct {
+	error string
+}
+
+func (e *OtherError) Error() string {
+	return "Other Error"
+}
+
+func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
+	logger, loggerOutput := test.NewNullLogger()
+	w, r, _ := tracing.NewTracer(
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		logger,
+		"test",
+	)
+
+	var oe *OtherError
+
+	HandleError(oe, w, r)
+
+	assert.Equal(t, "Unhandled server error: Other Error", loggerOutput.AllEntries()[0].Message)
+	assert.Empty(t, w.Header())
+}
