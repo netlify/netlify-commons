@@ -23,17 +23,14 @@ func (a *AtomicBool) Set(boolValue bool) bool {
 	if boolValue {
 		intValue = trueValue
 	}
-	return a.toTruthy(atomic.SwapInt32(&a.value, intValue))
+	return toTruthy(atomic.SwapInt32(&a.value, intValue))
 }
 
 // Get will return the current value
 func (a *AtomicBool) Get() bool {
-	return a.toTruthy(atomic.LoadInt32(&a.value))
+	return toTruthy(atomic.LoadInt32(&a.value))
 }
 
-func (a *AtomicBool) toTruthy(val int32) bool {
-	if val == falseValue {
-		return false
-	}
-	return true
+func toTruthy(val int32) bool {
+	return val != falseValue
 }
