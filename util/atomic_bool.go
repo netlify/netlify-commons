@@ -7,18 +7,23 @@ const (
 	trueValue  int32 = 1
 )
 
-type AtomicBool struct {
+type AtomicBool interface {
+	Set(bool) bool
+	Get() bool
+}
+
+type atomicBool struct {
 	value int32
 }
 
-func NewAtomicBool(val bool) *AtomicBool {
-	a := &AtomicBool{value: falseValue}
+func NewAtomicBool(val bool) AtomicBool {
+	a := &atomicBool{value: falseValue}
 	a.Set(val)
 	return a
 }
 
 // Set will set the value to boolValue and will return the previous value
-func (a *AtomicBool) Set(boolValue bool) bool {
+func (a *atomicBool) Set(boolValue bool) bool {
 	intValue := int32(falseValue)
 	if boolValue {
 		intValue = trueValue
@@ -27,7 +32,7 @@ func (a *AtomicBool) Set(boolValue bool) bool {
 }
 
 // Get will return the current value
-func (a *AtomicBool) Get() bool {
+func (a *atomicBool) Get() bool {
 	return toTruthy(atomic.LoadInt32(&a.value))
 }
 
