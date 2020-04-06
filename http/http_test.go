@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httptrace"
 	"net/url"
 	"testing"
 
@@ -51,6 +50,12 @@ func TestSafeHTTPClient(t *testing.T) {
 	_, err = client.Get("http://localhost:" + tsURL.Port())
 	assert.NotNil(t, err)
 
+	// It works when reusing pooled connections.
+	for i := 0; i < 50; i++ {
+		_, err = client.Get("http://localhost:" + tsURL.Port())
+		assert.NotNil(t, err)
+	}
+
 	// It succeeds when the local IP range used by the testserver is removed from
 	// the blacklist.
 	ipNet := popMatchingBlock(net.ParseIP(tsURL.Hostname()))
@@ -72,67 +77,4 @@ func popMatchingBlock(ip net.IP) *net.IPNet {
 		}
 	}
 	return nil
-}
-
-type testReuseTransport struct {
-	reusedConn bool
-}
-
-func (r *testReuseTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	ctx := httptrace.WithClientTrace(req.Context(), &httptrace.ClientTrace{
-		GotConn: func(info httptrace.GotConnInfo) {
-			r.reusedConn = info.Reused
-		},
-	})
-
-	req = req.WithContext(ctx)
-	return http.DefaultTransport.RoundTrip(req)
-}
-
-func TestSafeHTTPClientReuse(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Done"))
-	}))
-	defer ts.Close()
-	tsURL, err := url.Parse(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tr := &testReuseTransport{}
-	client := SafeHTTPClient(&http.Client{
-		Transport: tr,
-	}, logrus.New())
-
-	for !tr.reusedConn {
-		_, err = client.Get("http://localhost:" + tsURL.Port())
-		assert.NotNil(t, err)
-	}
-}
-
-func TestSafeHTTPClientReuse2(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Done"))
-	}))
-	defer ts.Close()
-	tsURL, err := url.Parse(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client := SafeHTTPClient(&http.Client{}, logrus.New())
-	var reusedConn bool
-	trace := &httptrace.ClientTrace{
-		GotConn: func(info httptrace.GotConnInfo) {
-			reusedConn = info.Reused
-		},
-	}
-
-	req, err := http.NewRequest("GET", "http://localhost:"+tsURL.Port(), nil)
-	assert.Nil(t, err)
-	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
-	for i := 0; i < 5000 && !reusedConn; i++ {
-		_, err := client.Do(req)
-		assert.NotNil(t, err)
-	}
 }
