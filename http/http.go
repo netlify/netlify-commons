@@ -52,7 +52,8 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	ctx, cancel := context.WithCancel(req.Context())
 
 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
-		ConnectStart: func(network, addr string) {
+		GotConn: func(info httptrace.GotConnInfo) {
+			addr := info.Conn.RemoteAddr().String()
 			host, _, err := net.SplitHostPort(addr)
 			if err != nil {
 				cancel()
