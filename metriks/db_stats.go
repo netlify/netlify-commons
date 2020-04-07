@@ -58,7 +58,7 @@ func (d *dBStats) emitStats() {
 	d.emitStat("Idle", float32(stats.Idle))
 
 	d.emitStat("WaitCount", float32(stats.WaitCount))
-	d.emitStat("WaitDuration_us", float32(stats.WaitDuration.Microseconds()))
+	d.emitStat("WaitDuration_us", float32(stats.WaitDuration.Nanoseconds()/1_000))
 	d.emitStat("MaxIdleClosed", float32(stats.MaxIdleClosed))
 	d.emitStat("MaxLifetimeClosed", float32(stats.MaxLifetimeClosed))
 }
