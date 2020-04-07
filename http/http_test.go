@@ -50,6 +50,12 @@ func TestSafeHTTPClient(t *testing.T) {
 	_, err = client.Get("http://localhost:" + tsURL.Port())
 	assert.NotNil(t, err)
 
+	// It works when reusing pooled connections.
+	for i := 0; i < 50; i++ {
+		_, err = client.Get("http://localhost:" + tsURL.Port())
+		assert.NotNil(t, err)
+	}
+
 	// It succeeds when the local IP range used by the testserver is removed from
 	// the blacklist.
 	ipNet := popMatchingBlock(net.ParseIP(tsURL.Hostname()))
