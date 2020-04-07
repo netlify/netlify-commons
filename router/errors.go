@@ -3,7 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
-	"unsafe"
+	"reflect"
 
 	"github.com/netlify/netlify-commons/tracing"
 )
@@ -86,15 +86,17 @@ func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 
 // HandleError will handle an error
 func HandleError(err error, w http.ResponseWriter, r *http.Request) {
-	// if err is nil or nil pointer of type *HTTPError
-	if err == nil || (*[2]uintptr)(unsafe.Pointer(&err))[1] == 0 {
-		return
-	}
-
 	log := tracing.GetLogger(r)
 	errorID := tracing.RequestID(r)
 	switch e := err.(type) {
+	case nil:
+		return
 	case *HTTPError:
+		// assert to *HTTPError to check nil intrface
+		httpErr := err.(*HTTPError)
+		if httpErr == nil {
+			return
+		}
 		if e.Code >= http.StatusInternalServerError {
 			e.ErrorID = errorID
 			// this will get us the stack trace too
@@ -107,6 +109,10 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			HandleError(jsonErr, w, r)
 		}
 	default:
+		// this is 5ns slower than using unsafe but a unhandled internal server error should not happen that often
+		if reflect.ValueOf(err).IsNil() {
+			return
+		}
 		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
