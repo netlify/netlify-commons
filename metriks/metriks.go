@@ -10,8 +10,13 @@ import (
 
 const timerGranularity = time.Millisecond
 
-// Init will initialize the internal metrics system and build a Datadog statsd sink
+// Init will initialize the internal metrics system with a Datadog statsd sink
 func Init(serviceName string, conf Config) error {
+	return InitTags(serviceName, conf, nil)
+}
+
+// InitTags behaves like Init but allows appending extra tags
+func InitTags(serviceName string, conf Config, extraTags []string) error {
 	sink, err := datadog.NewDogStatsdSink(statsdAddr(conf), conf.Name)
 	if err != nil {
 		return err
@@ -22,8 +27,19 @@ func Init(serviceName string, conf Config) error {
 		tags = append(tags, fmt.Sprintf("%s:%s", k, v))
 	}
 
+	if extraTags != nil {
+		for _, t := range extraTags {
+			tags = append(tags, t)
+		}
+	}
+
 	sink.SetTags(tags)
 
+	return InitWithSink(serviceName, sink)
+}
+
+// InitWithSink initializes the internal metrics system with custom sink
+func InitWithSink(serviceName string, sink metrics.MetricSink) error {
 	c := metrics.DefaultConfig(serviceName)
 	c.TimerGranularity = timerGranularity
 
