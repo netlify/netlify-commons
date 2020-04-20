@@ -41,6 +41,8 @@ func InitTags(serviceName string, conf Config, extraTags []string) error {
 // InitWithSink initializes the internal metrics system with custom sink
 func InitWithSink(serviceName string, sink metrics.MetricSink) error {
 	c := metrics.DefaultConfig(serviceName)
+	c.EnableHostname = false
+	c.EnableHostnameLabel = false
 	c.TimerGranularity = timerGranularity
 
 	if _, err := metrics.NewGlobal(c, sink); err != nil {
