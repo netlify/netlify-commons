@@ -43,6 +43,7 @@ func InitWithSink(serviceName string, sink metrics.MetricSink) error {
 	c := metrics.DefaultConfig(serviceName)
 	c.EnableHostname = false
 	c.EnableHostnameLabel = false
+	c.EnableServiceLabel = false
 	c.TimerGranularity = timerGranularity
 
 	if _, err := metrics.NewGlobal(c, sink); err != nil {
