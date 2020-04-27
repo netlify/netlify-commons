@@ -2,10 +2,13 @@ package metriks
 
 import (
 	"fmt"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/armon/go-metrics"
 	"github.com/armon/go-metrics/datadog"
+	"github.com/pkg/errors"
 )
 
 const timerGranularity = time.Millisecond
@@ -17,25 +20,52 @@ func Init(serviceName string, conf Config) error {
 
 // InitTags behaves like Init but allows appending extra tags
 func InitTags(serviceName string, conf Config, extraTags []string) error {
-	sink, err := datadog.NewDogStatsdSink(statsdAddr(conf), conf.Name)
+	sink, err := createDatadogSink(statsdAddr(conf), conf.Name, conf.Tags, extraTags)
 	if err != nil {
 		return err
 	}
 
-	var tags []string
-	for k, v := range conf.Tags {
-		tags = append(tags, fmt.Sprintf("%s:%s", k, v))
-	}
-
-	if extraTags != nil {
-		for _, t := range extraTags {
-			tags = append(tags, t)
-		}
-	}
-
-	sink.SetTags(tags)
-
 	return InitWithSink(serviceName, sink)
+}
+
+// InitWithURL will initialize using a URL to identify the sink type
+//
+// Examples:
+//
+//  InitWithURL("api", "datadog://187.32.21.12:8125/?hostname=foo.com&tag=env:production")
+//
+//  InitWithURL("api", "discard://nothing")
+//
+//  InitWithURL("api", "inmem://discarded/?interval=10s&duration=30s")
+//
+func InitWithURL(serviceName string, endpoint string) (metrics.MetricSink, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid endpoint format")
+	}
+
+	hostname := u.Query().Get("hostname")
+	if hostname == "" {
+		h, _ := os.Hostname()
+		hostname = h
+	}
+
+	var sink metrics.MetricSink
+	switch u.Scheme {
+	case "datadog":
+		sink, err = createDatadogSink(u.Host, hostname, map[string]string{}, u.Query()["tag"])
+	case "discard", "":
+		sink = &metrics.BlackholeSink{}
+	default:
+		sink, err = metrics.NewMetricSinkFromURL(endpoint)
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating sink")
+	}
+
+	err = InitWithSink(serviceName, sink)
+	return sink, err
 }
 
 // InitWithSink initializes the internal metrics system with custom sink
@@ -50,6 +80,28 @@ func InitWithSink(serviceName string, sink metrics.MetricSink) error {
 		return err
 	}
 	return nil
+}
+
+func createDatadogSink(url string, name string, tags map[string]string, extraTags []string) (metrics.MetricSink, error) {
+	sink, err := datadog.NewDogStatsdSink(url, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var ddTags []string
+	for k, v := range tags {
+		ddTags = append(ddTags, fmt.Sprintf("%s:%s", k, v))
+	}
+
+	if extraTags != nil {
+		for _, t := range extraTags {
+			ddTags = append(ddTags, t)
+		}
+	}
+
+	sink.SetTags(ddTags)
+
+	return sink, nil
 }
 
 //

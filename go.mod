@@ -33,6 +33,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
 	github.com/tinylib/msgp v1.1.0 // indirect
+	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
