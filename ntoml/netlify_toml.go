@@ -87,7 +87,7 @@ func findOnlyOneExistingPath(base string, paths ...string) (path string, err err
 	foundPaths := make([]string, 0, len(paths))
 	for _, possiblePath := range paths {
 		p := filepath.Join(base, possiblePath)
-		if fi, err := os.Stat(p); !os.IsNotExist(err) && !fi.IsDir() {
+		if fi, err := os.Stat(p); err != nil && !fi.IsDir() {
 			foundPaths = append(foundPaths, p)
 		}
 	}
