@@ -84,11 +84,9 @@ func (f *FoundMoreThanOneConfigPathError) Error() string {
 }
 
 func findOnlyOneExistingPath(base string, paths ...string) (path string, err error) {
-	joinedPaths := make([]string, 0, len(paths))
 	foundPaths := make([]string, 0, len(paths))
 	for _, possiblePath := range paths {
 		p := filepath.Join(base, possiblePath)
-		joinedPaths = append(joinedPaths, p)
 		if fi, err := os.Stat(p); !os.IsNotExist(err) && !fi.IsDir() {
 			foundPaths = append(foundPaths, p)
 		}
