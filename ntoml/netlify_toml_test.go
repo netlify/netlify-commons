@@ -231,3 +231,15 @@ context:
 
 	return tmp
 }
+
+func TestFindOnlyOneExistingPath(t *testing.T) {
+	_, err := findOnlyOneExistingPath("", "does-not-exist")
+	assert.IsType(t, &FoundNoConfigPathError{}, err)
+
+	tmp, err := ioutil.TempFile("", "netlify-*.yaml")
+	require.NoError(t, err)
+	defer os.Remove(tmp.Name())
+	path, err := findOnlyOneExistingPath("", tmp.Name())
+	assert.NoError(t, err)
+	assert.Equal(t, tmp.Name(), path)
+}
