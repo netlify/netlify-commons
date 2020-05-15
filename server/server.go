@@ -59,6 +59,7 @@ func NewWithRouter(log logrus.FieldLogger, projectName string, config Config, ap
 	if err := api.Start(r); err != nil {
 		return nil, errors.Wrap(err, "Failed to start API")
 	}
+	fmt.Println("test")
 
 	s := Server{
 		log: log.WithField("component", "server"),
