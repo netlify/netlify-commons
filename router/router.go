@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/netlify/netlify-commons/tracing"
@@ -52,6 +53,7 @@ type Router interface {
 
 //  creates a router with sensible defaults (xff, request id, cors)
 func New(log logrus.FieldLogger, options ...Option) Router {
+	fmt.Println("creating new router")
 	r := &chiWrapper{
 		chi:     chi.NewRouter(),
 		version: "unknown",
@@ -63,7 +65,7 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 		opt(r)
 	}
 	r.Use(VersionHeader(r.svcName, r.version))
-	if r.enableCORS {
+	if true {
 		corsMiddleware := cors.New(cors.Options{
 			AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
 			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
