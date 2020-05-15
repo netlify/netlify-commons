@@ -52,7 +52,10 @@ func New(log logrus.FieldLogger, projectName string, config Config, api APIDefin
 		router.OptHealthCheck(config.HealthPath, healthHandler),
 		router.OptTracingMiddleware(log, projectName),
 	)
+	return NewWithRouter(log, projectName, config, api, r)
+}
 
+func NewWithRouter(log logrus.FieldLogger, projectName string, config Config, api APIDefinition, r router.Router) (*Server, error) {
 	if err := api.Start(r); err != nil {
 		return nil, errors.Wrap(err, "Failed to start API")
 	}
