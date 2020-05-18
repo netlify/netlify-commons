@@ -42,6 +42,11 @@ type BuildConfig struct {
 	Publish     string            `toml:"publish" json:"publish" yaml:"publish"`
 	Ignore      string            `toml:"ignore" json:"ignore" yaml:"ignore"`
 	Environment map[string]string `toml:"environment" json:"environment" yaml:"environment"`
+	Plugins     []Plugin          `toml:"plugins" json:"plugins" yaml:"plugins"`
+}
+
+type Plugin struct {
+	Package string `toml:"package" json:"package" yaml:"package"`
 }
 
 type DeployContext struct {
