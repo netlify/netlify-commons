@@ -28,6 +28,7 @@ type NetlifyToml struct {
 
 	// this is the default context
 	Build   *BuildConfig             `toml:"build" json:"build" yaml:"build"`
+	Plugins []Plugin                 `toml:"plugins" json:"plugins" yaml:"plugins"`
 	Context map[string]DeployContext `toml:"context,omitempty" json:"context,omitempty" yaml:"context,omitempty"`
 }
 
@@ -42,7 +43,6 @@ type BuildConfig struct {
 	Publish     string            `toml:"publish" json:"publish" yaml:"publish"`
 	Ignore      string            `toml:"ignore" json:"ignore" yaml:"ignore"`
 	Environment map[string]string `toml:"environment" json:"environment" yaml:"environment"`
-	Plugins     []Plugin          `toml:"plugins" json:"plugins" yaml:"plugins"`
 }
 
 type Plugin struct {
