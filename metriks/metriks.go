@@ -127,8 +127,12 @@ func L(name string, value string) metrics.Label {
 //
 // metriks.Inc("publisher.errors", 1)
 //
-func Inc(name string, val int64) {
-	metrics.IncrCounter([]string{name}, float32(val))
+func Inc(name string, val int64, labels ...metrics.Label) {
+	if len(labels) > 0 {
+		metrics.IncrCounterWithLabels([]string{name}, float32(val), labels)
+	} else {
+		metrics.IncrCounter([]string{name}, float32(val))
+	}
 }
 
 // IncLabels increments a counter with additional labels

@@ -7,6 +7,7 @@ import (
 
 	"github.com/armon/go-metrics"
 	"github.com/armon/go-metrics/datadog"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/nettest"
 )
@@ -68,4 +69,21 @@ func TestInMemorySink(t *testing.T) {
 	require.Contains(t, met[0].Counters, "test.test_counter")
 	require.Equal(t, "test.test_counter", met[0].Counters["test.test_counter"].Name)
 	require.Equal(t, 1, met[0].Counters["test.test_counter"].Count)
+}
+
+func TestIncWithLabels(t *testing.T) {
+	sink, err := InitWithURL("test", "inmem://?interval=1s&retain=2s")
+	require.NoError(t, err)
+	require.IsType(t, &metrics.InmemSink{}, sink)
+
+	Inc("test_counter", 1, L("tag", "value"))
+	met := sink.(*metrics.InmemSink).Data()
+	require.Len(t, met, 1)
+
+	require.Len(t, met[0].Counters, 1)
+	require.Contains(t, met[0].Counters, "test.test_counter;tag=value")
+	incr := met[0].Counters["test.test_counter;tag=value"]
+	assert.Len(t, incr.Labels, 1)
+	assert.Equal(t, "value", incr.Labels[0].Value)
+	assert.Equal(t, "tag", incr.Labels[0].Name)
 }
