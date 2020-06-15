@@ -76,14 +76,26 @@ func TestIncWithLabels(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &metrics.InmemSink{}, sink)
 
-	Inc("test_counter", 1, L("tag", "value"))
+	Inc("test_counter", 1, L("tag", "value"), L("tag2", "value2"))
 	met := sink.(*metrics.InmemSink).Data()
 	require.Len(t, met, 1)
 
 	require.Len(t, met[0].Counters, 1)
-	require.Contains(t, met[0].Counters, "test.test_counter;tag=value")
-	incr := met[0].Counters["test.test_counter;tag=value"]
-	assert.Len(t, incr.Labels, 1)
-	assert.Equal(t, "value", incr.Labels[0].Value)
-	assert.Equal(t, "tag", incr.Labels[0].Name)
+	var incr metrics.SampledValue
+	for _, v := range met[0].Counters {
+		incr = v
+		break
+	}
+
+	assert.Len(t, incr.Labels, 2)
+	for _, l := range incr.Labels {
+		switch l.Name {
+		case "tag":
+			assert.Equal(t, "value", l.Value)
+		case "tag2":
+			assert.Equal(t, "value2", l.Value)
+		default:
+			assert.Fail(t, "unexpected label value")
+		}
+	}
 }
