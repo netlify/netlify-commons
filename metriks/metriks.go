@@ -142,7 +142,7 @@ func Inc(name string, val int64, labels ...metrics.Label) {
 // metriks.IncLabels("publisher.errors", metriks.Labels(metriks.L("status_class", "4xx")), 1)
 //
 func IncLabels(name string, labels []metrics.Label, val int64) {
-	metrics.IncrCounterWithLabels([]string{name}, float32(val), labels)
+	Inc(name, val, labels...)
 }
 
 // MeasureSince records the time from start until the invocation of the function
@@ -157,13 +157,17 @@ func IncLabels(name string, labels []metrics.Label, val int64) {
 //   return db.Execute(query)
 // }
 //
-func MeasureSince(name string, start time.Time) {
-	metrics.MeasureSince([]string{name}, start)
+func MeasureSince(name string, start time.Time, labels ...metrics.Label) {
+	if len(labels) > 0 {
+		metrics.MeasureSinceWithLabels([]string{name}, start, labels)
+	} else {
+		metrics.MeasureSince([]string{name}, start)
+	}
 }
 
 // MeasureSinceLabels is the same as MeasureSince, but with additional labels
 func MeasureSinceLabels(name string, labels []metrics.Label, start time.Time) {
-	metrics.MeasureSinceWithLabels([]string{name}, start, labels)
+	MeasureSince(name, start, labels...)
 }
 
 // Sample records a float32 sample as part of a histogram. This will get histogram
@@ -173,25 +177,33 @@ func MeasureSinceLabels(name string, labels []metrics.Label, start time.Time) {
 //
 // metriks.Sample("publisher-payload-size", float32(len(payload)))
 //
-func Sample(name string, val float32) {
-	metrics.AddSample([]string{name}, val)
+func Sample(name string, val float32, labels ...metrics.Label) {
+	if len(labels) > 0 {
+		metrics.AddSampleWithLabels([]string{name}, val, labels)
+	} else {
+		metrics.AddSample([]string{name}, val)
+	}
 }
 
 // SampleLabels is the same as Sample but with additional labels
 func SampleLabels(name string, labels []metrics.Label, val float32) {
-	metrics.AddSampleWithLabels([]string{name}, val, labels)
+	Sample(name, val, labels...)
 }
 
 // Gauge is used to report a single float32 value. It is most often used during a
 // periodic update or timer to report the current size of a queue or how many
 // connections are currently connected.
-func Gauge(name string, val float32) {
-	metrics.SetGauge([]string{name}, val)
+func Gauge(name string, val float32, labels ...metrics.Label) {
+	if len(labels) > 0 {
+		metrics.SetGaugeWithLabels([]string{name}, val, labels)
+	} else {
+		metrics.SetGauge([]string{name}, val)
+	}
 }
 
 // GaugeLabels is the same as Gauge but with additional labels
 func GaugeLabels(name string, labels []metrics.Label, val float32) {
-	metrics.SetGaugeWithLabels([]string{name}, val, labels)
+	Gauge(name, val, labels...)
 }
 
 func statsdAddr(conf Config) string {
