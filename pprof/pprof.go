@@ -1,14 +1,15 @@
 package pprof
 
 import (
-	"log"
 	"net/http"
 	"net/http/pprof"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var ListenAddress = "localhost:6060"
 
-// This init is needed to disable the default handlers registered by importing net/http/pprof
+// This init is needed to disable the default handlers registered during the init() from importing net/http/pprof
 func init() {
 	http.DefaultServeMux = http.NewServeMux()
 }
@@ -45,7 +46,7 @@ func ListenAndServe(addr string) error {
 // Run a standard pprof server at ListenAddress
 func Run() {
 	go func() {
-		log.Printf("Running pprof server at: %s", ListenAddress)
+		log.Infof("Running pprof server at: %s", ListenAddress)
 		log.Fatal(ListenAndServe(ListenAddress))
 	}()
 }
