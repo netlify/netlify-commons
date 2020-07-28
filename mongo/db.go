@@ -29,8 +29,15 @@ type Config struct {
 	ConnTimeout int64            `mapstructure:"conn_timeout"`
 }
 
-// FromConfig connects to MongoDB using the official mongodb driver.
-func FromConfig(config *Config, log *logrus.Entry) (*mongo.Database, error) {
+type Auth struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	Source   string `mapstructure:"source"`
+}
+
+// Connect connects to MongoDB
+func Connect(config *Config, auth *Auth, log *logrus.Entry) (*mongo.Database, error) {
 	opts := options.Client().
 		SetConnectTimeout(time.Second * time.Duration(config.ConnTimeout)).
 		SetReplicaSet(config.ReplSetName).
@@ -52,6 +59,16 @@ func FromConfig(config *Config, log *logrus.Entry) (*mongo.Database, error) {
 		opts.SetTLSConfig(tlsConfig)
 	} else {
 		log.Debug("Skipping TLS config")
+	}
+
+	if auth.Enabled {
+		creds := options.Credential{
+			Username:   auth.Username,
+			Password:   auth.Password,
+			AuthSource: auth.Source,
+		}
+
+		opts.SetAuth(creds)
 	}
 
 	log.WithFields(logrus.Fields{
