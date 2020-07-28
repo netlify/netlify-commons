@@ -9,16 +9,13 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
-	github.com/golang/snappy v0.0.1 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
 	github.com/nats-io/nats.go v1.8.1
 	github.com/nats-io/stan.go v0.5.0
 	github.com/opentracing/opentracing-go v1.1.0
-	github.com/pelletier/go-toml v1.3.0 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/rs/cors v1.6.0
@@ -34,11 +31,9 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
-	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.1.3
+	go.mongodb.org/mongo-driver v1.3.5
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
-	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 )
