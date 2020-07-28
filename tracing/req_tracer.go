@@ -13,7 +13,7 @@ type RequestTracer struct {
 	logrus.FieldLogger
 
 	RequestID   string
-	FinalFields map[string]interface{}
+	finalFields map[string]interface{}
 
 	remoteAddr  string
 	method      string
@@ -42,7 +42,7 @@ func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, s
 		span:           span,
 		trackingWriter: trackWriter,
 		FieldLogger:    log,
-		FinalFields:    make(map[string]interface{}),
+		finalFields:    make(map[string]interface{}),
 	}
 	r = WrapWithTracer(r, rt)
 
@@ -63,7 +63,7 @@ func (rt *RequestTracer) Finish() {
 	dur := time.Since(rt.start)
 
 	fields := logrus.Fields{}
-	for k, v := range rt.FinalFields {
+	for k, v := range rt.finalFields {
 		fields[k] = v
 	}
 
@@ -86,4 +86,9 @@ func (rt *RequestTracer) SetLogField(key string, value interface{}) logrus.Field
 func (rt *RequestTracer) SetLogFields(fields logrus.Fields) logrus.FieldLogger {
 	rt.FieldLogger = rt.FieldLogger.WithFields(fields)
 	return rt.FieldLogger
+}
+
+func (rt *RequestTracer) SetFinalField(key string, value interface{}) logrus.FieldLogger {
+	rt.finalFields[key] = value
+	return rt.FieldLogger.WithField(key, value)
 }

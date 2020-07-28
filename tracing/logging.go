@@ -63,11 +63,15 @@ func SetLogFields(r *http.Request, fields logrus.Fields) logrus.FieldLogger {
 // SetFinalField will add a field to the canonical line created at in Finish. It will add
 // it to this line, but not every log line in between
 func SetFinalField(r *http.Request, key string, value interface{}) logrus.FieldLogger {
-	entry := GetTracer(r)
+	return SetFinalFieldWithContext(r.Context(), key, value)
+}
+
+// SetFinalFieldWithContext will add a field to the canonical line created at in Finish. It will add
+// it to this line, but not every log line in between
+func SetFinalFieldWithContext(ctx context.Context, key string, value interface{}) logrus.FieldLogger {
+	entry := GetFromContext(ctx)
 	if entry == nil {
 		return logrus.StandardLogger().WithField(key, value)
 	}
-
-	entry.FinalFields[key] = value
-	return entry.FieldLogger.WithField(key, value)
+	return entry.SetFinalField(key, value)
 }
