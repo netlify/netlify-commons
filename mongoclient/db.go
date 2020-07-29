@@ -1,4 +1,4 @@
-package mongo
+package mongoclient
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/sirupsen/logrus"
 
@@ -21,23 +22,22 @@ const (
 	CollectionSites         = "projects"
 )
 
-type Config struct {
-	TLS         *nconf.TLSConfig `mapstructure:"tls_conf"`
-	DB          string           `mapstructure:"db"`
-	Servers     []string         `mapstructure:"servers"`
-	ReplSetName string           `mapstructure:"replset_name"`
-	ConnTimeout int64            `mapstructure:"conn_timeout"`
+type Auth struct {
+	Username string
+	Password string
+	Source   string
 }
 
-type Auth struct {
-	Enabled  bool   `mapstructure:"enabled"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Source   string `mapstructure:"source"`
+type Config struct {
+	TLS         *nconf.TLSConfig
+	Servers     []string
+	ReplSetName string
+	ConnTimeout int64
+	Auth        *Auth
 }
 
 // Connect connects to MongoDB
-func Connect(config *Config, auth *Auth, log *logrus.Entry) (*mongo.Database, error) {
+func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 	opts := options.Client().
 		SetConnectTimeout(time.Second * time.Duration(config.ConnTimeout)).
 		SetReplicaSet(config.ReplSetName).
@@ -61,11 +61,11 @@ func Connect(config *Config, auth *Auth, log *logrus.Entry) (*mongo.Database, er
 		log.Debug("Skipping TLS config")
 	}
 
-	if auth.Enabled {
+	if config.Auth != nil {
 		creds := options.Credential{
-			Username:   auth.Username,
-			Password:   auth.Password,
-			AuthSource: auth.Source,
+			Username:   config.Auth.Username,
+			Password:   config.Auth.Password,
+			AuthSource: config.Auth.Source,
 		}
 
 		opts.SetAuth(creds)
@@ -81,6 +81,16 @@ func Connect(config *Config, auth *Auth, log *logrus.Entry) (*mongo.Database, er
 		return nil, err
 	}
 
-	log.WithField("db", config.DB).Debugf("Got session, Using database %s", config.DB)
-	return client.Database(config.DB), nil
+	// Connect does not block for server discovery, so we should ping to ensure
+	// we are actually connected
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		log.WithError(err).Error("Failed to ping primary Mongo instance")
+		return nil, err
+	}
+
+	log.Debug("Connected to MongoDB")
+	return client, nil
 }
