@@ -32,14 +32,14 @@ type Config struct {
 	TLS         *nconf.TLSConfig
 	Servers     []string
 	ReplSetName string
-	ConnTimeout int64
+	ConnTimeout time.Duration
 	Auth        *Auth
 }
 
 // Connect connects to MongoDB
 func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 	opts := options.Client().
-		SetConnectTimeout(time.Second * time.Duration(config.ConnTimeout)).
+		SetConnectTimeout(config.ConnTimeout).
 		SetReplicaSet(config.ReplSetName).
 		SetHosts(config.Servers)
 
@@ -83,7 +83,7 @@ func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 
 	// Connect does not block for server discovery, so we should ping to ensure
 	// we are actually connected
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), config.ConnTimeout)
 	defer cancel()
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
