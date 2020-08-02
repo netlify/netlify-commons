@@ -29,11 +29,12 @@ type Auth struct {
 }
 
 type Config struct {
-	TLS         *nconf.TLSConfig
-	Servers     []string
-	ReplSetName string
-	ConnTimeout time.Duration
-	Auth        *Auth
+	TLS                *nconf.TLSConfig
+	Servers            []string
+	ReplSetName        string
+	ConnTimeout        time.Duration
+	Auth               *Auth
+	SecondaryPreferred bool
 }
 
 // Connect connects to MongoDB
@@ -42,6 +43,10 @@ func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 		SetConnectTimeout(config.ConnTimeout).
 		SetReplicaSet(config.ReplSetName).
 		SetHosts(config.Servers)
+
+	if config.SecondaryPreferred {
+		opts.SetReadPreference(readpref.SecondaryPreferred())
+	}
 
 	if config.TLS != nil && config.TLS.Enabled {
 		tlsLog := log.WithFields(logrus.Fields{
