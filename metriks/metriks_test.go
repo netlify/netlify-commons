@@ -19,7 +19,6 @@ func TestMetriksInit(t *testing.T) {
 	config := Config{
 		Host: "127.0.0.1",
 		Port: 8125,
-		Name: "dev-test",
 		Tags: nil,
 	}
 	err = Init("foo", config)
