@@ -29,6 +29,7 @@ type Auth struct {
 }
 
 type Config struct {
+	AppName            string
 	TLS                *nconf.TLSConfig
 	Servers            []string
 	ReplSetName        string
@@ -43,6 +44,10 @@ func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 		SetConnectTimeout(config.ConnTimeout).
 		SetReplicaSet(config.ReplSetName).
 		SetHosts(config.Servers)
+
+	if config.AppName != "" {
+		opts.SetAppName(config.AppName)
+	}
 
 	if config.SecondaryPreferred {
 		opts.SetReadPreference(readpref.SecondaryPreferred())
