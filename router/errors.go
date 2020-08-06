@@ -87,7 +87,7 @@ func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 // HandleError will handle an error
 func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 	log := tracing.GetLogger(r)
-	errorID := tracing.RequestID(r)
+	errorID := tracing.GetRequestID(r)
 	switch e := err.(type) {
 	case nil:
 		return

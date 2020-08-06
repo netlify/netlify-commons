@@ -87,7 +87,7 @@ func TestHandleError_HTTPError(t *testing.T) {
 	b, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	expectedBody := fmt.Sprintf(`{"code":500,"msg":"Internal Server Error","error_id":"%s"}`, tracing.RequestID(r))
+	expectedBody := fmt.Sprintf(`{"code":500,"msg":"Internal Server Error","error_id":"%s"}`, tracing.GetRequestID(r))
 	assert.Equal(t, expectedBody, string(b))
 
 	require.Len(t, loggerOutput.AllEntries(), 1)

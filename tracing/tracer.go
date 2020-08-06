@@ -6,7 +6,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	ext "github.com/opentracing/opentracing-go/ext"
-	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	ddtrace_ext "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
@@ -17,22 +16,6 @@ func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger
 	rt.Start()
 	next.ServeHTTP(w, r)
 	rt.Finish()
-}
-
-func RequestID(r *http.Request) string {
-	id := r.Header.Get(HeaderRequestUUID)
-	if id != "" {
-		return id
-	}
-
-	id = GetRequestID(r)
-	if id != "" {
-		return id
-	}
-
-	id = uuid.NewV4().String()
-	r.Header.Set(HeaderRequestUUID, id)
-	return id
 }
 
 func WrapWithSpan(r *http.Request, reqID, service string) (*http.Request, opentracing.Span) {
