@@ -21,10 +21,17 @@ func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger
 
 func RequestID(r *http.Request) string {
 	id := r.Header.Get(HeaderRequestUUID)
-	if id == "" {
-		id = uuid.NewV4().String()
-		r.Header.Set(HeaderRequestUUID, id)
+	if id != "" {
+		return id
 	}
+
+	id = GetRequestID(r)
+	if id != "" {
+		return id
+	}
+
+	id = uuid.NewV4().String()
+	r.Header.Set(HeaderRequestUUID, id)
 	return id
 }
 
