@@ -97,7 +97,7 @@ func TestServerCustomHealth(t *testing.T) {
 	apiDef := new(testAPICustomHealth)
 
 	cfg := testConfig()
-	svr, err := New(tl(t), "testing", cfg, apiDef)
+	svr, err := New(tl(t), "testing", "", cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
