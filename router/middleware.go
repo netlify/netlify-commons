@@ -1,6 +1,8 @@
 package router
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"net/http"
 	"os"
@@ -64,17 +66,24 @@ func CheckAuth(secret string) Middleware {
 // Recoverer is a middleware that recovers from panics, logs the panic (and a
 // backtrace), and returns a HTTP 500 (Internal Server Error) status if
 // possible. Recoverer prints a request ID if one is provided.
-func Recoverer(rootLogger logrus.FieldLogger) Middleware {
+func Recoverer(errLog logrus.FieldLogger) Middleware {
 	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		defer func() {
 			if rvr := recover(); rvr != nil {
-				if log := tracing.GetLogger(r); log != nil {
-					log.Errorf("Panic: %+v\n%s", rvr, debug.Stack())
-				} else if rootLogger != nil {
-					rootLogger.Errorf("Panic: %+v\n%s", rvr, debug.Stack())
-				} else {
-					fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
-					debug.PrintStack()
+				if errLog == nil {
+					logger := logrus.New()
+					logger.Out = os.Stderr
+					errLog = logrus.NewEntry(logger)
+				}
+				reqID := tracing.RequestID(r)
+				panicLog := errLog.WithField("request_id", reqID)
+
+				stack := debug.Stack()
+				scanner := bufio.NewScanner(bytes.NewReader(stack))
+
+				panicLog.Errorf("Panic: %+v", rvr)
+				for scanner.Scan() {
+					panicLog.Errorf(scanner.Text())
 				}
 
 				se := &HTTPError{
