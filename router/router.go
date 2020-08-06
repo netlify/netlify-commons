@@ -22,6 +22,7 @@ type chiWrapper struct {
 
 	enableTracing bool
 	enableCORS    bool
+	enableRecover bool
 }
 
 // Router wraps the chi router to make it slightly more accessible
@@ -61,6 +62,10 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 	r.Use(xffmw.Handler)
 	for _, opt := range options {
 		opt(r)
+	}
+
+	if r.enableRecover {
+		r.Use(Recoverer(log))
 	}
 	r.Use(VersionHeader(r.svcName, r.version))
 	if r.enableCORS {
@@ -140,7 +145,7 @@ func (r *chiWrapper) Mount(pattern string, h http.Handler) {
 // HTTP handler with custom error payload
 // =======================================
 
-type APIHandler func(w http.ResponseWriter, r *http.Request) *HTTPError
+type APIHandler func(w http.ResponseWriter, r *http.Request) error
 
 func HandlerFunc(fn APIHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

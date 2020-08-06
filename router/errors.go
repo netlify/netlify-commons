@@ -12,7 +12,7 @@ import (
 type HTTPError struct {
 	Code            int         `json:"code"`
 	Message         string      `json:"msg"`
-	JSON            interface{} `json:"json"`
+	JSON            interface{} `json:"json,omitempty"`
 	InternalError   error       `json:"-"`
 	InternalMessage string      `json:"-"`
 	ErrorID         string      `json:"error_id,omitempty"`

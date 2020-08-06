@@ -19,7 +19,7 @@ func TestCheckAuth(t *testing.T) {
 	makeRequest := func(req *http.Request) *httptest.ResponseRecorder {
 		r := New(logrus.WithField("test", "CheckAuth"))
 		r.Use(CheckAuth(validKey))
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) *HTTPError {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) error {
 			return nil
 		})
 		rec := httptest.NewRecorder()

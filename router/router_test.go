@@ -31,7 +31,7 @@ func TestCallthrough(t *testing.T) {
 	require.NoError(t, err)
 
 	var callCount int
-	handler := func(w http.ResponseWriter, r *http.Request) *HTTPError {
+	handler := func(w http.ResponseWriter, r *http.Request) error {
 		callCount++
 		return BadRequestError("")
 	}
@@ -52,12 +52,11 @@ func TestHealthEndpoint(t *testing.T) {
 		"default":  {[]Option{OptHealthCheck("/health", nil)}, http.StatusOK},
 		"custom": {[]Option{OptHealthCheck(
 			"/health",
-			func(_ http.ResponseWriter, r *http.Request) *HTTPError {
+			func(_ http.ResponseWriter, r *http.Request) error {
 				return UnauthorizedError("")
 			})},
 			http.StatusUnauthorized},
 	}
-
 
 	for name, scene := range scenarios {
 		t.Run(name, func(t *testing.T) {
@@ -96,7 +95,7 @@ func do(t *testing.T, opts []Option, svcName, path string, handler APIHandler, r
 	r := New(logrus.WithField("test", t.Name()), opts...)
 
 	if handler == nil {
-		handler = func(w http.ResponseWriter, r *http.Request) *HTTPError {
+		handler = func(w http.ResponseWriter, r *http.Request) error {
 			return nil
 		}
 	}

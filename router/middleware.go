@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/netlify/netlify-commons/tracing"
+	"github.com/sirupsen/logrus"
 )
 
 var bearerRegexp = regexp.MustCompile(`^(?:B|b)earer (\S+$)`)
@@ -26,9 +27,12 @@ func MiddlewareFunc(f func(w http.ResponseWriter, r *http.Request, next http.Han
 }
 
 func VersionHeader(serviceName, version string) Middleware {
+	if version == "" {
+		version = "unknown"
+	}
 	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
-		next.ServeHTTP(w, r)
 		w.Header().Set(fmt.Sprintf(versionHeaderTempl, strings.ToUpper(serviceName)), version)
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -60,27 +64,29 @@ func CheckAuth(secret string) Middleware {
 // Recoverer is a middleware that recovers from panics, logs the panic (and a
 // backtrace), and returns a HTTP 500 (Internal Server Error) status if
 // possible. Recoverer prints a request ID if one is provided.
-func Recoverer(w http.ResponseWriter, r *http.Request, next http.Handler) {
-	defer func() {
-		if rvr := recover(); rvr != nil {
+func Recoverer(rootLogger logrus.FieldLogger) Middleware {
+	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		defer func() {
+			if rvr := recover(); rvr != nil {
+				if log := tracing.GetLogger(r); log != nil {
+					log.Errorf("Panic: %+v\n%s", rvr, debug.Stack())
+				} else if rootLogger != nil {
+					rootLogger.Errorf("Panic: %+v\n%s", rvr, debug.Stack())
+				} else {
+					fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
+					debug.PrintStack()
+				}
 
-			log := tracing.GetLogger(r)
-			if log != nil {
-				log.Errorf("Panic: %+v\n%s", rvr, debug.Stack())
-			} else {
-				fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
-				debug.PrintStack()
+				se := &HTTPError{
+					Code:    http.StatusInternalServerError,
+					Message: http.StatusText(http.StatusInternalServerError),
+				}
+				HandleError(se, w, r)
 			}
+		}()
 
-			se := &HTTPError{
-				Code:    http.StatusInternalServerError,
-				Message: http.StatusText(http.StatusInternalServerError),
-			}
-			HandleError(se, w, r)
-		}
-	}()
-
-	next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func HealthCheck(route string, f APIHandler) Middleware {
