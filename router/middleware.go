@@ -75,7 +75,7 @@ func Recoverer(errLog logrus.FieldLogger) Middleware {
 					logger.Out = os.Stderr
 					errLog = logrus.NewEntry(logger)
 				}
-				reqID := tracing.RequestID(r)
+				reqID := tracing.GetRequestID(r)
 				panicLog := errLog.WithField("request_id", reqID)
 
 				stack := debug.Stack()

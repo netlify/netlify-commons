@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -11,7 +12,7 @@ const (
 	logKey = contextKey("nf-log-key")
 )
 
-func requestLogger(r *http.Request, log logrus.FieldLogger) logrus.FieldLogger {
+func requestLogger(r *http.Request, log logrus.FieldLogger) (logrus.FieldLogger, string) {
 	if r.Header.Get(HeaderNFDebugLogging) != "" {
 		logger := logrus.New()
 		logger.SetLevel(logrus.DebugLevel)
@@ -21,12 +22,17 @@ func requestLogger(r *http.Request, log logrus.FieldLogger) logrus.FieldLogger {
 		}
 	}
 
-	reqID := RequestID(r)
+	reqID := r.Header.Get(HeaderRequestUUID)
+	if reqID == "" {
+		reqID = uuid.NewV4().String()
+		r.Header.Set(HeaderRequestUUID, reqID)
+	}
 
 	log = log.WithFields(logrus.Fields{
 		"request_id": reqID,
 	})
-	return log
+
+	return log, reqID
 }
 
 func GetLoggerFromContext(ctx context.Context) logrus.FieldLogger {

@@ -28,3 +28,15 @@ func GetFromContext(ctx context.Context) *RequestTracer {
 func GetTracer(r *http.Request) *RequestTracer {
 	return GetFromContext(r.Context())
 }
+
+func GetRequestID(r *http.Request) string {
+	return GetRequestIDFromContext(r.Context())
+}
+
+func GetRequestIDFromContext(ctx context.Context) string {
+	tr := GetFromContext(ctx)
+	if tr == nil {
+		return ""
+	}
+	return tr.RequestID
+}
