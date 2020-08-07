@@ -33,3 +33,9 @@ func OptTracingMiddleware(log logrus.FieldLogger, svcName string) Option {
 		r.enableTracing = true
 	}
 }
+
+func OptRecoverer() Option {
+	return func(r *chiWrapper) {
+		r.enableRecover = true
+	}
+}

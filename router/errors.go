@@ -12,7 +12,7 @@ import (
 type HTTPError struct {
 	Code            int         `json:"code"`
 	Message         string      `json:"msg"`
-	JSON            interface{} `json:"json"`
+	JSON            interface{} `json:"json,omitempty"`
 	InternalError   error       `json:"-"`
 	InternalMessage string      `json:"-"`
 	ErrorID         string      `json:"error_id,omitempty"`
@@ -106,7 +106,7 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		}
 
 		if jsonErr := SendJSON(w, e.Code, e); jsonErr != nil {
-			HandleError(jsonErr, w, r)
+			log.WithError(jsonErr).Error("Failed to write the JSON error response")
 		}
 	default:
 		// this is 5ns slower than using unsafe but a unhandled internal server error should not happen that often

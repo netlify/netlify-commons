@@ -22,7 +22,7 @@ func init() {
 func TestServerHealth(t *testing.T) {
 	apiDef := APIFunc(
 		func(r router.Router) error {
-			r.Get("/", func(w http.ResponseWriter, r *http.Request) *router.HTTPError {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) error {
 				return nil
 			})
 			return nil
@@ -32,7 +32,7 @@ func TestServerHealth(t *testing.T) {
 	)
 
 	cfg := testConfig()
-	svr, err := New(tl(t), "testing", cfg, apiDef)
+	svr, err := New(tl(t), "testing", "", cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
@@ -43,10 +43,45 @@ func TestServerHealth(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rsp.StatusCode)
 }
 
+func TestServerVersioning(t *testing.T) {
+	apiDef := APIFunc(
+		func(r router.Router) error {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) error {
+				return nil
+			})
+			return nil
+		},
+		func() {
+		},
+	)
+	cfg := testConfig()
+	t.Run("with-no-version", func(t *testing.T) {
+		svr, err := New(tl(t), "testing", "", cfg, apiDef)
+		require.NoError(t, err)
+		testSvr := httptest.NewServer(svr.svr.Handler)
+		defer testSvr.Close()
+		rsp, err := http.Get(testSvr.URL + cfg.HealthPath)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rsp.StatusCode)
+		assert.Equal(t, "unknown", rsp.Header.Get("X-Nf-Testing-Version"))
+	})
+	t.Run("with-version", func(t *testing.T) {
+		svr, err := New(tl(t), "testing", "123", cfg, apiDef)
+		require.NoError(t, err)
+		testSvr := httptest.NewServer(svr.svr.Handler)
+		defer testSvr.Close()
+		rsp, err := http.Get(testSvr.URL + cfg.HealthPath)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rsp.StatusCode)
+		assert.Equal(t, "123", rsp.Header.Get("X-Nf-testing-version"))
+	})
+
+}
+
 type testAPICustomHealth struct{}
 
 func (a *testAPICustomHealth) Start(r router.Router) error {
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) *router.HTTPError {
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	})
 	return nil
@@ -54,7 +89,7 @@ func (a *testAPICustomHealth) Start(r router.Router) error {
 
 func (a *testAPICustomHealth) Stop() {}
 
-func (a *testAPICustomHealth) Healthy(w http.ResponseWriter, r *http.Request) *router.HTTPError {
+func (a *testAPICustomHealth) Healthy(w http.ResponseWriter, r *http.Request) error {
 	return router.InternalServerError("healthcheck failed")
 }
 
@@ -62,7 +97,7 @@ func TestServerCustomHealth(t *testing.T) {
 	apiDef := new(testAPICustomHealth)
 
 	cfg := testConfig()
-	svr, err := New(tl(t), "testing", cfg, apiDef)
+	svr, err := New(tl(t), "testing", "", cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
