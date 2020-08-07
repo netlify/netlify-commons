@@ -20,6 +20,10 @@ func Init(serviceName string, conf Config) error {
 
 // InitTags behaves like Init but allows appending extra tags
 func InitTags(serviceName string, conf Config, extraTags []string) error {
+	if !conf.Enabled {
+		return nil
+	}
+
 	sink, err := createDatadogSink(statsdAddr(conf), "", conf.Tags, extraTags)
 	if err != nil {
 		return err

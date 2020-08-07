@@ -37,7 +37,7 @@ PF_LOG_QUOTE_EMPTY_FIELDS=true
 		EnvFile: tmp.Name(),
 	}
 
-	log, err := args.Setup(cfg, "")
+	log, err := args.Setup(cfg, "", "")
 	require.NoError(t, err)
 
 	// check that we did call configure the logger
