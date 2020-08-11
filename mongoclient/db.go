@@ -38,62 +38,29 @@ type Config struct {
 	SecondaryPreferred bool
 }
 
-// Connect connects to MongoDB
-func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
-	opts := options.Client().
-		SetConnectTimeout(config.ConnTimeout).
-		SetReplicaSet(config.ReplSetName).
-		SetHosts(config.Servers)
-
-	if config.AppName != "" {
-		opts.SetAppName(config.AppName)
-	}
-
-	if config.SecondaryPreferred {
-		opts.SetReadPreference(readpref.SecondaryPreferred())
-	}
-
-	if config.TLS != nil && config.TLS.Enabled {
-		tlsLog := log.WithFields(logrus.Fields{
-			"cert_file": config.TLS.CertFile,
-			"key_file":  config.TLS.KeyFile,
-			"ca_files":  strings.Join(config.TLS.CAFiles, ","),
-		})
-
-		tlsLog.Debug("Using TLS config")
-		tlsConfig, err := config.TLS.TLSConfig()
-		if err != nil {
+func ConnectWithOptions(log logrus.FieldLogger, replSet string, servers []string, opts ...Option) (*mongo.Client, error) {
+	finalOpts := options.Client().
+		SetConnectTimeout(time.Minute). // use a default
+		SetReplicaSet(replSet).
+		SetHosts(servers)
+	for _, opt := range opts {
+		if err := opt(finalOpts); err != nil {
 			return nil, err
 		}
-
-		opts.SetTLSConfig(tlsConfig)
-	} else {
-		log.Debug("Skipping TLS config")
 	}
-
-	if config.Auth != nil {
-		creds := options.Credential{
-			Username:   config.Auth.Username,
-			Password:   config.Auth.Password,
-			AuthSource: config.Auth.Source,
-		}
-
-		opts.SetAuth(creds)
-	}
-
 	log.WithFields(logrus.Fields{
-		"servers":     strings.Join(opts.Hosts, ","),
-		"replica_set": config.ReplSetName,
+		"servers":     strings.Join(finalOpts.Hosts, ","),
+		"replica_set": finalOpts.ReplicaSet,
 	}).Debug("Dialing database")
 
-	client, err := mongo.Connect(context.Background(), opts)
+	client, err := mongo.Connect(context.Background(), finalOpts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Connect does not block for server discovery, so we should ping to ensure
 	// we are actually connected
-	ctx, cancel := context.WithTimeout(context.Background(), config.ConnTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *finalOpts.ConnectTimeout+time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
@@ -103,4 +70,22 @@ func Connect(config *Config, log *logrus.Entry) (*mongo.Client, error) {
 
 	log.Debug("Connected to MongoDB")
 	return client, nil
+}
+
+// Connect connects to MongoDB
+func Connect(log logrus.FieldLogger, config *Config) (*mongo.Client, error) {
+	opts := []Option{
+		AppName(config.AppName),
+	}
+	if config.TLS != nil {
+		opts = append(opts, TLSOption(log, *config.TLS))
+	}
+	if config.Auth != nil {
+		opts = append(opts, AuthOption(*config.Auth))
+	}
+	if config.SecondaryPreferred {
+		opts = append(opts, SecondaryPreferred())
+	}
+
+	return ConnectWithOptions(log, config.ReplSetName, config.Servers, opts...)
 }
