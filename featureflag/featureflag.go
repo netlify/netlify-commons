@@ -1,6 +1,8 @@
 package featureflag
 
 import (
+	"io/ioutil"
+
 	"github.com/sirupsen/logrus"
 
 	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
@@ -26,7 +28,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	}
 
 	if logger == nil {
-		logger = logrus.New()
+		logger = noopLogger()
 	}
 
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
@@ -52,4 +54,10 @@ func (c *ldClient) Variation(key, defaultVal, userID string) string {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
 	return res
+}
+
+func noopLogger() *logrus.Logger {
+	l := logrus.New()
+	l.SetOutput(ioutil.Discard)
+	return l
 }
