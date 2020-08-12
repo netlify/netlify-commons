@@ -12,6 +12,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Supported auth types
+const (
+	AuthTypePlain    = "plain"
+	AuthTypeSCRAM256 = "scram-sha256"
+	AuthTypeSCRAM512 = "scram-sha512"
+)
+
+// DefaultLogLevel is the log level Kafka producers/consumers will use if non set.
+const DefaultLogLevel = logrus.ErrorLevel
+
 // Config holds all the configuration for this package.
 type Config struct {
 	Brokers   []string       `json:"brokers"`
