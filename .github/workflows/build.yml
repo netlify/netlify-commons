@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13.x', '1.14.x']
+        go: ["1.14.x", "1.15.x"]
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-go@v1
-      with:
-        go-version: ${{ matrix.go }} # The Go version to download (if necessary) and use.
-    - run: make deps build test
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }} # The Go version to download (if necessary) and use.
+      - run: make deps build test
