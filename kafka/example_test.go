@@ -22,7 +22,7 @@ func ExampleConsumer() {
 	conf := Config{
 		Topic:   "example-topic",
 		Brokers: []string{"localhost:9092"},
-		ConsumerConf: ConsumerConfig{
+		Consumer: ConsumerConfig{
 			GroupID: "example-group",
 		},
 	}

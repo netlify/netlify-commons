@@ -90,7 +90,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (*Confl
 	// In case we try to assign an offset out of range (greater than log-end-offset), consumer will use start consuming from offset zero.
 	_ = kafkaConf.SetKey("auto.offset.reset", "earliest")
 
-	conf.ConsumerConf.Apply(kafkaConf)
+	conf.Consumer.Apply(kafkaConf)
 	for _, opt := range opts {
 		opt(kafkaConf)
 	}
@@ -243,7 +243,7 @@ func NewProducer(conf Config, opts ...ConfigOpt) (w *ConfluentProducer, err erro
 	_ = kafkaConf.SetKey("queue.buffering.max.messages", DefaultProducerBufferMaxMessages)
 	_ = kafkaConf.SetKey("queue.buffering.max.ms", DefaultProducerBufferMaxMs)
 
-	conf.ProducerConf.Apply(kafkaConf)
+	conf.Producer.Apply(kafkaConf)
 	for _, opt := range opts {
 		opt(kafkaConf)
 	}

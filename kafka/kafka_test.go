@@ -64,7 +64,7 @@ func consumer(t *testing.T) (*ConfluentConsumer, Config) {
 	conf := Config{
 		Brokers: nil, // No brokers are used for unit test.
 		Topic:   "gotest",
-		ConsumerConf: ConsumerConfig{
+		Consumer: ConsumerConfig{
 			GroupID: "gotest",
 		},
 	}

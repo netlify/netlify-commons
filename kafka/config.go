@@ -14,15 +14,15 @@ import (
 
 // Config holds all the configuration for this package.
 type Config struct {
-	Brokers      []string       `json:"brokers"`
-	Topic        string         `json:"topic"`
-	ProducerConf ProducerConfig `json:"producer" envconfig:"producer"`
-	ConsumerConf ConsumerConfig `json:"consumer" envconfig:"consumer"`
-	AuthType     string         `json:"auth" split_words:"true"`
-	User         string         `json:"user"`
-	Password     string         `json:"password"`
-	CAPEMFile    string         `json:"ca_pem_file"`
-	LogLevel     string         `json:"log_level" split_words:"true"`
+	Brokers   []string       `json:"brokers"`
+	Topic     string         `json:"topic"`
+	Producer  ProducerConfig `json:"producer" envconfig:"producer"`
+	Consumer  ConsumerConfig `json:"consumer" envconfig:"consumer"`
+	AuthType  string         `json:"auth" split_words:"true"`
+	User      string         `json:"user"`
+	Password  string         `json:"password"`
+	CAPEMFile string         `json:"ca_pem_file"`
+	LogLevel  string         `json:"log_level" split_words:"true"`
 }
 
 // baseKafkaConfig provides the base config that applies to both consumers and producers.
