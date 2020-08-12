@@ -4,28 +4,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
 )
 
-// Ensure type checks
-var _ Client = &ldClient{}
-var _ Client = MockClient{}
-
-func TestLDClient(t *testing.T) {
-	config := ld.DefaultConfig
-	config.Offline = true
-	ldc, err := ld.MakeCustomClient("BAD_KEY", config, time.Second)
-	require.NoError(t, err)
-
-	client := ldClient{ldc, nil}
-	isEnabled := client.Enabled("some_flag", "some_account_id")
-	require.False(t, isEnabled)
-}
-
 func TestOfflineClient(t *testing.T) {
-	client, err := NewClient("", 1*time.Second, &logrus.Entry{})
+	cfg := Config{
+		Key:            "ABCD",
+		RequestTimeout: time.Second,
+		Enabled:        false,
+	}
+	client, err := NewClient(&cfg, nil)
 	require.NoError(t, err)
 
 	require.False(t, client.Enabled("notset", "12345"))

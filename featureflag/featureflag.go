@@ -1,66 +1,55 @@
 package featureflag
 
 import (
-	"time"
-
 	"github.com/sirupsen/logrus"
 
 	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
 )
 
 type Client interface {
-	Enabled(string, string) bool
-	Variation(string, string, string) string
+	Enabled(key, userID string) bool
+	Variation(key, defaultVal, userID string) string
 }
 
 type ldClient struct {
 	*ld.LDClient
-	log *logrus.Entry
+	log logrus.FieldLogger
 }
 
-func NewClientWithConfig(cfg *Config, logger *logrus.Entry) (Client, error) {
-	return NewClient(cfg.Key, cfg.RequestTimeout, logger)
-}
+var _ Client = &ldClient{}
 
-func NewClient(key string, reqTimeout time.Duration, logger *logrus.Entry) (Client, error) {
+func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	config := ld.DefaultConfig
-	if key == "" {
+
+	if !cfg.Enabled {
 		config.Offline = true
 	}
 
-	inner, err := ld.MakeCustomClient(key, config, reqTimeout)
-	return &ldClient{inner, logger}, err
+	if logger == nil {
+		logger = logrus.New()
+	}
+
+	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
+	if err != nil {
+		logger.WithError(err).Error("Unable to construct LD client")
+		return nil, err
+	}
+
+	return &ldClient{inner, logger}, nil
 }
 
 func (c *ldClient) Enabled(key string, userID string) bool {
 	res, err := c.BoolVariation(key, ld.NewUser(userID), false)
-	if err != nil && c.log != nil {
-		c.log.WithError(err).WithField("key", key).Errorf("Failed to load feature flag")
+	if err != nil {
+		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
 	return res
 }
 
 func (c *ldClient) Variation(key, defaultVal, userID string) string {
 	res, err := c.StringVariation(key, ld.NewUser(userID), defaultVal)
-	if err != nil && c.log != nil {
-		c.log.WithError(err).WithField("key", key).Errorf("Failed to load feature flag")
-	}
-	return res
-}
-
-type MockClient struct {
-	BoolVars   map[string]bool
-	StringVars map[string]string
-}
-
-func (c MockClient) Enabled(key, _ string) bool {
-	return c.BoolVars[key]
-}
-
-func (c MockClient) Variation(key, defaultVal, _ string) string {
-	res, ok := c.StringVars[key]
-	if !ok {
-		return defaultVal
+	if err != nil {
+		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
 	return res
 }
