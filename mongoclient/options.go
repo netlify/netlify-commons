@@ -2,6 +2,7 @@ package mongoclient
 
 import (
 	"strings"
+	"time"
 
 	"github.com/netlify/netlify-commons/nconf"
 	"github.com/sirupsen/logrus"
@@ -59,6 +60,13 @@ func AppName(name string) Option {
 func SecondaryPreferred() Option {
 	return func(opts *options.ClientOptions) error {
 		opts.SetReadPreference(readpref.SecondaryPreferred())
+		return nil
+	}
+}
+
+func ConnectionTimeout(dur time.Duration) Option {
+	return func(opts *options.ClientOptions) error {
+		opts.SetConnectTimeout(dur)
 		return nil
 	}
 }
