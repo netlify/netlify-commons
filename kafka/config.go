@@ -26,8 +26,8 @@ const DefaultLogLevel = logrus.ErrorLevel
 type Config struct {
 	Brokers   []string       `json:"brokers"`
 	Topic     string         `json:"topic"`
-	Producer  ProducerConfig `json:"producer" envconfig:"producer"`
-	Consumer  ConsumerConfig `json:"consumer" envconfig:"consumer"`
+	Producer  ProducerConfig `json:"producer"`
+	Consumer  ConsumerConfig `json:"consumer"`
 	AuthType  string         `json:"auth" split_words:"true"`
 	User      string         `json:"user"`
 	Password  string         `json:"password"`
