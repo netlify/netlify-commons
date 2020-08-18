@@ -39,11 +39,11 @@ require (
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.3.5
-	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
+	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
 	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01 // indirect
 	gopkg.in/launchdarkly/go-server-sdk.v4 v4.0.0-20200729232655-2a44fb361895
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
 go 1.14
