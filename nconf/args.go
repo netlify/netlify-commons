@@ -47,6 +47,10 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	// Handles the 'enabled' flag itself
 	tracing.Configure(&rootConfig.Tracing, serviceName)
 
+	if err := sendDatadogEvents(rootConfig.Metrics, serviceName, version); err != nil {
+		log.WithError(err).Error("Failed to send the startup events to datadog")
+	}
+
 	if config != nil {
 		// second load the config for this project
 		if err := LoadFromEnv(args.Prefix, args.EnvFile, config); err != nil {
