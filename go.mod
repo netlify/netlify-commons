@@ -28,7 +28,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
 	github.com/shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.4-0.20190321000552-67fc4837d267
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
