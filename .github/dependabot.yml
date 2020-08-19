@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    ignore:
+      - dependency-name: "gopkg.in/yaml.v3" # updates way to frequently
+      - dependency-name: "golang.org/x/net" # not properly versioned
+    labels:
+      - "type: chore"
