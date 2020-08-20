@@ -24,7 +24,7 @@ func InitTags(serviceName string, conf Config, extraTags []string) error {
 		return nil
 	}
 
-	sink, err := createDatadogSink(statsdAddr(conf), "", conf.Tags, extraTags)
+	sink, err := createDatadogSink(conf.StatsdAddr(), "", conf.Tags, extraTags)
 	if err != nil {
 		return err
 	}
@@ -210,6 +210,6 @@ func GaugeLabels(name string, labels []metrics.Label, val float32) {
 	Gauge(name, val, labels...)
 }
 
-func statsdAddr(conf Config) string {
+func (conf Config) StatsdAddr() string {
 	return fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 }
