@@ -22,7 +22,7 @@ func TestArgsLoad(t *testing.T) {
 		Overridden: "this should change",
 	}
 
-	tmp, err := ioutil.TempFile("", "something")
+	tmp, err := ioutil.TempFile("", "something*.env")
 	require.NoError(t, err)
 	cfgStr := `
 PF_OTHER=10
@@ -33,8 +33,8 @@ PF_LOG_QUOTE_EMPTY_FIELDS=true
 	require.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(cfgStr), 0644))
 
 	args := RootArgs{
-		Prefix:  "pf",
-		EnvFile: tmp.Name(),
+		Prefix:     "pf",
+		ConfigFile: tmp.Name(),
 	}
 
 	log, err := args.Setup(cfg, "", "")
@@ -57,7 +57,7 @@ func TestArgsAddToCmd(t *testing.T) {
 	cmd := cobra.Command{
 		Run: func(_ *cobra.Command, _ []string) {
 			assert.Equal(t, "PF", args.Prefix)
-			assert.Equal(t, "file.env", args.EnvFile)
+			assert.Equal(t, "file.env", args.ConfigFile)
 			called++
 		},
 	}
