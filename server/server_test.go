@@ -29,10 +29,14 @@ func TestServerHealth(t *testing.T) {
 		},
 		func() {
 		},
+		APIInfo{
+			Name:    t.Name(),
+			Version: "",
+		},
 	)
 
 	cfg := testConfig()
-	svr, err := New(tl(t), "testing", "", cfg, apiDef)
+	svr, err := New(tl(t), cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
@@ -53,10 +57,14 @@ func TestServerVersioning(t *testing.T) {
 		},
 		func() {
 		},
+		APIInfo{
+			Name:    "testing",
+			Version: "",
+		},
 	)
 	cfg := testConfig()
 	t.Run("with-no-version", func(t *testing.T) {
-		svr, err := New(tl(t), "testing", "", cfg, apiDef)
+		svr, err := New(tl(t), cfg, apiDef)
 		require.NoError(t, err)
 		testSvr := httptest.NewServer(svr.svr.Handler)
 		defer testSvr.Close()
@@ -65,8 +73,24 @@ func TestServerVersioning(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rsp.StatusCode)
 		assert.Equal(t, "unknown", rsp.Header.Get("X-Nf-Testing-Version"))
 	})
+
+	apiDef = APIFunc(
+		func(r router.Router) error {
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) error {
+				return nil
+			})
+			return nil
+		},
+		func() {
+		},
+		APIInfo{
+			Name:    "testing",
+			Version: "123",
+		},
+	)
+
 	t.Run("with-version", func(t *testing.T) {
-		svr, err := New(tl(t), "testing", "123", cfg, apiDef)
+		svr, err := New(tl(t), cfg, apiDef)
 		require.NoError(t, err)
 		testSvr := httptest.NewServer(svr.svr.Handler)
 		defer testSvr.Close()
@@ -92,12 +116,15 @@ func (a *testAPICustomHealth) Stop() {}
 func (a *testAPICustomHealth) Healthy(w http.ResponseWriter, r *http.Request) error {
 	return router.InternalServerError("healthcheck failed")
 }
+func (a *testAPICustomHealth) Info() APIInfo {
+	return APIInfo{"testing", ""}
+}
 
 func TestServerCustomHealth(t *testing.T) {
 	apiDef := new(testAPICustomHealth)
 
 	cfg := testConfig()
-	svr, err := New(tl(t), "testing", "", cfg, apiDef)
+	svr, err := New(tl(t), cfg, apiDef)
 	require.NoError(t, err)
 
 	testSvr := httptest.NewServer(svr.svr.Handler)
