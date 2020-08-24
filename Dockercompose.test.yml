@@ -1,0 +1,40 @@
+version: '3'
+
+networks:
+  integration-tests:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    logging:
+      driver: none # change this to json-file if you want to debug zookeeper
+    networks:
+      - integration-tests
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    logging:
+      driver: json-file # change this to json-file if you want to debug kafka
+    depends_on:
+      - zookeeper
+    networks:
+      - integration-tests
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  
+  golang_tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - zookeeper
+      - kafka
+    networks:
+      - integration-tests
+    environment:
+      KAFKA_TEST_BROKER: kafka:9092

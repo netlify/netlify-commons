@@ -1,0 +1,11 @@
+FROM golang:1.14-stretch
+
+# Add Code
+RUN mkdir /app
+ADD . /app/
+
+# Set the working dir
+WORKDIR /app
+
+# Run tests without cache
+CMD go test -v -count=1 ./...

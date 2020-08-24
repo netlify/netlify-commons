@@ -117,3 +117,29 @@ func (w ConfluentProducer) Produce(ctx context.Context, msgs ...*kafkalib.Messag
 
 	return nil
 }
+
+// GetMeta return the confluence producers metatdata
+func (w *ConfluentProducer) GetMeta(ctx context.Context, topic string, allTopics bool) (*kafkalib.Metadata, error) {
+	var t *string
+	if topic != "" {
+		t = &topic
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			return w.p.GetMetadata(t, allTopics, int(KafkaMaxTimeout.Milliseconds()))
+		}
+	}
+}
+
+// GetPartions returns the partition ids of a given topic
+func (w *ConfluentProducer) GetPartions(ctx context.Context, topic string) ([]int32, error) {
+	meta, err := w.GetMeta(ctx, topic, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return getPartitionIds(topic, meta)
+}

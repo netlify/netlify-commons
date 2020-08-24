@@ -2,6 +2,7 @@ module github.com/netlify/netlify-commons
 
 require (
 	github.com/BurntSushi/toml v0.3.1
+	github.com/DataDog/datadog-go v3.2.0+incompatible
 	github.com/armon/go-metrics v0.3.3
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -9,6 +10,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.3
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/confluentinc/confluent-kafka-go v1.4.2
+	github.com/davecgh/go-spew v1.1.1
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/uuid v1.1.1 // indirect

@@ -192,6 +192,32 @@ func (r *ConfluentConsumer) Close() error {
 	return r.c.Close()
 }
 
+// GetMeta return the confluence consumer metatdata
+func (r *ConfluentConsumer) GetMeta(ctx context.Context, topic string, allTopics bool) (*kafkalib.Metadata, error) {
+	var t *string
+	if topic != "" {
+		t = &topic
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			return r.c.GetMetadata(t, allTopics, int(KafkaMaxTimeout.Milliseconds()))
+		}
+	}
+}
+
+// GetPartions retunrs the partition ids of a given topic
+func (r *ConfluentConsumer) GetPartions(ctx context.Context, topic string) ([]int32, error) {
+	meta, err := r.GetMeta(ctx, topic, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return getPartitionIds(topic, meta)
+}
+
 // handleConfluentReadMessageError returns an error if the error is fatal.
 // confluent-kafka-go manages most of the errors internally except for fatal errors which are non-recoverable.
 // Non fatal errors will be just ignored (just logged)

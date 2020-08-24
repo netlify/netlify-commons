@@ -17,6 +17,14 @@ const (
 	AuthTypePlain    = "plain"
 	AuthTypeSCRAM256 = "scram-sha256"
 	AuthTypeSCRAM512 = "scram-sha512"
+
+	PartitionerRandom           = "random"            // random distribution
+	PartitionerConsistent       = "consistent"        //  CRC32 hash of key (Empty and NULL keys are mapped to single partition)
+	PartitionerConsistentRandom = "consistent_random" // CRC32 hash of key (Empty and NULL keys are randomly partitioned)
+	PartitionerMurMur2          = "murmur2"           // Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition)
+	PartitionerMurMur2Random    = "murmur2_random"    // Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. Default partitioner in the Java Producer.)
+	PartitionerFNV1A            = "fnv1a"             // FNV-1a hash of key (NULL keys are mapped to single partition)
+	PartitionerFNV1ARandom      = "fnv1a_random"      // FNV-1a hash of key (NULL keys are randomly partitioned).
 )
 
 // DefaultLogLevel is the log level Kafka producers/consumers will use if non set.
@@ -188,5 +196,12 @@ func WithLogger(ctx context.Context, log logrus.FieldLogger) ConfigOpt {
 func WithConsumerGroupID(groupID string) ConfigOpt {
 	return func(c *kafkalib.ConfigMap) {
 		_ = c.SetKey("group.id", groupID)
+	}
+}
+
+// WithPartitionerAlgorithm sets the partitioner algorithm
+func WithPartitionerAlgorithm(algorithm string) ConfigOpt {
+	return func(c *kafkalib.ConfigMap) {
+		_ = c.SetKey("partitioner", algorithm)
 	}
 }

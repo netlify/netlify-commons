@@ -3,7 +3,6 @@ package kafka
 import (
 	"testing"
 
-	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ func TestMurMurHash2(t *testing.T) {
 		"",
 	}
 
-	hashes := []int{
+	hashes := []int32{
 		4, // kafka
 		6, // 35235629-3f4a-4243-bac9-cc0d2d5014b1"
 		3, // 162a7f77-fea4-4f22-9746-6d635a93bc57"
@@ -30,11 +29,10 @@ func TestMurMurHash2(t *testing.T) {
 		1, // ""
 	}
 
-	partitions := []int{0, 1, 2, 3, 4, 5, 6, 7}
+	partitions := []int32{0, 1, 2, 3, 4, 5, 6, 7}
 
 	for idx, key := range keysToTest {
-		msg := &kafkalib.Message{Key: []byte(key)}
-		h := GetPartition(msg, partitions...)
+		h := GetPartition(key, partitions)
 		assert.Equal(hashes[idx], h)
 	}
 }

@@ -1,12 +1,13 @@
 package kafka
 
-import kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
-
-func GetPartition(msg *kafkalib.Message, partitions ...int) (partition int) {
+func GetPartition(key string, partitions []int32) int32 {
+	if len(partitions) == 0 {
+		return -1
+	}
 	// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
 	//       non-existent while treating an empty slice as a defined value.
-	idx := (murmur2(msg.Key) & 0x7fffffff) % uint32(len(partitions))
-	return partitions[idx]
+	idx := (murmur2([]byte(key)) & 0x7fffffff) % uint32(len(partitions))
+	return int32(partitions[idx])
 }
 
 // Go port of the Java library's murmur2 function.
