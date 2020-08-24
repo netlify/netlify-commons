@@ -32,6 +32,13 @@ type Config struct {
 type APIDefinition interface {
 	Start(r router.Router) error
 	Stop()
+	Info() APIInfo
+}
+
+// APIInfo outlines the basic service information needed
+type APIInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 // HealthChecker is used to run a custom health check
@@ -41,7 +48,7 @@ type HealthChecker interface {
 	Healthy(w http.ResponseWriter, r *http.Request) error
 }
 
-func New(log logrus.FieldLogger, projectName, version string, config Config, api APIDefinition) (*Server, error) {
+func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, error) {
 	var healthHandler router.APIHandler
 	if checker, ok := api.(HealthChecker); ok {
 		healthHandler = checker.Healthy
@@ -50,8 +57,8 @@ func New(log logrus.FieldLogger, projectName, version string, config Config, api
 	r := router.New(
 		log,
 		router.OptHealthCheck(config.HealthPath, healthHandler),
-		router.OptTracingMiddleware(log, projectName),
-		router.OptVersionHeader(projectName, version),
+		router.OptTracingMiddleware(log, api.Info().Name),
+		router.OptVersionHeader(api.Info().Name, api.Info().Version),
 		router.OptRecoverer(),
 	)
 
@@ -126,6 +133,7 @@ func (s *Server) TestServer() *httptest.Server {
 type apiFunc struct {
 	start func(router.Router) error
 	stop  func()
+	info  APIInfo
 }
 
 func (a apiFunc) Start(r router.Router) error {
@@ -135,10 +143,14 @@ func (a apiFunc) Start(r router.Router) error {
 func (a apiFunc) Stop() {
 	a.stop()
 }
+func (a apiFunc) Info() APIInfo {
+	return a.info
+}
 
-func APIFunc(start func(router.Router) error, stop func()) APIDefinition {
+func APIFunc(start func(router.Router) error, stop func(), info APIInfo) APIDefinition {
 	return apiFunc{
 		start: start,
 		stop:  stop,
+		info:  info,
 	}
 }
