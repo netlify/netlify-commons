@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/netlify/netlify-commons/nconf"
@@ -93,6 +96,8 @@ func (s *Server) Shutdown(to time.Duration) error {
 }
 
 func (s *Server) ListenAndServe() error {
+	go s.waitForShutdown()
+
 	s.log.Infof("Starting server at %s", s.svr.Addr)
 	var err error
 	if s.svr.TLSConfig != nil {
@@ -121,6 +126,18 @@ func (s *Server) ListenAndServe() error {
 
 func (s *Server) TestServer() *httptest.Server {
 	return httptest.NewServer(s.svr.Handler)
+}
+
+func (s *Server) waitForShutdown() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	s.log.Debug("Waiting for the shutdown signal")
+	sig := <-sigs
+	s.log.Infof("Received signal '%s', shutting down", sig)
+	if err := s.Shutdown(30 * time.Second); err != nil {
+		s.log.WithError(err).Warn("Failed to shutdown the server in time")
+	}
 }
 
 type apiFunc struct {
