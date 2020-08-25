@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
@@ -119,27 +120,25 @@ func (w ConfluentProducer) Produce(ctx context.Context, msgs ...*kafkalib.Messag
 }
 
 // GetMeta return the confluence producers metatdata
-func (w *ConfluentProducer) GetMeta(ctx context.Context, topic string, allTopics bool) (*kafkalib.Metadata, error) {
-	var t *string
-	if topic != "" {
-		t = &topic
+func (w *ConfluentProducer) GetMeta(allTopics bool, timeout time.Duration) (*kafkalib.Metadata, error) {
+	timeoutMs := timeout.Milliseconds()
+	if timeoutMs == 0 {
+		// Otherwise the call will be asynchronous, losing error handling.
+		return nil, errors.New("Timeout should be set when calling Seek")
 	}
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			return w.p.GetMetadata(t, allTopics, int(KafkaMaxTimeout.Milliseconds()))
-		}
+	if allTopics {
+		return w.p.GetMetadata(nil, true, int(timeoutMs))
 	}
+
+	return w.p.GetMetadata(&w.conf.Topic, false, int(timeoutMs))
 }
 
 // GetPartions returns the partition ids of a given topic
-func (w *ConfluentProducer) GetPartions(ctx context.Context, topic string) ([]int32, error) {
-	meta, err := w.GetMeta(ctx, topic, false)
+func (w *ConfluentProducer) GetPartions(timout time.Duration) ([]int32, error) {
+	meta, err := w.GetMeta(false, timout)
 	if err != nil {
 		return nil, err
 	}
 
-	return getPartitionIds(topic, meta)
+	return getPartitionIds(w.conf.Topic, meta)
 }

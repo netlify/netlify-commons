@@ -2,13 +2,8 @@ package kafka
 
 import (
 	"fmt"
-	"time"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
-)
-
-const (
-	KafkaMaxTimeout = 5 * time.Minute
 )
 
 // getPartitionIds returns the partition IDs for a given topic

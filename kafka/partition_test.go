@@ -3,52 +3,52 @@ package kafka
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/davecgh/go-spew/spew"
+	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPartition(t *testing.T) {
 	assert := assert.New(t)
 
-	testBroker := os.Getenv("KAFKA_TEST_BROKER")
-	if testBroker == "" {
+	ctx := context.Background()
+
+	testBrokers := os.Getenv("KAFKA_TEST_BROKERS")
+	if testBrokers == "" {
 		t.Skipf("No local Kafka broker available to run tests")
 	}
 
+	// create netlify kafka config
 	conf := Config{
-		Brokers: []string{testBroker},
+		Brokers: strings.Split(testBrokers, ","),
 		Topic:   "gotest",
 		Consumer: ConsumerConfig{
 			GroupID: "gotest",
 		},
 	}
 
-	ctx := context.Background()
-
+	// create the producer
 	p, err := NewProducer(conf, WithLogger(ctx, logger()), WithPartitionerAlgorithm(PartitionerMurMur2))
 
-	ctx, _ = context.WithTimeout(ctx, 5*time.Second)
-	meta, err := p.GetMeta(ctx, conf.Topic, false)
+	meta, err := p.GetMeta(true, time.Duration(10*time.Second))
 	assert.NoError(err)
-	spew.Dump(meta)
 	assert.NotNil(meta)
 
 	key := "gotestkey"
 	val := "gotestval"
 
-	parts, err := p.GetPartions(ctx, conf.Topic)
+	parts, err := p.GetPartions(time.Duration(10 * time.Second))
 	assert.NoError(err)
-	assert.NotNil(parts)
-	spew.Dump(parts)
+	assert.Len(parts, 3)
 
+	//TODO produce and consume more messages in test
 	m := &kafka.Message{
-		TopicPartition: kafka.TopicPartition{
-			Topic:     &conf.Topic,
-			Partition: GetPartition(key, parts),
+		TopicPartition: kafkalib.TopicPartition{
+			Topic: &conf.Topic,
 		},
 		Key:   []byte(key),
 		Value: []byte(val),
@@ -58,8 +58,15 @@ func TestPartition(t *testing.T) {
 	assert.NoError(err)
 
 	c, err := NewConsumer(logger(), conf)
+	assert.NoError(err)
+	assert.NotNil(c)
+
+	err = c.SetPartitionByKey(key, time.Duration(10*time.Second))
+	assert.NoError(err)
+
 	m, err = c.FetchMessage(ctx)
 	assert.NoError(err)
+	assert.NotNil(m)
 	assert.Equal([]byte(key), m.Key)
 	assert.Equal([]byte(val), m.Value)
 }

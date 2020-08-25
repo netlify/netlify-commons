@@ -1,40 +1,129 @@
-version: '3'
-
-networks:
-  integration-tests:
-    driver: bridge
-
+---
+version: '2'
 services:
-  zookeeper:
+  zookeeper-1:
     image: confluentinc/cp-zookeeper:latest
-    logging:
-      driver: none # change this to json-file if you want to debug zookeeper
-    networks:
-      - integration-tests
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 22181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+    network_mode: host
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none # change this to json-file if you want to debug kafka
 
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    logging:
-      driver: json-file # change this to json-file if you want to debug kafka
-    depends_on:
-      - zookeeper
-    networks:
-      - integration-tests
+  zookeeper-2:
+    image: confluentinc/cp-zookeeper:latest
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 32181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+    network_mode: host
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none # change this to json-file if you want to debug kafka
+
+  zookeeper-3:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 42181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+    network_mode: host
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none # change this to json-file if you want to debug kafka
+
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    network_mode: host
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:19092
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none # change this to json-file if you want to debug kafka
+
+  kafka-2:
+    image: confluentinc/cp-kafka:latest
+    network_mode: host
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none  # change this to json-file if you want to debug kafka
+
+  kafka-3:
+    image: confluentinc/cp-kafka:latest
+    network_mode: host
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:39092
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+    extra_hosts:
+      - "moby:127.0.0.1"
+    logging:
+      driver: none  # change this to json-file if you want to debug kafka
+
+  kafka_setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.setup
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    network_mode: host
+    logging:
+      driver: none  # change this to json-file if you want to debug kafka setup
+
+
   golang_tests:
     build:
       context: .
       dockerfile: Dockerfile.test
     depends_on:
-      - zookeeper
-      - kafka
-    networks:
-      - integration-tests
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    network_mode: host
     environment:
-      KAFKA_TEST_BROKER: kafka:9092
+      KAFKA_TEST_BROKERS: localhost:19092,localhost:29092,localhost:39092
