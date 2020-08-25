@@ -2,48 +2,30 @@ package nconf
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// LoadConfig loads the config from a file if specified, otherwise from the environment
-func LoadConfig(cmd *cobra.Command, serviceName string, input interface{}) error {
-	if err := viper.BindPFlags(cmd.Flags()); err != nil {
-		return err
+// LoadFromFile will load the configuration from the specified file based on the file type
+// There is only support for .json and .yml now
+func LoadFromFile(configFile string, input interface{}) error {
+	if configFile == "" {
+		return nil
 	}
 
-	configFile, _ := cmd.Flags().GetString("config")
-	return LoadConfigWithFile(serviceName, configFile, input)
-}
-
-// LoadConfigWithFile loads the service configuration from an optional file, otherwise from the environment
-func LoadConfigWithFile(serviceName, configFile string, input interface{}) error {
-	viper.SetEnvPrefix(serviceName)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
-
-		if ext := filepath.Ext(configFile); len(ext) > 1 {
-			switch strings.ToLower(ext[1:]) {
-			case "yaml", "yml":
-				viper.SetConfigType("yaml")
-			case "json":
-				fallthrough
-			default:
-				viper.SetConfigType("json")
-			}
-		}
-	} else {
-		viper.SetConfigName("config")
-		viper.AddConfigPath("./")
-		viper.AddConfigPath("$HOME/.netlify/" + serviceName + "/")
+	switch {
+	case strings.HasSuffix(configFile, ".json"):
+		viper.SetConfigType("json")
+	case strings.HasSuffix(configFile, ".yaml"):
+		fallthrough
+	case strings.HasSuffix(configFile, ".yml"):
+		viper.SetConfigType("yaml")
 	}
+	viper.SetConfigFile(configFile)
 
 	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
 		_, ok := err.(viper.ConfigFileNotFoundError)
@@ -52,8 +34,23 @@ func LoadConfigWithFile(serviceName, configFile string, input interface{}) error
 		}
 	}
 
-	if err := viper.Unmarshal(input); err != nil {
+	return viper.Unmarshal(input)
+}
+
+func LoadFromEnv(prefix, filename string, face interface{}) error {
+	var err error
+	if filename == "" {
+		err = godotenv.Load()
+		if os.IsNotExist(err) {
+			err = nil
+		}
+	} else {
+		err = godotenv.Load(filename)
+	}
+
+	if err != nil {
 		return err
 	}
-	return nil
+
+	return envconfig.Process(prefix, face)
 }

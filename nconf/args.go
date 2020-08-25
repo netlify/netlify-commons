@@ -2,17 +2,19 @@ package nconf
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 type RootArgs struct {
-	Prefix  string
-	EnvFile string
+	Prefix     string
+	ConfigFile string
 }
 
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
@@ -23,7 +25,17 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 		Metrics metriks.Config
 		Tracing tracing.Config
 	}{}
-	if err := LoadFromEnv(args.Prefix, args.EnvFile, rootConfig); err != nil {
+
+	loader := func(cfg interface{}) error {
+		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
+	}
+	if !strings.HasSuffix(args.ConfigFile, ".env") {
+		loader = func(cfg interface{}) error {
+			return LoadFromFile(args.ConfigFile, cfg)
+		}
+	}
+
+	if err := loader(rootConfig); err != nil {
 		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
@@ -53,7 +65,7 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 
 	if config != nil {
 		// second load the config for this project
-		if err := LoadFromEnv(args.Prefix, args.EnvFile, config); err != nil {
+		if err := loader(config); err != nil {
 			return log, errors.Wrap(err, "Failed to load the config object")
 		}
 		log.Debug("Loaded configuration")
@@ -74,12 +86,18 @@ func (args *RootArgs) MustSetup(config interface{}, serviceName, version string)
 	return logger
 }
 
+func (args *RootArgs) AddFlags(cmd *cobra.Command) *cobra.Command {
+	cmd.Flags().AddFlag(args.ConfigFlag())
+	cmd.Flags().AddFlag(args.PrefixFlag())
+	return cmd
+}
+
 func (args *RootArgs) ConfigFlag() *pflag.Flag {
 	return &pflag.Flag{
 		Name:      "config",
 		Shorthand: "c",
-		Usage:     "A .env file to load configuration from",
-		Value:     newStringValue("", &args.EnvFile),
+		Usage:     "A file to load configuration from, supported formats are env, json, and yaml",
+		Value:     newStringValue("", &args.ConfigFile),
 	}
 }
 
