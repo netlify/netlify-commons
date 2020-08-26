@@ -18,3 +18,6 @@ integration-test:
 	
 clean:
 	docker-compose -f Dockercompose.test.yml rm -f
+
+kafkacat:
+	docker run -it --network=host confluentinc/cp-kafkacat kafkacat -b localhost:19092 -C -t gotest -J

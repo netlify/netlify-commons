@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -33,40 +34,63 @@ func TestPartition(t *testing.T) {
 
 	// create the producer
 	p, err := NewProducer(conf, WithLogger(ctx, logger()), WithPartitionerAlgorithm(PartitionerMurMur2))
+	assert.NoError(err)
+	assert.NotNil(p)
 
-	meta, err := p.GetMeta(true, time.Duration(10*time.Second))
+	meta, err := p.GetMetadata(true)
 	assert.NoError(err)
 	assert.NotNil(meta)
 
 	key := "gotestkey"
 	val := "gotestval"
 
-	parts, err := p.GetPartions(time.Duration(10 * time.Second))
+	parts, err := p.GetPartions()
 	assert.NoError(err)
 	assert.Len(parts, 3)
 
-	//TODO produce and consume more messages in test
-	m := &kafka.Message{
-		TopicPartition: kafkalib.TopicPartition{
-			Topic: &conf.Topic,
-		},
-		Key:   []byte(key),
-		Value: []byte(val),
+	// create a map of consumers by partition
+	consumers := make(map[int32]*ConfluentConsumer)
+	for _, part := range parts {
+		conf.Consumer.Partition = &part
+		c, err := NewConsumer(logger(), conf)
+		assert.NoError(err)
+		assert.NotNil(c)
+
+		consumers[part] = c
 	}
 
-	err = p.Produce(ctx, m)
-	assert.NoError(err)
+	// test consuming on multiple partitions
+	for i := 0; i < 5; i++ {
+		k := fmt.Sprintf("%s-%d", key, i)
+		v := fmt.Sprintf("%s-%d", val, i)
+		m := &kafka.Message{
+			TopicPartition: kafkalib.TopicPartition{
+				Topic: &conf.Topic,
+			},
+			Key:   []byte(k),
+			Value: []byte(v),
+		}
 
-	c, err := NewConsumer(logger(), conf)
-	assert.NoError(err)
-	assert.NotNil(c)
+		t := time.Now()
+		err = p.Produce(ctx, m)
+		assert.NoError(err)
 
-	err = c.SetPartitionByKey(key, time.Duration(10*time.Second))
-	assert.NoError(err)
+		p := GetPartition(k, parts)
+		c := consumers[p]
 
-	m, err = c.FetchMessage(ctx)
-	assert.NoError(err)
-	assert.NotNil(m)
-	assert.Equal([]byte(key), m.Key)
-	assert.Equal([]byte(val), m.Value)
+		err = c.SetPartitionByKey(k, PartitionerMurMur2)
+		assert.NoError(err)
+
+		err = c.SeekToTime(t)
+		assert.NoError(err)
+
+		m, err = c.FetchMessage(ctx)
+		assert.NoError(err)
+		assert.NotNil(m)
+		assert.Equal([]byte(k), m.Key, "Partition to read from: %d", p)
+		assert.Equal([]byte(v), m.Value, "Partition to read from: %d", p)
+
+		err = c.CommitMessage(m)
+		assert.NoError(err)
+	}
 }

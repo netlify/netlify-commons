@@ -12,19 +12,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type PartitionerAlgorithm string
+
 // Supported auth types
 const (
 	AuthTypePlain    = "plain"
 	AuthTypeSCRAM256 = "scram-sha256"
 	AuthTypeSCRAM512 = "scram-sha512"
 
-	PartitionerRandom           = "random"            // random distribution
-	PartitionerConsistent       = "consistent"        //  CRC32 hash of key (Empty and NULL keys are mapped to single partition)
-	PartitionerConsistentRandom = "consistent_random" // CRC32 hash of key (Empty and NULL keys are randomly partitioned)
-	PartitionerMurMur2          = "murmur2"           // Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition)
-	PartitionerMurMur2Random    = "murmur2_random"    // Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. Default partitioner in the Java Producer.)
-	PartitionerFNV1A            = "fnv1a"             // FNV-1a hash of key (NULL keys are mapped to single partition)
-	PartitionerFNV1ARandom      = "fnv1a_random"      // FNV-1a hash of key (NULL keys are randomly partitioned).
+	PartitionerRandom           = PartitionerAlgorithm("random")            // random distribution
+	PartitionerConsistent       = PartitionerAlgorithm("consistent")        //  CRC32 hash of key (Empty and NULL keys are mapped to single partition)
+	PartitionerConsistentRandom = PartitionerAlgorithm("consistent_random") // CRC32 hash of key (Empty and NULL keys are randomly partitioned)
+	PartitionerMurMur2          = PartitionerAlgorithm("murmur2")           // Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition)
+	PartitionerMurMur2Random    = PartitionerAlgorithm("murmur2_random")    // Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. Default partitioner in the Java Producer.)
+	PartitionerFNV1A            = PartitionerAlgorithm("fnv1a")             // FNV-1a hash of key (NULL keys are mapped to single partition)
+	PartitionerFNV1ARandom      = PartitionerAlgorithm("fnv1a_random")      // FNV-1a hash of key (NULL keys are randomly partitioned).
+
+	DefaultTimout = time.Duration(30 * time.Second) // Default timout to be used if not set in the config
 )
 
 // DefaultLogLevel is the log level Kafka producers/consumers will use if non set.
@@ -41,6 +45,7 @@ type Config struct {
 	Password  string         `json:"password"`
 	CAPEMFile string         `json:"ca_pem_file"`
 	LogLevel  string         `json:"log_level" split_words:"true"`
+	Timeout   time.Duration  `json:"timeout"`
 }
 
 // baseKafkaConfig provides the base config that applies to both consumers and producers.
@@ -76,7 +81,8 @@ func (c Config) baseKafkaConfig() *kafkalib.ConfigMap {
 
 // ConsumerConfig holds the specific configuration for a consumer.
 type ConsumerConfig struct {
-	GroupID string `json:"group_id" split_words:"true"`
+	GroupID   string `json:"group_id" split_words:"true"`
+	Partition *int32 `json:"partition"`
 }
 
 // Apply applies the specific configuration for a consumer.
@@ -200,8 +206,8 @@ func WithConsumerGroupID(groupID string) ConfigOpt {
 }
 
 // WithPartitionerAlgorithm sets the partitioner algorithm
-func WithPartitionerAlgorithm(algorithm string) ConfigOpt {
+func WithPartitionerAlgorithm(algorithm PartitionerAlgorithm) ConfigOpt {
 	return func(c *kafkalib.ConfigMap) {
-		_ = c.SetKey("partitioner", algorithm)
+		_ = c.SetKey("partitioner", string(algorithm))
 	}
 }

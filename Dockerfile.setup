@@ -1,4 +1,4 @@
 FROM confluentinc/cp-kafka
 
-# Create the Kafka Topic & run forever
+# Create the Kafka Topic & sleep forever
 CMD kafka-topics --create --bootstrap-server localhost:19092 --replication-factor 1 --partitions 3 --topic gotest && sleep infinity

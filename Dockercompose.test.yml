@@ -112,18 +112,12 @@ services:
     logging:
       driver: none  # change this to json-file if you want to debug kafka setup
 
-
   golang_tests:
     build:
       context: .
       dockerfile: Dockerfile.test
     depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      - kafka_setup
     network_mode: host
     environment:
       KAFKA_TEST_BROKERS: localhost:19092,localhost:29092,localhost:39092

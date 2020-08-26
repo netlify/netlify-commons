@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -49,9 +48,8 @@ type ConfluentConsumer struct {
 
 	rebalanceHandler      func(c *kafkalib.Consumer, ev kafkalib.Event) error // Only set when an initial offset should be set
 	rebalanceHandlerMutex sync.Mutex
-	subscribeOnce         sync.Once
-
-	partition int32
+	configOnce            sync.Once
+	partition             int32
 }
 
 // NewConsumer creates a ConfluentConsumer based on config.
@@ -77,58 +75,80 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (*Confl
 		return nil, err
 	}
 
-	confluenceConsumer := &ConfluentConsumer{
+	if conf.Timeout == 0 {
+		conf.Timeout = DefaultTimout
+	}
+
+	part := int32(-1)
+	if conf.Consumer.Partition != nil {
+		part = *conf.Consumer.Partition
+	}
+
+	cc := &ConfluentConsumer{
 		c:         consumer,
 		conf:      conf,
 		log:       log,
-		partition: -1,
+		partition: part,
 	}
 
-	return confluenceConsumer, nil
+	if cc.partition < 0 {
+		// if we are not reading from a specific partition, we subscribe
+		cc.configOnce.Do(func() {
+			cc.log.WithField("kafka_topic", cc.conf.Topic).Debug("Subscribing to Kafka topic")
+			cc.rebalanceHandlerMutex.Lock()
+			defer cc.rebalanceHandlerMutex.Unlock()
+			if err := cc.c.Subscribe(cc.conf.Topic, cc.rebalanceHandler); err != nil {
+				err = errors.Wrap(err, "error subscribing to topic")
+			}
+		})
+	} else {
+		// if we are reading from a specific partition, we assign
+		cc.configOnce.Do(func() {
+			parts := []kafkalib.TopicPartition{
+				kafkalib.TopicPartition{
+					Topic:     &cc.conf.Topic,
+					Partition: cc.partition,
+				},
+			}
+			err = cc.c.Assign(parts)
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return cc, nil
 }
 
 // Seek implements OffsetAwareConsumer interface.
-func (r *ConfluentConsumer) Seek(offset int64, timeout time.Duration) error {
-	timeoutMs := timeout.Milliseconds()
-	if timeoutMs == 0 {
-		// Otherwise the call will be asynchronous, losing error handling.
-		return errors.New("Timeout should be set when calling Seek")
+func (r *ConfluentConsumer) Seek(offset int64) error {
+	tp := kafkalib.TopicPartition{Topic: &r.conf.Topic, Offset: kafkalib.Offset(offset)}
+	if r.partition > -1 {
+		tp.Partition = r.partition
 	}
 
-	var err error
-	if r.partition < 0 {
-		err = r.c.Seek(kafkalib.TopicPartition{Topic: &r.conf.Topic, Offset: kafkalib.Offset(offset)}, int(timeoutMs))
-	} else {
-		err = r.c.Seek(kafkalib.TopicPartition{Topic: &r.conf.Topic, Partition: r.partition, Offset: kafkalib.Offset(offset)}, int(timeoutMs))
-	}
+	err := r.c.Seek(tp, int(r.conf.Timeout.Milliseconds()))
 	if err, ok := err.(kafkalib.Error); ok && err.Code() == kafkalib.ErrTimedOut {
 		return ErrSeekTimedOut
 	}
 
-	return err
+	return nil
 }
 
 // SeekToTime seeks to the specified time
-func (r *ConfluentConsumer) SeekToTime(t time.Time, timeout time.Duration) error {
-	timeoutMs := timeout.Milliseconds()
-	if timeoutMs == 0 {
-		// Otherwise the call will be asynchronous, losing error handling.
-		return errors.New("Timeout should be set when calling Seek")
-	}
-
+func (r *ConfluentConsumer) SeekToTime(t time.Time) error {
 	var offsets []kafkalib.TopicPartition
-	var err error
 	millisSinceEpoch := t.UnixNano() / 1000000
-	if r.partition < 0 {
-		offsets, err = r.c.OffsetsForTimes([]kafka.TopicPartition{{Topic: &r.conf.Topic, Offset: kafkalib.Offset(millisSinceEpoch)}}, int(timeoutMs))
-	} else {
-		offsets, err = r.c.OffsetsForTimes([]kafka.TopicPartition{{Topic: &r.conf.Topic, Partition: r.partition, Offset: kafkalib.Offset(millisSinceEpoch)}}, int(timeoutMs))
+	tps := []kafkalib.TopicPartition{{Topic: &r.conf.Topic, Offset: kafkalib.Offset(millisSinceEpoch)}}
+	if r.partition > -1 {
+		tps[0].Partition = r.partition
 	}
+	offsets, err := r.c.OffsetsForTimes(tps, int(r.conf.Timeout.Milliseconds()))
 	if err != nil {
 		return err
 	}
 	if len(offsets) == 1 {
-		return r.Seek(int64(offsets[0].Offset), timeout)
+		return r.Seek(int64(offsets[0].Offset))
 	}
 
 	return fmt.Errorf("error finding offset to seek to")
@@ -177,31 +197,6 @@ func (r *ConfluentConsumer) SetInitialOffset(offset int64) error {
 
 // FetchMessage implements Consumer interface.
 func (r *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message, error) {
-	var err error
-	// if we are not reading from a partition, we subscribe
-	if r.partition < 0 {
-		r.subscribeOnce.Do(func() {
-			r.log.WithField("kafka_topic", r.conf.Topic).Debug("Subscribing to Kafka topic")
-			r.rebalanceHandlerMutex.Lock()
-			defer r.rebalanceHandlerMutex.Unlock()
-			if err := r.c.Subscribe(r.conf.Topic, r.rebalanceHandler); err != nil {
-				err = errors.Wrap(err, "error subscribing to topic")
-			}
-		})
-	} else {
-		parts := []kafkalib.TopicPartition{
-			kafkalib.TopicPartition{
-				Topic:     &r.conf.Topic,
-				Partition: r.partition,
-			},
-		}
-		err = r.c.Assign(parts)
-
-	}
-	if err != nil {
-		return nil, err
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -240,23 +235,18 @@ func (r *ConfluentConsumer) Close() error {
 	return r.c.Close()
 }
 
-// GetMeta return the confluence consumer metatdata
-func (r *ConfluentConsumer) GetMeta(allTopics bool, timeout time.Duration) (*kafkalib.Metadata, error) {
-	timeoutMs := timeout.Milliseconds()
-	if timeoutMs == 0 {
-		// Otherwise the call will be asynchronous, losing error handling.
-		return nil, errors.New("Timeout should be set when calling Seek")
-	}
+// GetMetadata return the confluence consumer metatdata
+func (r *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
 	if allTopics {
-		return r.c.GetMetadata(nil, true, int(timeoutMs))
+		return r.c.GetMetadata(nil, true, int(r.conf.Timeout.Milliseconds()))
 	}
 
-	return r.c.GetMetadata(&r.conf.Topic, false, int(timeoutMs))
+	return r.c.GetMetadata(&r.conf.Topic, false, int(r.conf.Timeout.Milliseconds()))
 }
 
-// GetPartions retunrs the partition ids of a given topic
-func (r *ConfluentConsumer) GetPartions(timeout time.Duration) ([]int32, error) {
-	meta, err := r.GetMeta(false, timeout)
+// GetPartions returns the partition ids of the configured topic
+func (r *ConfluentConsumer) GetPartions() ([]int32, error) {
+	meta, err := r.GetMetadata(false)
 	if err != nil {
 		return nil, err
 	}
@@ -264,13 +254,44 @@ func (r *ConfluentConsumer) GetPartions(timeout time.Duration) ([]int32, error) 
 	return getPartitionIds(r.conf.Topic, meta)
 }
 
-// SetPartitionByKey sets the partition to consume messages from by the passed key
-func (r *ConfluentConsumer) SetPartitionByKey(key string, timeout time.Duration) error {
-	parts, err := r.GetPartions(timeout)
+// SetPartitionByKey sets the partition to consume messages from by the passed key and algorithm
+// - NOTE we currently only support the murmur2 hashing algorithm in the consumer
+func (r *ConfluentConsumer) SetPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
+	if algorithm != PartitionerMurMur2 {
+		return fmt.Errorf("we currently only support the murmur2 hashing algorithm in the consumer")
+	}
+	parts, err := r.GetPartions()
 	if err != nil {
 		return err
 	}
-	r.partition = GetPartition(key, parts)
+
+	return r.SetPartitionByID(GetPartition(key, parts))
+}
+
+// SetPartitionByID sets the partition to consume messages from by the passed partition ID
+func (r *ConfluentConsumer) SetPartitionByID(id int32) error {
+	parts, err := r.GetPartions()
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, part := range parts {
+		if part == id {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("%d is not a valid partition id", id)
+	}
+	pt := []kafkalib.TopicPartition{
+		kafkalib.TopicPartition{
+			Topic:     &r.conf.Topic,
+			Partition: r.partition,
+		},
+	}
+	err = r.c.Assign(pt)
+	r.partition = id
 
 	return nil
 }

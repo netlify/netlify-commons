@@ -3,7 +3,6 @@ package kafka
 import (
 	"context"
 	"testing"
-	"time"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/require"
@@ -33,7 +32,7 @@ func TestConsumerSeek(t *testing.T) {
 	c, conf := consumer(t)
 	defer checkClose(t, c)
 	require.NoError(t, c.c.Assign(kafkalib.TopicPartitions{{Topic: &conf.Topic, Partition: 0}})) // manually assign partition
-	require.NoError(t, c.Seek(2, time.Millisecond))
+	require.NoError(t, c.Seek(2))
 }
 
 func consumer(t *testing.T) (*ConfluentConsumer, Config) {
