@@ -108,6 +108,9 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 				Partition: *cc.conf.Consumer.Partition,
 			},
 		}
+		if cc.conf.Consumer.PartitionerAlgorithm == "" {
+			cc.conf.Consumer.PartitionerAlgorithm = PartitionerMurMur2
+		}
 		// Set the partition if a key is set to determine the partition
 		if cc.conf.Consumer.PartitionKey != "" && cc.conf.Consumer.PartitionerAlgorithm != "" {
 			cc.SetPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
@@ -118,33 +121,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		// - NOTE if the partition is set and the partition key is not set we have no way
 		//   of knowing where to assign the consumer to in the case of a rebalance
 		cc.eventChan = cc.c.Events()
-		go func(cc *ConfluentConsumer) {
-			for ev := range cc.eventChan {
-				log := cc.log.WithField("kafka_event", ev.String())
-				switch e := ev.(type) {
-				case kafkalib.RevokedPartitions:
-					// check if we are assigned to this partition
-					revokedParts := e.Partitions
-					revoked := false
-					for _, part := range revokedParts {
-						if part.Partition == *cc.conf.Consumer.Partition && *part.Topic == cc.conf.Topic {
-							revoked = true
-							break
-						}
-					}
-					if revoked {
-						cc.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
-						if err := cc.c.Unassign(); err != nil {
-							log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
-						}
-						// if we know the partition key we can reassign
-						if cc.conf.Consumer.PartitionKey != "" && cc.conf.Consumer.PartitionerAlgorithm != "" {
-							cc.SetPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
-						}
-					}
-				}
-			}
-		}(cc)
+		go cc.handlePartitionRebalacne()
 	}
 	if err != nil {
 		return nil, err
@@ -226,6 +203,34 @@ func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) error {
 	}
 
 	return nil
+}
+
+func (r *ConfluentConsumer) handlePartitionRebalacne() {
+	for ev := range r.eventChan {
+		log := r.log.WithField("kafka_event", ev.String())
+		switch e := ev.(type) {
+		case kafkalib.RevokedPartitions:
+			// check if we are assigned to this partition
+			revokedParts := e.Partitions
+			revoked := false
+			for _, part := range revokedParts {
+				if part.Partition == *r.conf.Consumer.Partition && *part.Topic == r.conf.Topic {
+					revoked = true
+					break
+				}
+			}
+			if revoked {
+				r.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
+				if err := r.c.Unassign(); err != nil {
+					log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
+				}
+				// if we know the partition key we can reassign
+				if r.conf.Consumer.PartitionKey != "" && r.conf.Consumer.PartitionerAlgorithm != "" {
+					r.SetPartitionByKey(r.conf.Consumer.PartitionKey, r.conf.Consumer.PartitionerAlgorithm)
+				}
+			}
+		}
+	}
 }
 
 // FetchMessage fetches one message, if there is any available at the current offset.
