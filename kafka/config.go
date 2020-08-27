@@ -81,8 +81,11 @@ func (c Config) baseKafkaConfig() *kafkalib.ConfigMap {
 
 // ConsumerConfig holds the specific configuration for a consumer.
 type ConsumerConfig struct {
-	GroupID   string `json:"group_id" split_words:"true"`
-	Partition *int32 `json:"partition"`
+	GroupID              string               `json:"group_id" split_words:"true"`
+	Partition            *int32               `json:"partition"`
+	PartitionKey         string               `json:"partition_key"`
+	PartitionerAlgorithm PartitionerAlgorithm `json:"partition_algorithm"`
+	InitialOffset        int64                `json:"initial_offset"`
 }
 
 // Apply applies the specific configuration for a consumer.

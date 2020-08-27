@@ -48,19 +48,12 @@ func TestPartition(t *testing.T) {
 	assert.NoError(err)
 	assert.Len(parts, 3)
 
-	// create a map of consumers by partition
-	consumers := make(map[int32]*ConfluentConsumer)
-	for _, part := range parts {
-		conf.Consumer.Partition = &part
-		c, err := NewConsumer(logger(), conf)
-		assert.NoError(err)
-		assert.NotNil(c)
-
-		consumers[part] = c
-	}
+	c, err := NewConsumer(logger(), conf)
+	assert.NoError(err)
+	assert.NotNil(c)
 
 	// test consuming on multiple partitions
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 100; i++ {
 		k := fmt.Sprintf("%s-%d", key, i)
 		v := fmt.Sprintf("%s-%d", val, i)
 		m := &kafka.Message{
@@ -76,7 +69,6 @@ func TestPartition(t *testing.T) {
 		assert.NoError(err)
 
 		p := GetPartition(k, parts)
-		c := consumers[p]
 
 		err = c.SetPartitionByKey(k, PartitionerMurMur2)
 		assert.NoError(err)
@@ -87,8 +79,8 @@ func TestPartition(t *testing.T) {
 		m, err = c.FetchMessage(ctx)
 		assert.NoError(err)
 		assert.NotNil(m)
-		assert.Equal([]byte(k), m.Key, "Partition to read from: %d", p)
-		assert.Equal([]byte(v), m.Value, "Partition to read from: %d", p)
+		assert.Equal([]byte(k), m.Key, "Partition to read from: %d, Msg: %+v", p, m)
+		assert.Equal([]byte(v), m.Value, "Partition to read from: %d, Msg: %+v", p, m)
 
 		err = c.CommitMessage(m)
 		assert.NoError(err)

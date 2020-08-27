@@ -8,15 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConsumerSetInitialOffset(t *testing.T) {
-	c, _ := consumer(t)
-	defer checkClose(t, c)
-
-	require.Nil(t, c.rebalanceHandler)
-	require.NoError(t, c.SetInitialOffset(1))
-	require.NotNil(t, c.rebalanceHandler)
-}
-
 func TestConsumerFetchMessageContextAwareness(t *testing.T) {
 	c, _ := consumer(t)
 	defer checkClose(t, c)
@@ -47,5 +38,5 @@ func consumer(t *testing.T) (*ConfluentConsumer, Config) {
 	c, err := NewConsumer(logger(), conf)
 	require.NoError(t, err)
 
-	return c, conf
+	return c.(*ConfluentConsumer), conf
 }
