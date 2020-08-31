@@ -7,6 +7,7 @@ import (
 	"time"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +17,12 @@ var ErrSeekTimedOut = errors.New("Kafka Seek timed out. Please try again.")
 
 // Consumer reads messages from Kafka.
 type Consumer interface {
+	// AssignPartittionByKey sets the current consumer to read from a partion by a hashed key.
+	AssignPartitionByKey(key string, algorithm PartitionerAlgorithm) error
+
+	// AssignPartitionByID sets the current consumer to read from the specified partition.
+	AssignPartitionByID(id int32) error
+
 	// FetchMessage fetches one message, if there is any available at the current offset.
 	FetchMessage(ctx context.Context) (*kafkalib.Message, error)
 
@@ -29,19 +36,13 @@ type Consumer interface {
 	GetMetadata(allTopics bool) (*kafkalib.Metadata, error)
 
 	// GetPartitions returns the partitions on the consumer.
-	GetPartions() ([]int32, error)
+	GetPartitions() ([]int32, error)
 
 	// Seek seeks the assigned topic partitions to the given offset.
 	Seek(offset int64) error
 
 	// SeekToTime seeks to the specified time.
 	SeekToTime(t time.Time) error
-
-	// SetPartittionByKey sets the current consumer to read from a partion by a hashed key.
-	SetPartitionByKey(key string, algorithm PartitionerAlgorithm) error
-
-	// SetPartitionByID sets the current consumer to read from the specified partition.
-	SetPartitionByID(id int32) error
 }
 
 // ConfluentConsumer implements Consumer interface.
@@ -66,6 +67,13 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 
 	// In case we try to assign an offset out of range (greater than log-end-offset), consumer will use start consuming from offset zero.
 	_ = kafkaConf.SetKey("auto.offset.reset", "earliest")
+
+	// enable events channel for parttition consumer
+	if conf.Consumer.PartitionKey != "" {
+		defaultPartition := int32(0)
+		conf.Consumer.Partition = &defaultPartition
+		_ = kafkaConf.SetKey("go.application.rebalance.enable", true)
+	}
 
 	conf.Consumer.Apply(kafkaConf)
 	for _, opt := range opts {
@@ -95,8 +103,6 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		// if we are not reading from a specific partition, we subscribe
 		cc.setupRebalanceHandler(cc.conf.Consumer.InitialOffset)
 		cc.log.WithField("kafka_topic", cc.conf.Topic).Debug("Subscribing to Kafka topic")
-		cc.rebalanceHandlerMutex.Lock()
-		defer cc.rebalanceHandlerMutex.Unlock()
 		if serr := cc.c.Subscribe(cc.conf.Topic, cc.rebalanceHandler); serr != nil {
 			err = errors.Wrap(serr, "error subscribing to topic")
 		}
@@ -113,7 +119,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		}
 		// Set the partition if a key is set to determine the partition
 		if cc.conf.Consumer.PartitionKey != "" && cc.conf.Consumer.PartitionerAlgorithm != "" {
-			cc.SetPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
+			cc.AssignPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
 		}
 		err = cc.c.Assign(tps)
 
@@ -121,6 +127,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		// - NOTE if the partition is set and the partition key is not set we have no way
 		//   of knowing where to assign the consumer to in the case of a rebalance
 		cc.eventChan = cc.c.Events()
+		spew.Dump(cc)
 		go cc.handlePartitionRebalacne()
 	}
 	if err != nil {
@@ -165,7 +172,7 @@ func (r *ConfluentConsumer) SeekToTime(t time.Time) error {
 }
 
 // setupReabalnceHandler does the setup of the rebalance handler
-func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) error {
+func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) {
 	r.rebalanceHandlerMutex.Lock()
 	defer r.rebalanceHandlerMutex.Unlock()
 
@@ -179,6 +186,7 @@ func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) error {
 	var once sync.Once
 	r.rebalanceHandler = func(c *kafkalib.Consumer, ev kafkalib.Event) error {
 		log := r.log.WithField("kafka_event", ev.String())
+		spew.Dump(ev)
 		switch e := ev.(type) {
 		case kafkalib.AssignedPartitions:
 			partitions := e.Partitions
@@ -201,12 +209,11 @@ func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) error {
 		}
 		return nil
 	}
-
-	return nil
 }
 
 func (r *ConfluentConsumer) handlePartitionRebalacne() {
 	for ev := range r.eventChan {
+		spew.Dump(ev)
 		log := r.log.WithField("kafka_event", ev.String())
 		switch e := ev.(type) {
 		case kafkalib.RevokedPartitions:
@@ -226,7 +233,7 @@ func (r *ConfluentConsumer) handlePartitionRebalacne() {
 				}
 				// if we know the partition key we can reassign
 				if r.conf.Consumer.PartitionKey != "" && r.conf.Consumer.PartitionerAlgorithm != "" {
-					r.SetPartitionByKey(r.conf.Consumer.PartitionKey, r.conf.Consumer.PartitionerAlgorithm)
+					r.AssignPartitionByKey(r.conf.Consumer.PartitionKey, r.conf.Consumer.PartitionerAlgorithm)
 				}
 			}
 		}
@@ -270,6 +277,9 @@ func (r *ConfluentConsumer) CommitMessage(msg *kafkalib.Message) error {
 
 // Close closes the consumer.
 func (r *ConfluentConsumer) Close() error {
+	if r.eventChan != nil {
+		close(r.eventChan)
+	}
 	return r.c.Close()
 }
 
@@ -282,8 +292,8 @@ func (r *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, err
 	return r.c.GetMetadata(&r.conf.Topic, false, int(r.conf.Timeout.Milliseconds()))
 }
 
-// GetPartions returns the partition ids of the configured topic
-func (r *ConfluentConsumer) GetPartions() ([]int32, error) {
+// GetPartitions returns the partition ids of the configured topic
+func (r *ConfluentConsumer) GetPartitions() ([]int32, error) {
 	meta, err := r.GetMetadata(false)
 	if err != nil {
 		return nil, err
@@ -292,23 +302,23 @@ func (r *ConfluentConsumer) GetPartions() ([]int32, error) {
 	return getPartitionIds(r.conf.Topic, meta)
 }
 
-// SetPartitionByKey sets the partition to consume messages from by the passed key and algorithm
+// AssignPartitionByKey sets the partition to consume messages from by the passed key and algorithm
 // - NOTE we currently only support the murmur2 hashing algorithm in the consumer
-func (r *ConfluentConsumer) SetPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
+func (r *ConfluentConsumer) AssignPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
 	if algorithm != PartitionerMurMur2 {
 		return fmt.Errorf("we currently only support the murmur2 hashing algorithm in the consumer")
 	}
-	parts, err := r.GetPartions()
+	parts, err := r.GetPartitions()
 	if err != nil {
 		return err
 	}
 
-	return r.SetPartitionByID(GetPartition(key, parts))
+	return r.AssignPartitionByID(GetPartition(key, parts))
 }
 
-// SetPartitionByID sets the partition to consume messages from by the passed partition ID
-func (r *ConfluentConsumer) SetPartitionByID(id int32) error {
-	parts, err := r.GetPartions()
+// AssignPartitionByID sets the partition to consume messages from by the passed partition ID
+func (r *ConfluentConsumer) AssignPartitionByID(id int32) error {
+	parts, err := r.GetPartitions()
 	if err != nil {
 		return err
 	}
