@@ -82,7 +82,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 	}
 
 	if conf.RequestTimeout == 0 {
-		conf.RequestTimeout = DefaultTimout
+		conf.RequestTimeout = DefaultTimeout
 	}
 
 	cc := &ConfluentConsumer{

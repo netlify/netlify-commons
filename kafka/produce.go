@@ -68,7 +68,7 @@ func NewProducer(conf Config, opts ...ConfigOpt) (w *ConfluentProducer, err erro
 	}
 
 	if conf.RequestTimeout == 0 {
-		conf.RequestTimeout = DefaultTimout
+		conf.RequestTimeout = DefaultTimeout
 	}
 
 	return &ConfluentProducer{p: p, conf: conf}, nil
