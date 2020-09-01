@@ -242,15 +242,3 @@ func TestMalformedResponseSize(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
-
-func BenchmarkParseUserTrafficRecordSingle(b *testing.B) {
-	b.ReportAllocs()
-	b.SetBytes(int64(len(rawUTRecord)))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := ParseUserTrafficRecord(rawUTRecord)
-		if err != nil {
-			b.Error(err, nil)
-		}
-	}
-}
