@@ -260,7 +260,7 @@ func (cc *ConfluentConsumer) Close() error {
 	return cc.c.Close()
 }
 
-// GetMetadata return the confluence consumer metatdata
+// GetMetadata return the confluence consumer metadata
 func (cc *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
 	if allTopics {
 		return cc.c.GetMetadata(nil, true, int(cc.conf.Timeout.Milliseconds()))
