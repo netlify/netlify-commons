@@ -42,11 +42,12 @@ type UserTraffic struct {
 }
 
 //ParseUserTrafficRecord parses a raw user traffic log line into a UserTraffic struct
-func ParseUserTrafficRecord(ut *UserTraffic, raw string) error {
+func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
+	var ut UserTraffic
 	var err error
 
 	if count := strings.Count(raw, `@timestamp`); count > 1 {
-		return fmt.Errorf("%d @timestamp fields detected", count)
+		return nil, fmt.Errorf("%d @timestamp fields detected", count)
 	}
 
 	praw := strings.SplitN(raw, " ua=", 2)
@@ -58,7 +59,7 @@ func ParseUserTrafficRecord(ut *UserTraffic, raw string) error {
 	for _, field := range strings.Fields(praw[0]) {
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) != 2 {
-			return fmt.Errorf("found key field with no value: %s", parts)
+			return nil, fmt.Errorf("found key field with no value: %s", parts)
 		}
 		switch parts[0] {
 		case "request_id":
@@ -66,12 +67,12 @@ func ParseUserTrafficRecord(ut *UserTraffic, raw string) error {
 		case "@timestamp":
 			tsFloat, err := strconv.ParseFloat(parts[1], 64)
 			if err != nil {
-				return fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
 			}
 			ut.Timestamp = time.Unix(int64(tsFloat), 0)
 		case "timing":
 			if ut.Timing, err = strconv.ParseInt(parts[1], 10, 64); err != nil {
-				return fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
 			}
 		case "result":
 			ut.Result = parts[1]
@@ -83,15 +84,15 @@ func ParseUserTrafficRecord(ut *UserTraffic, raw string) error {
 			ut.CCID = parts[1]
 		case "status":
 			if ut.Status, err = strconv.Atoi(parts[1]); err != nil {
-				return fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
 			}
 		case "request_size":
 			if ut.RequestSize, err = strconv.ParseInt(parts[1], 10, 64); err != nil {
-				return fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
 			}
 		case "response_size":
 			if ut.ResponseSize, err = strconv.ParseInt(parts[1], 10, 64); err != nil {
-				return fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
 			}
 		case "proto":
 			ut.Proto = parts[1]
@@ -137,5 +138,5 @@ func ParseUserTrafficRecord(ut *UserTraffic, raw string) error {
 			ut.Other[parts[0]] = parts[1]
 		}
 	}
-	return nil
+	return &ut, nil
 }
