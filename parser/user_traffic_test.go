@@ -58,7 +58,7 @@ var (
 	protoField        = "http/2"
 	methodField       = "GET"
 	urlField          = "http://localhost/something/1591294965428966000/something.jpg"
-	sidField          = "18bb190b-6727-497a-af8b-f03287d14caf," //sometimes sid's have trailing comma's
+	sidField          = "18bb190b-6727-497a-af8b-f03287d14caf"
 	aidField          = "1591294965428966000"
 	didField          = "5e85df2043933dd053ebec6f"
 	cancelField       = "-"
