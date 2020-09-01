@@ -28,7 +28,7 @@ const (
 	PartitionerFNV1A            = PartitionerAlgorithm("fnv1a")             // FNV-1a hash of key (NULL keys are mapped to single partition)
 	PartitionerFNV1ARandom      = PartitionerAlgorithm("fnv1a_random")      // FNV-1a hash of key (NULL keys are randomly partitioned).
 
-	DefaultTimout = time.Duration(30 * time.Second) // Default timout to be used if not set in the config
+	DefaultTimout = time.Duration(30 * time.Second) // Default timeout to be used if not set in the config
 )
 
 // DefaultLogLevel is the log level Kafka producers/consumers will use if non set.
