@@ -67,8 +67,8 @@ func NewProducer(conf Config, opts ...ConfigOpt) (w *ConfluentProducer, err erro
 		return nil, err
 	}
 
-	if conf.Timeout == 0 {
-		conf.Timeout = DefaultTimout
+	if conf.RequestTimeout == 0 {
+		conf.RequestTimeout = DefaultTimout
 	}
 
 	return &ConfluentProducer{p: p, conf: conf}, nil
@@ -125,10 +125,10 @@ func (w ConfluentProducer) Produce(ctx context.Context, msgs ...*kafkalib.Messag
 // GetMetadata return the confluence producers metatdata
 func (w *ConfluentProducer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
 	if allTopics {
-		return w.p.GetMetadata(nil, true, int(w.conf.Timeout.Milliseconds()))
+		return w.p.GetMetadata(nil, true, int(w.conf.RequestTimeout.Milliseconds()))
 	}
 
-	return w.p.GetMetadata(&w.conf.Topic, false, int(w.conf.Timeout.Milliseconds()))
+	return w.p.GetMetadata(&w.conf.Topic, false, int(w.conf.RequestTimeout.Milliseconds()))
 }
 
 // GetPartions returns the partition ids of a given topic

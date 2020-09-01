@@ -81,8 +81,8 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		return nil, err
 	}
 
-	if conf.Timeout == 0 {
-		conf.Timeout = DefaultTimout
+	if conf.RequestTimeout == 0 {
+		conf.RequestTimeout = DefaultTimout
 	}
 
 	cc := &ConfluentConsumer{
@@ -127,7 +127,7 @@ func (cc *ConfluentConsumer) Seek(offset int64) error {
 		tp.Partition = *cc.conf.Consumer.Partition
 	}
 
-	err := cc.c.Seek(tp, int(cc.conf.Timeout.Milliseconds()))
+	err := cc.c.Seek(tp, int(cc.conf.RequestTimeout.Milliseconds()))
 	if err, ok := err.(kafkalib.Error); ok && err.Code() == kafkalib.ErrTimedOut {
 		return ErrSeekTimedOut
 	}
@@ -143,7 +143,7 @@ func (cc *ConfluentConsumer) SeekToTime(t time.Time) error {
 	if cc.conf.Consumer.Partition != nil {
 		tps[0].Partition = *cc.conf.Consumer.Partition
 	}
-	offsets, err := cc.c.OffsetsForTimes(tps, int(cc.conf.Timeout.Milliseconds()))
+	offsets, err := cc.c.OffsetsForTimes(tps, int(cc.conf.RequestTimeout.Milliseconds()))
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (cc *ConfluentConsumer) SeekToTime(t time.Time) error {
 }
 
 // setupReabalnceHandler does the setup of the rebalance handler
-func (cc *ConfluentConsumer) setupRebalanceHandler(offset int64) {
+func (cc *ConfluentConsumer) setupRebalanceHandler(offset *int64) {
 	cc.rebalanceHandlerMutex.Lock()
 	defer cc.rebalanceHandlerMutex.Unlock()
 
@@ -173,11 +173,13 @@ func (cc *ConfluentConsumer) setupRebalanceHandler(offset int64) {
 		case kafkalib.AssignedPartitions:
 			if cc.conf.Consumer.Partition == nil {
 				partitions := e.Partitions
-				once.Do(func() {
-					log.WithField("kafka_offset", offset).Debug("Skipping Kafka assignment given by coordinator after rebalance in favor of resetting the offset")
-					partitions = kafkalib.TopicPartitions{{Topic: &cc.conf.Topic, Offset: kafkalib.Offset(offset)}}
-				})
-
+				// if we have an initial offset we need to set it
+				if cc.conf.Consumer.InitialOffset != nil {
+					once.Do(func() {
+						log.WithField("kafka_offset", *offset).Debug("Skipping Kafka assignment given by coordinator after rebalance in favor of resetting the offset")
+						partitions = kafkalib.TopicPartitions{{Topic: &cc.conf.Topic, Offset: kafkalib.Offset(*offset)}}
+					})
+				}
 				log.WithField("kafka_partitions", partitions).Debug("Assigning Kafka partitions after rebalance")
 				if err := c.Assign(partitions); err != nil {
 					log.WithField("kafka_partitions", partitions).WithError(err).Error("failed assigning Kafka partitions after rebalance")
@@ -263,10 +265,10 @@ func (cc *ConfluentConsumer) Close() error {
 // GetMetadata return the confluence consumer metadata
 func (cc *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
 	if allTopics {
-		return cc.c.GetMetadata(nil, true, int(cc.conf.Timeout.Milliseconds()))
+		return cc.c.GetMetadata(nil, true, int(cc.conf.RequestTimeout.Milliseconds()))
 	}
 
-	return cc.c.GetMetadata(&cc.conf.Topic, false, int(cc.conf.Timeout.Milliseconds()))
+	return cc.c.GetMetadata(&cc.conf.Topic, false, int(cc.conf.RequestTimeout.Milliseconds()))
 }
 
 // GetPartitions returns the partition ids of the configured topic

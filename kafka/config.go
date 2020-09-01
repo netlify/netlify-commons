@@ -36,16 +36,16 @@ const DefaultLogLevel = logrus.ErrorLevel
 
 // Config holds all the configuration for this package.
 type Config struct {
-	Brokers   []string       `json:"brokers"`
-	Topic     string         `json:"topic"`
-	Producer  ProducerConfig `json:"producer"`
-	Consumer  ConsumerConfig `json:"consumer"`
-	AuthType  string         `json:"auth" split_words:"true"`
-	User      string         `json:"user"`
-	Password  string         `json:"password"`
-	CAPEMFile string         `json:"ca_pem_file"`
-	LogLevel  string         `json:"log_level" split_words:"true"`
-	Timeout   time.Duration  `json:"timeout"`
+	Brokers        []string       `json:"brokers"`
+	Topic          string         `json:"topic"`
+	Producer       ProducerConfig `json:"producer"`
+	Consumer       ConsumerConfig `json:"consumer"`
+	AuthType       string         `json:"auth" split_words:"true"`
+	User           string         `json:"user"`
+	Password       string         `json:"password"`
+	CAPEMFile      string         `json:"ca_pem_file"`
+	LogLevel       string         `json:"log_level" split_words:"true"`
+	RequestTimeout time.Duration  `json:"request_timeout"`
 }
 
 // baseKafkaConfig provides the base config that applies to both consumers and producers.
@@ -85,7 +85,7 @@ type ConsumerConfig struct {
 	Partition            *int32               `json:"partition"`
 	PartitionKey         string               `json:"partition_key"`
 	PartitionerAlgorithm PartitionerAlgorithm `json:"partition_algorithm"`
-	InitialOffset        int64                `json:"initial_offset"`
+	InitialOffset        *int64               `json:"initial_offset"`
 }
 
 // Apply applies the specific configuration for a consumer.

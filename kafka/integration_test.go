@@ -36,14 +36,16 @@ func TestIntegration(t *testing.T) {
 		assert := assert.New(t)
 
 		ctx := context.Background()
+		offset := int64(0)
 
 		// create netlify kafka config
 		conf := Config{
 			Brokers: strings.Split(testBrokers, ","),
 			Topic:   "gotest",
 			Consumer: ConsumerConfig{
-				GroupID:      "gotest",
-				PartitionKey: "test",
+				GroupID:       "gotest",
+				PartitionKey:  "test",
+				InitialOffset: &offset,
 			},
 		}
 
@@ -121,32 +123,37 @@ func TestIntegration(t *testing.T) {
 			Brokers: strings.Split(testBrokers, ","),
 			Topic:   "gotest",
 			Consumer: ConsumerConfig{
-				GroupID: "gotest2",
+				GroupID: "gotest",
 			},
 		}
 
 		key := "gotestkey"
 		val := "gotestval"
 
-		_ = key
-		_ = val
+		// create the producer
+		p, err := NewProducer(conf, WithLogger(ctx, log), WithPartitionerAlgorithm(PartitionerMurMur2))
+		assert.NoError(err)
+		assert.NotNil(p)
+
+		m := &kafkalib.Message{
+			TopicPartition: kafkalib.TopicPartition{
+				Topic: &conf.Topic,
+			},
+			Key:   []byte(key),
+			Value: []byte(val),
+		}
+
+		err = p.Produce(ctx, m)
+		assert.NoError(err)
 
 		c, err := NewConsumer(log, conf, WithConsumerGroupID("gotest"))
 		assert.NoError(err)
 		assert.NotNil(c)
 
-		m, err := c.FetchMessage(ctx)
-		assert.NoError(err)
-		assert.Equal(int32(0), m.TopicPartition.Partition)
-		assert.Equal(kafkalib.Offset(0), m.TopicPartition.Offset)
-
-		err = c.CommitMessage(m)
-		assert.NoError(err)
-
 		m, err = c.FetchMessage(ctx)
 		assert.NoError(err)
-		assert.Equal(int32(0), m.TopicPartition.Partition)
-		assert.Equal(kafkalib.Offset(1), m.TopicPartition.Offset)
+		assert.Contains(string(m.Value), val)
+		assert.Equal(kafkalib.Offset(30), m.TopicPartition.Offset)
 
 		err = c.CommitMessage(m)
 		assert.NoError(err)
@@ -164,14 +171,15 @@ func TestIntegration(t *testing.T) {
 		assert := assert.New(t)
 
 		ctx := context.Background()
+		offset := int64(1)
 
 		// create netlify kafka config
 		conf := Config{
 			Brokers: strings.Split(testBrokers, ","),
 			Topic:   "gotest",
 			Consumer: ConsumerConfig{
-				GroupID:       "gotest3",
-				InitialOffset: 1,
+				GroupID:       "gotest",
+				InitialOffset: &offset,
 			},
 		}
 
