@@ -10,7 +10,7 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/davecgh/go-spew/spew"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,6 +20,16 @@ func TestIntegration(t *testing.T) {
 	if testBrokers == "" {
 		t.Skipf("No local Kafka broker available to run tests")
 	}
+
+	log := logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:    true,
+		DisableTimestamp: false,
+		TimestampFormat:  time.RFC3339Nano,
+		DisableColors:    true,
+		QuoteEmptyFields: true,
+	})
+	log.SetLevel(logrus.DebugLevel)
 
 	t.Run("PartitionConsumer", func(t *testing.T) {
 
@@ -38,7 +48,7 @@ func TestIntegration(t *testing.T) {
 		}
 
 		// create the producer
-		p, err := NewProducer(conf, WithLogger(ctx, logger()), WithPartitionerAlgorithm(PartitionerMurMur2))
+		p, err := NewProducer(conf, WithLogger(ctx, log), WithPartitionerAlgorithm(PartitionerMurMur2))
 		assert.NoError(err)
 		assert.NotNil(p)
 
@@ -53,7 +63,7 @@ func TestIntegration(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(parts, 3)
 
-		c, err := NewConsumer(logger(), conf)
+		c, err := NewConsumer(log, conf)
 		assert.NoError(err)
 		assert.NotNil(c)
 
@@ -96,18 +106,6 @@ func TestIntegration(t *testing.T) {
 		// force a rebalance event
 		chaosTest(testBrokers, assert)
 
-		// force a revoke
-		cc := c.(*ConfluentConsumer)
-		var revokeEv kafkalib.Event
-		tp := kafkalib.TopicPartition{Topic: &conf.Topic, Partition: *cc.conf.Consumer.Partition}
-		revokeEv = kafkalib.RevokedPartitions{Partitions: kafkalib.TopicPartitions{tp}}
-		select {
-		case cc.eventChan <- revokeEv:
-			t.Log("sent revoke event", revokeEv)
-		default:
-			t.Log("no revoke event sent")
-		}
-
 		err = c.Close()
 		assert.NoError(err)
 
@@ -133,7 +131,7 @@ func TestIntegration(t *testing.T) {
 		_ = key
 		_ = val
 
-		c, err := NewConsumer(logger(), conf, WithConsumerGroupID("gotest"))
+		c, err := NewConsumer(log, conf, WithConsumerGroupID("gotest"))
 		assert.NoError(err)
 		assert.NotNil(c)
 
@@ -183,14 +181,11 @@ func TestIntegration(t *testing.T) {
 		_ = key
 		_ = val
 
-		c, err := NewConsumer(logger(), conf, WithConsumerGroupID("gotest"))
-		spew.Dump(0)
+		c, err := NewConsumer(log, conf, WithConsumerGroupID("gotest"))
 		assert.NoError(err)
 		assert.NotNil(c)
 
-		spew.Dump(1)
 		m, err := c.FetchMessage(ctx)
-		spew.Dump(2)
 		assert.NoError(err)
 		assert.Equal(int32(0), m.TopicPartition.Partition)
 		assert.Equal(kafkalib.Offset(1), m.TopicPartition.Offset)
@@ -228,19 +223,17 @@ func chaosTest(testBrokers string, assert *assert.Assertions) {
 	chaos := os.Getenv("KAFKA_CHAOS")
 	ctx := context.Background()
 	if chaos == "" {
-		a, err := kafkalib.NewAdminClient(&kafka.ConfigMap{"bootstrap.servers": testBrokers})
+		a, err := kafkalib.NewAdminClient(&kafkalib.ConfigMap{"bootstrap.servers": testBrokers})
 		assert.NoError(err)
 		assert.NotNil(a)
 
-		maxDur, err := time.ParseDuration("60s")
-		assert.NoError(err)
 		results, err := a.CreateTopics(
 			ctx,
 			[]kafkalib.TopicSpecification{{
 				Topic:             "gotest",
 				NumPartitions:     5,
 				ReplicationFactor: 1}},
-			kafka.SetAdminOperationTimeout(maxDur))
+			kafka.SetAdminOperationTimeout(time.Duration(1*time.Minute)))
 		assert.NoError(err)
 		assert.NotNil(results)
 		a.Close()

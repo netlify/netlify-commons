@@ -7,7 +7,6 @@ import (
 	"time"
 
 	kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -68,13 +67,6 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 	// In case we try to assign an offset out of range (greater than log-end-offset), consumer will use start consuming from offset zero.
 	_ = kafkaConf.SetKey("auto.offset.reset", "earliest")
 
-	// enable events channel for parttition consumer
-	if conf.Consumer.PartitionKey != "" {
-		defaultPartition := int32(0)
-		conf.Consumer.Partition = &defaultPartition
-		_ = kafkaConf.SetKey("go.application.rebalance.enable", true)
-	}
-
 	conf.Consumer.Apply(kafkaConf)
 	for _, opt := range opts {
 		opt(kafkaConf)
@@ -99,21 +91,10 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		log:  log,
 	}
 
-	if cc.conf.Consumer.Partition == nil {
-		// if we are not reading from a specific partition, we subscribe
-		cc.setupRebalanceHandler(cc.conf.Consumer.InitialOffset)
-		cc.log.WithField("kafka_topic", cc.conf.Topic).Debug("Subscribing to Kafka topic")
-		if serr := cc.c.Subscribe(cc.conf.Topic, cc.rebalanceHandler); serr != nil {
-			err = errors.Wrap(serr, "error subscribing to topic")
-		}
-	} else {
-		// if we are reading from a specific partition, we assign
-		tps := []kafkalib.TopicPartition{
-			kafkalib.TopicPartition{
-				Topic:     &cc.conf.Topic,
-				Partition: *cc.conf.Consumer.Partition,
-			},
-		}
+	logFields := logrus.Fields{"kafka_topic": cc.conf.Topic}
+
+	if cc.conf.Consumer.Partition != nil || cc.conf.Consumer.PartitionKey != "" {
+		// set the default partitioner algorithm
 		if cc.conf.Consumer.PartitionerAlgorithm == "" {
 			cc.conf.Consumer.PartitionerAlgorithm = PartitionerMurMur2
 		}
@@ -121,15 +102,17 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		if cc.conf.Consumer.PartitionKey != "" && cc.conf.Consumer.PartitionerAlgorithm != "" {
 			cc.AssignPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
 		}
-		err = cc.c.Assign(tps)
 
-		// handle rebalance events for consumer assigned to a specific partition
-		// - NOTE if the partition is set and the partition key is not set we have no way
-		//   of knowing where to assign the consumer to in the case of a rebalance
-		cc.eventChan = cc.c.Events()
-		spew.Dump(cc)
-		go cc.handlePartitionRebalacne()
+		logFields["kafka_partition_key"] = cc.conf.Consumer.PartitionKey
+		logFields["kafka_partition"] = cc.conf.Consumer.Partition
 	}
+
+	cc.setupRebalanceHandler(cc.conf.Consumer.InitialOffset)
+	cc.log.WithFields(logFields).Debug("Subscribing to Kafka topic")
+	if serr := cc.c.Subscribe(cc.conf.Topic, cc.rebalanceHandler); serr != nil {
+		err = errors.Wrap(serr, "error subscribing to topic")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -138,13 +121,13 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 }
 
 // Seek seeks the assigned topic partitions to the given offset.
-func (r *ConfluentConsumer) Seek(offset int64) error {
-	tp := kafkalib.TopicPartition{Topic: &r.conf.Topic, Offset: kafkalib.Offset(offset)}
-	if r.conf.Consumer.Partition != nil {
-		tp.Partition = *r.conf.Consumer.Partition
+func (cc *ConfluentConsumer) Seek(offset int64) error {
+	tp := kafkalib.TopicPartition{Topic: &cc.conf.Topic, Offset: kafkalib.Offset(offset)}
+	if cc.conf.Consumer.Partition != nil {
+		tp.Partition = *cc.conf.Consumer.Partition
 	}
 
-	err := r.c.Seek(tp, int(r.conf.Timeout.Milliseconds()))
+	err := cc.c.Seek(tp, int(cc.conf.Timeout.Milliseconds()))
 	if err, ok := err.(kafkalib.Error); ok && err.Code() == kafkalib.ErrTimedOut {
 		return ErrSeekTimedOut
 	}
@@ -153,28 +136,28 @@ func (r *ConfluentConsumer) Seek(offset int64) error {
 }
 
 // SeekToTime seeks to the specified time.
-func (r *ConfluentConsumer) SeekToTime(t time.Time) error {
+func (cc *ConfluentConsumer) SeekToTime(t time.Time) error {
 	var offsets []kafkalib.TopicPartition
 	millisSinceEpoch := t.UnixNano() / 1000000
-	tps := []kafkalib.TopicPartition{{Topic: &r.conf.Topic, Offset: kafkalib.Offset(millisSinceEpoch)}}
-	if r.conf.Consumer.Partition != nil {
-		tps[0].Partition = *r.conf.Consumer.Partition
+	tps := []kafkalib.TopicPartition{{Topic: &cc.conf.Topic, Offset: kafkalib.Offset(millisSinceEpoch)}}
+	if cc.conf.Consumer.Partition != nil {
+		tps[0].Partition = *cc.conf.Consumer.Partition
 	}
-	offsets, err := r.c.OffsetsForTimes(tps, int(r.conf.Timeout.Milliseconds()))
+	offsets, err := cc.c.OffsetsForTimes(tps, int(cc.conf.Timeout.Milliseconds()))
 	if err != nil {
 		return err
 	}
 	if len(offsets) == 1 {
-		return r.Seek(int64(offsets[0].Offset))
+		return cc.Seek(int64(offsets[0].Offset))
 	}
 
 	return fmt.Errorf("error finding offset to seek to")
 }
 
 // setupReabalnceHandler does the setup of the rebalance handler
-func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) {
-	r.rebalanceHandlerMutex.Lock()
-	defer r.rebalanceHandlerMutex.Unlock()
+func (cc *ConfluentConsumer) setupRebalanceHandler(offset int64) {
+	cc.rebalanceHandlerMutex.Lock()
+	defer cc.rebalanceHandlerMutex.Unlock()
 
 	// Setting the following rebalance handler ensures the offset is set right after a rebalance, avoiding
 	// connectivity problems caused by race conditions (consumer did not join the group yet).
@@ -184,64 +167,61 @@ func (r *ConfluentConsumer) setupRebalanceHandler(offset int64) {
 	// not be a member of a group, we could just use Assign() with the hardcoded partitions instead, but this is not the case.
 	// See https://docs.confluent.io/current/clients/confluent-kafka-go/index.html#hdr-High_level_Consumer
 	var once sync.Once
-	r.rebalanceHandler = func(c *kafkalib.Consumer, ev kafkalib.Event) error {
-		log := r.log.WithField("kafka_event", ev.String())
-		spew.Dump(ev)
+	cc.rebalanceHandler = func(c *kafkalib.Consumer, ev kafkalib.Event) error {
+		log := cc.log.WithField("kafka_event", ev.String())
 		switch e := ev.(type) {
 		case kafkalib.AssignedPartitions:
-			partitions := e.Partitions
-			once.Do(func() {
-				log.WithField("kafka_offset", offset).Debug("Skipping Kafka assignment given by coordinator after rebalance in favor of resetting the offset")
-				partitions = kafkalib.TopicPartitions{{Topic: &r.conf.Topic, Offset: kafkalib.Offset(offset)}}
-			})
+			if cc.conf.Consumer.Partition == nil {
+				partitions := e.Partitions
+				once.Do(func() {
+					log.WithField("kafka_offset", offset).Debug("Skipping Kafka assignment given by coordinator after rebalance in favor of resetting the offset")
+					partitions = kafkalib.TopicPartitions{{Topic: &cc.conf.Topic, Offset: kafkalib.Offset(offset)}}
+				})
 
-			log.WithField("kafka_partitions", partitions).Debug("Assigning Kafka partitions after rebalance")
-			if err := c.Assign(partitions); err != nil {
-				log.WithField("kafka_partitions", partitions).WithError(err).Error("failed assigning Kafka partitions after rebalance")
+				log.WithField("kafka_partitions", partitions).Debug("Assigning Kafka partitions after rebalance")
+				if err := c.Assign(partitions); err != nil {
+					log.WithField("kafka_partitions", partitions).WithError(err).Error("failed assigning Kafka partitions after rebalance")
+					return err
+				}
+			} else {
+				err := cc.AssignPartitionByID(*cc.conf.Consumer.Partition)
 				return err
 			}
 		case kafkalib.RevokedPartitions:
-			r.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
-			if err := c.Unassign(); err != nil {
-				log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
-				return err
+			if cc.conf.Consumer.Partition == nil {
+				cc.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
+				if err := c.Unassign(); err != nil {
+					log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
+					return err
+				}
+			} else {
+				// check if we are assigned to this partition
+				revokedParts := e.Partitions
+				revoked := false
+				for _, part := range revokedParts {
+					if part.Partition == *cc.conf.Consumer.Partition && *part.Topic == cc.conf.Topic {
+						revoked = true
+						break
+					}
+				}
+				if revoked {
+					cc.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
+					if err := cc.c.Unassign(); err != nil {
+						log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
+					}
+					// if we know the partition key we can reassign
+					if cc.conf.Consumer.PartitionKey != "" && cc.conf.Consumer.PartitionerAlgorithm != "" {
+						cc.AssignPartitionByKey(cc.conf.Consumer.PartitionKey, cc.conf.Consumer.PartitionerAlgorithm)
+					}
+				}
 			}
 		}
 		return nil
 	}
 }
 
-func (r *ConfluentConsumer) handlePartitionRebalacne() {
-	for ev := range r.eventChan {
-		spew.Dump(ev)
-		log := r.log.WithField("kafka_event", ev.String())
-		switch e := ev.(type) {
-		case kafkalib.RevokedPartitions:
-			// check if we are assigned to this partition
-			revokedParts := e.Partitions
-			revoked := false
-			for _, part := range revokedParts {
-				if part.Partition == *r.conf.Consumer.Partition && *part.Topic == r.conf.Topic {
-					revoked = true
-					break
-				}
-			}
-			if revoked {
-				r.log.WithField("kafka_event", e.String()).Debug("Unassigning Kafka partitions after rebalance")
-				if err := r.c.Unassign(); err != nil {
-					log.WithError(err).Error("failed unassigning current Kafka partitions after rebalance")
-				}
-				// if we know the partition key we can reassign
-				if r.conf.Consumer.PartitionKey != "" && r.conf.Consumer.PartitionerAlgorithm != "" {
-					r.AssignPartitionByKey(r.conf.Consumer.PartitionKey, r.conf.Consumer.PartitionerAlgorithm)
-				}
-			}
-		}
-	}
-}
-
 // FetchMessage fetches one message, if there is any available at the current offset.
-func (r *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message, error) {
+func (cc *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message, error) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -249,14 +229,14 @@ func (r *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message
 		default:
 			// The timeout applies for the poll time, meaning if no messages during 5 min, read will timeout.
 			// Used for checking <-ctx.Done() from time to time.
-			msg, err := r.c.ReadMessage(time.Minute * 5)
+			msg, err := cc.c.ReadMessage(time.Minute * 5)
 			if err != nil {
 				if err.(kafkalib.Error).Code() == kafkalib.ErrTimedOut {
 					// Avoid logging errors when timing out.
 					continue
 				}
 
-				if err := handleConfluentReadMessageError(r.log, err, "failed fetching Kafka message"); err != nil {
+				if err := handleConfluentReadMessageError(cc.log, err, "failed fetching Kafka message"); err != nil {
 					return nil, err
 				}
 
@@ -270,55 +250,52 @@ func (r *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message
 }
 
 // CommitMessage commits the offset of a given message.
-func (r *ConfluentConsumer) CommitMessage(msg *kafkalib.Message) error {
-	_, err := r.c.CommitMessage(msg)
+func (cc *ConfluentConsumer) CommitMessage(msg *kafkalib.Message) error {
+	_, err := cc.c.CommitMessage(msg)
 	return errors.Wrap(err, "failed committing Kafka message")
 }
 
 // Close closes the consumer.
-func (r *ConfluentConsumer) Close() error {
-	if r.eventChan != nil {
-		close(r.eventChan)
-	}
-	return r.c.Close()
+func (cc *ConfluentConsumer) Close() error {
+	return cc.c.Close()
 }
 
 // GetMetadata return the confluence consumer metatdata
-func (r *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
+func (cc *ConfluentConsumer) GetMetadata(allTopics bool) (*kafkalib.Metadata, error) {
 	if allTopics {
-		return r.c.GetMetadata(nil, true, int(r.conf.Timeout.Milliseconds()))
+		return cc.c.GetMetadata(nil, true, int(cc.conf.Timeout.Milliseconds()))
 	}
 
-	return r.c.GetMetadata(&r.conf.Topic, false, int(r.conf.Timeout.Milliseconds()))
+	return cc.c.GetMetadata(&cc.conf.Topic, false, int(cc.conf.Timeout.Milliseconds()))
 }
 
 // GetPartitions returns the partition ids of the configured topic
-func (r *ConfluentConsumer) GetPartitions() ([]int32, error) {
-	meta, err := r.GetMetadata(false)
+func (cc *ConfluentConsumer) GetPartitions() ([]int32, error) {
+	meta, err := cc.GetMetadata(false)
 	if err != nil {
 		return nil, err
 	}
 
-	return getPartitionIds(r.conf.Topic, meta)
+	return getPartitionIds(cc.conf.Topic, meta)
 }
 
 // AssignPartitionByKey sets the partition to consume messages from by the passed key and algorithm
 // - NOTE we currently only support the murmur2 hashing algorithm in the consumer
-func (r *ConfluentConsumer) AssignPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
+func (cc *ConfluentConsumer) AssignPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
 	if algorithm != PartitionerMurMur2 {
 		return fmt.Errorf("we currently only support the murmur2 hashing algorithm in the consumer")
 	}
-	parts, err := r.GetPartitions()
+	parts, err := cc.GetPartitions()
 	if err != nil {
 		return err
 	}
 
-	return r.AssignPartitionByID(GetPartition(key, parts))
+	return cc.AssignPartitionByID(GetPartition(key, parts))
 }
 
 // AssignPartitionByID sets the partition to consume messages from by the passed partition ID
-func (r *ConfluentConsumer) AssignPartitionByID(id int32) error {
-	parts, err := r.GetPartitions()
+func (cc *ConfluentConsumer) AssignPartitionByID(id int32) error {
+	parts, err := cc.GetPartitions()
 	if err != nil {
 		return err
 	}
@@ -332,16 +309,16 @@ func (r *ConfluentConsumer) AssignPartitionByID(id int32) error {
 	if !found {
 		return fmt.Errorf("%d is not a valid partition id", id)
 	}
-	r.conf.Consumer.Partition = &id
+	cc.conf.Consumer.Partition = &id
 	pt := []kafkalib.TopicPartition{
 		kafkalib.TopicPartition{
-			Topic:     &r.conf.Topic,
-			Partition: *r.conf.Consumer.Partition,
+			Topic:     &cc.conf.Topic,
+			Partition: *cc.conf.Consumer.Partition,
 		},
 	}
-	err = r.c.Assign(pt)
+	err = cc.c.Assign(pt)
 
-	r.log.WithField("kafka_partition_id", id).Debug("Assigning Kafka partition")
+	cc.log.WithField("kafka_partition_id", id).Debug("Assigning Kafka partition")
 
 	return nil
 }
