@@ -27,6 +27,7 @@ const (
 	PartitionerMurMur2Random    = PartitionerAlgorithm("murmur2_random")    // Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. Default partitioner in the Java Producer.)
 	PartitionerFNV1A            = PartitionerAlgorithm("fnv1a")             // FNV-1a hash of key (NULL keys are mapped to single partition)
 	PartitionerFNV1ARandom      = PartitionerAlgorithm("fnv1a_random")      // FNV-1a hash of key (NULL keys are randomly partitioned).
+	PartitionerFilebeat         = PartitionerAlgorithm("filebeat")          // This is to fix the stupidity that is in the filebeat code.
 
 	DefaultTimeout = time.Duration(30 * time.Second) // Default timeout to be used if not set in the config
 )
