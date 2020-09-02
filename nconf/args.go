@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/netlify/netlify-commons/featureflag"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/pkg/errors"
@@ -20,10 +21,11 @@ type RootArgs struct {
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
 	// first load the logger and BugSnag config
 	rootConfig := &struct {
-		Log     *LoggingConfig
-		BugSnag *BugSnagConfig
-		Metrics metriks.Config
-		Tracing tracing.Config
+		Log         *LoggingConfig
+		BugSnag     *BugSnagConfig
+		Metrics     metriks.Config
+		Tracing     tracing.Config
+		FeatureFlag featureflag.Config
 	}{}
 
 	loader := func(cfg interface{}) error {
@@ -59,6 +61,10 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	// Handles the 'enabled' flag itself
 	tracing.Configure(&rootConfig.Tracing, serviceName)
 
+	if err := featureflag.Init(rootConfig.FeatureFlag, log); err != nil {
+		return nil, errors.Wrap(err, "Failed to configure featureflags")
+	}
+
 	if err := sendDatadogEvents(rootConfig.Metrics, serviceName, version); err != nil {
 		log.WithError(err).Error("Failed to send the startup events to datadog")
 	}
@@ -79,7 +85,7 @@ func (args *RootArgs) MustSetup(config interface{}, serviceName, version string)
 		if logger != nil {
 			logger.WithError(err).Fatal("Failed to setup configuration")
 		} else {
-			panic(fmt.Sprintf("Failed to setup configuratio: %s", err.Error()))
+			panic(fmt.Sprintf("Failed to setup configuration: %s", err.Error()))
 		}
 	}
 
