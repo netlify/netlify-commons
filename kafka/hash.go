@@ -1,12 +1,21 @@
 package kafka
 
-func GetPartition(key string, partitions []int32) int32 {
+import "hash/fnv"
+
+func GetPartition(key string, partitions []int32, algorithm PartitionerAlgorithm) int32 {
 	if len(partitions) == 0 {
 		return -1
 	}
-	// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
-	//       non-existent while treating an empty slice as a defined value.
-	idx := (murmur2([]byte(key)) & 0x7fffffff) % uint32(len(partitions))
+	var idx uint32
+	numPartitions := uint32(len(partitions))
+	switch algorithm {
+	case PartitionerMurMur2:
+		// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
+		//       non-existent while treating an empty slice as a defined value.
+		idx = (murmur2([]byte(key)) & 0x7fffffff) % numPartitions
+	case PartitionerFNV1A:
+		idx = uint32(fnv1([]byte(key))) % numPartitions
+	}
 	return int32(partitions[idx])
 }
 
@@ -54,4 +63,10 @@ func murmur2(data []byte) uint32 {
 	h ^= h >> 15
 
 	return h
+}
+
+func fnv1(data []byte) uint32 {
+	hasher := fnv.New32a()
+	hasher.Write(data)
+	return hasher.Sum32()
 }

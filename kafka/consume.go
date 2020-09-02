@@ -282,17 +282,17 @@ func (cc *ConfluentConsumer) GetPartitions() ([]int32, error) {
 }
 
 // AssignPartitionByKey sets the partition to consume messages from by the passed key and algorithm
-// - NOTE we currently only support the murmur2 hashing algorithm in the consumer
+// - NOTE we currently only support the murmur2 and fnv1a hashing algorithm in the consumer
 func (cc *ConfluentConsumer) AssignPartitionByKey(key string, algorithm PartitionerAlgorithm) error {
-	if algorithm != PartitionerMurMur2 {
-		return fmt.Errorf("we currently only support the murmur2 hashing algorithm in the consumer")
+	if algorithm != PartitionerMurMur2 && algorithm != PartitionerFNV1A {
+		return fmt.Errorf("we currently only support the murmur2 and fnv1a hashing algorithm in the consumer")
 	}
 	parts, err := cc.GetPartitions()
 	if err != nil {
 		return err
 	}
 
-	return cc.AssignPartitionByID(GetPartition(key, parts))
+	return cc.AssignPartitionByID(GetPartition(key, parts, algorithm))
 }
 
 // AssignPartitionByID sets the partition to consume messages from by the passed partition ID

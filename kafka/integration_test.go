@@ -85,7 +85,7 @@ func TestIntegration(t *testing.T) {
 			err = p.Produce(ctx, m)
 			assert.NoError(err)
 
-			p := GetPartition(k, parts)
+			p := GetPartition(k, parts, PartitionerMurMur2)
 
 			err = c.AssignPartitionByKey(k, PartitionerMurMur2)
 			assert.NoError(err)
