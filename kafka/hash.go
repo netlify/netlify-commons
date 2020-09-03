@@ -9,18 +9,22 @@ func GetPartition(key string, partitions []int32, algorithm PartitionerAlgorithm
 		return -1
 	}
 	var idx uint32
-	numPartitions := uint32(len(partitions))
+	numPartitions := len(partitions)
 	switch algorithm {
 	case PartitionerMurMur2:
 		// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
 		//       non-existent while treating an empty slice as a defined value.
-		idx = (murmur2(key) & 0x7fffffff) % numPartitions
+		idx = (murmur2(key) & 0x7fffffff) % uint32(numPartitions)
 	case PartitionerFNV1A:
-		idx = (fnv1(key) & 0x7fffffff) % numPartitions
+		idx = (fnv1(key) & 0x7fffffff) % uint32(numPartitions)
 	case PartitionerFilebeat:
-		idx = filebeat(key) % numPartitions
+		h := int32(fnv1(key))
+		if h < 0 {
+			h = -h
+		}
+		idx = uint32(h % int32(numPartitions))
 	}
-	return int32(partitions[idx])
+	return partitions[idx]
 }
 
 // Go port of the Java library's murmur2 function.
@@ -78,9 +82,8 @@ func fnv1(key string) uint32 {
 }
 
 func filebeat(key string) uint32 {
-	type ByteEncoder []byte
-	data := ByteEncoder(key)
-	hasher := fnv.New32()
+	data := []byte(key)
+	hasher := fnv.New32a()
 	hasher.Write(data)
 	return hasher.Sum32()
 }
