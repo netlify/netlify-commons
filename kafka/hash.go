@@ -1,17 +1,36 @@
 package kafka
 
-import kafkalib "github.com/confluentinc/confluent-kafka-go/kafka"
+import (
+	"hash/fnv"
+)
 
-func GetPartition(msg *kafkalib.Message, partitions ...int) (partition int) {
-	// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
-	//       non-existent while treating an empty slice as a defined value.
-	idx := (murmur2(msg.Key) & 0x7fffffff) % uint32(len(partitions))
+func GetPartition(key string, partitions []int32, algorithm PartitionerAlgorithm) int32 {
+	if len(partitions) == 0 {
+		return -1
+	}
+	var idx uint32
+	numPartitions := len(partitions)
+	switch algorithm {
+	case PartitionerMurMur2:
+		// NOTE: the murmur2 balancers in java and librdkafka treat a nil key as
+		//       non-existent while treating an empty slice as a defined value.
+		idx = (murmur2(key) & 0x7fffffff) % uint32(numPartitions)
+	case PartitionerFNV1A:
+		idx = (fnv1(key) & 0x7fffffff) % uint32(numPartitions)
+	case PartitionerFilebeat:
+		h := int32(fnv1(key))
+		if h < 0 {
+			h = -h
+		}
+		idx = uint32(h % int32(numPartitions))
+	}
 	return partitions[idx]
 }
 
 // Go port of the Java library's murmur2 function.
 // https://github.com/apache/kafka/blob/1.0/clients/src/main/java/org/apache/kafka/common/utils/Utils.java#L353
-func murmur2(data []byte) uint32 {
+func murmur2(key string) uint32 {
+	data := []byte(key)
 	length := len(data)
 	const (
 		seed uint32 = 0x9747b28c
@@ -53,4 +72,18 @@ func murmur2(data []byte) uint32 {
 	h ^= h >> 15
 
 	return h
+}
+
+func fnv1(key string) uint32 {
+	data := []byte(key)
+	hasher := fnv.New32a()
+	hasher.Write(data)
+	return hasher.Sum32()
+}
+
+func filebeat(key string) uint32 {
+	data := []byte(key)
+	hasher := fnv.New32a()
+	hasher.Write(data)
+	return hasher.Sum32()
 }

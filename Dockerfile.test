@@ -1,0 +1,12 @@
+FROM golang:1.14-stretch
+
+# Add Code
+RUN mkdir /app
+ADD . /app/
+
+# Set the working dir
+WORKDIR /app
+
+# Run tests without cache
+# TODO figuire out a better way then sleeping for kafka to start
+CMD echo "Sleeping 30 seconds for Kafka clsuter to start..."; sleep 30; go test -v -count=1 ./...
