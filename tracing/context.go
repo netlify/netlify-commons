@@ -30,7 +30,10 @@ func GetTracer(r *http.Request) *RequestTracer {
 }
 
 func GetRequestID(r *http.Request) string {
-	return GetRequestIDFromContext(r.Context())
+	if id := GetRequestIDFromContext(r.Context()); id != "" {
+		return id
+	}
+	return r.Header.Get(HeaderRequestUUID)
 }
 
 func GetRequestIDFromContext(ctx context.Context) string {

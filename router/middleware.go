@@ -68,6 +68,8 @@ func CheckAuth(secret string) Middleware {
 // possible. Recoverer prints a request ID if one is provided.
 func Recoverer(errLog logrus.FieldLogger) Middleware {
 	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		reqID := tracing.GetRequestID(r)
+
 		defer func() {
 			if rvr := recover(); rvr != nil {
 				if errLog == nil {
@@ -75,15 +77,16 @@ func Recoverer(errLog logrus.FieldLogger) Middleware {
 					logger.Out = os.Stderr
 					errLog = logrus.NewEntry(logger)
 				}
-				reqID := tracing.GetRequestID(r)
 				panicLog := errLog.WithField("request_id", reqID)
 
 				stack := debug.Stack()
 				scanner := bufio.NewScanner(bytes.NewReader(stack))
 
-				panicLog.Errorf("Panic: %+v", rvr)
+				var lineID int
+				panicLog.WithField("trace_line", lineID).Errorf("Panic: %+v", rvr)
 				for scanner.Scan() {
-					panicLog.Errorf(scanner.Text())
+					lineID++
+					panicLog.WithField("trace_line", lineID).Errorf(scanner.Text())
 				}
 
 				se := &HTTPError{
