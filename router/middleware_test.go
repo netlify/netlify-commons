@@ -1,12 +1,15 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/netlify/netlify-commons/tracing"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,4 +73,28 @@ func TestCheckAuth(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, rsp.Code)
 	})
 
+}
+
+func TestRecoveryLogging(t *testing.T) {
+	logger, hook := test.NewNullLogger()
+
+	mw := Recoverer(logger)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://doesntmatter.com", nil)
+	req.Header.Set(tracing.HeaderRequestUUID, "123456")
+
+	// this should be captured by the recorder
+	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic(errors.New("because I should"))
+	}))
+
+	handler.ServeHTTP(rec, req)
+	require.NotEmpty(t, hook.AllEntries)
+	var lineID int
+	for _, e := range hook.AllEntries() {
+		assert.Equal(t, "123456", e.Data["request_id"], "missing the request_id: %v", e.Data)
+		assert.Equal(t, lineID, e.Data["trace_line"], "trace_line isn't in order: %v", e.Data)
+		lineID++
+	}
 }
