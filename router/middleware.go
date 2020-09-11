@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/bugsnag/bugsnag-go"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/sirupsen/logrus"
 )
@@ -116,5 +117,13 @@ func HealthCheck(route string, f APIHandler) Middleware {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func BugSnag() Middleware {
+	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		ctx := bugsnag.StartSession(r.Context())
+		defer bugsnag.AutoNotify(ctx)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
