@@ -8,8 +8,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
-	"github.com/opentracing/opentracing-go"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 // HTTPError is an error with a message and an HTTP status code.
@@ -93,11 +91,6 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 	log := tracing.GetLogger(r)
 	errorID := tracing.GetRequestID(r)
 
-	code := http.StatusInternalServerError
-	meta := map[string]interface{}{
-		"error_id": errorID,
-	}
-
 	switch e := err.(type) {
 	case nil:
 		return
@@ -108,7 +101,6 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		code = e.Code
 		if e.Code >= http.StatusInternalServerError {
 			e.ErrorID = errorID
 			// this will get us the stack trace too
@@ -126,7 +118,6 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		meta["unhandled"] = true
 		metriks.Inc("unhandled_errors", 1)
 		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
 		// hide real error details from response to prevent info leaks
@@ -134,20 +125,12 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		if _, writeErr := w.Write([]byte(`{"code":500,"msg":"Internal server error","error_id":"` + errorID + `"}`)); writeErr != nil {
 			log.WithError(writeErr).Error("Error writing generic error message")
 		}
+		bugsnag.Notify(err, r, bugsnag.MetaData{
+			"meta": map[string]interface{}{
+				"error_id":    errorID,
+				"status_code": http.StatusInternalServerError,
+				"unhandled":   true,
+			},
+		})
 	}
-
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		span.SetTag("error_id", errorID)
-		span.SetTag(ext.ErrorMsg, err.Error())
-		span.SetTag(ext.HTTPCode, code)
-		defer span.Finish()
-	}
-	if tr := tracing.GetFromContext(r.Context()); tr != nil {
-		tr.Finish()
-	}
-
-	meta["status_code"] = code
-	bugsnag.Notify(err, r, bugsnag.MetaData{
-		"meta": meta,
-	})
 }

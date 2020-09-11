@@ -12,7 +12,9 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/netlify/netlify-commons/tracing"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 var bearerRegexp = regexp.MustCompile(`^(?:B|b)earer (\S+$)`)
@@ -95,6 +97,23 @@ func Recoverer(errLog logrus.FieldLogger) Middleware {
 					Message: http.StatusText(http.StatusInternalServerError),
 				}
 				HandleError(se, w, r)
+
+				// in the event of a panic none of the normal shutdown code is called
+				if span := opentracing.SpanFromContext(r.Context()); span != nil {
+					span.SetTag("error_id", reqID)
+					span.SetTag(ext.ErrorType, "panic")
+					span.SetTag(ext.HTTPCode, http.StatusInternalServerError)
+
+					if err, ok := rvr.(error); ok {
+						span.SetTag(ext.ErrorMsg, err.Error())
+					}
+
+					defer span.Finish()
+				}
+
+				if tr := tracing.GetFromContext(r.Context()); tr != nil {
+					tr.Finish()
+				}
 			}
 		}()
 

@@ -8,10 +8,13 @@ import (
 	"testing"
 
 	"github.com/netlify/netlify-commons/tracing"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 func TestCheckAuth(t *testing.T) {
@@ -97,4 +100,54 @@ func TestRecoveryLogging(t *testing.T) {
 		assert.Equal(t, lineID, e.Data["trace_line"], "trace_line isn't in order: %v", e.Data)
 		lineID++
 	}
+}
+
+func TestRecoveryTracing(t *testing.T) {
+	mw := Recoverer(logrus.New())
+	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic(errors.New("because I should"))
+	}))
+
+	mtracer := mocktracer.New()
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.Header.Set(tracing.HeaderRequestUUID, "123456")
+	ctx := opentracing.ContextWithSpan(r.Context(), mtracer.StartSpan(t.Name()))
+	r = r.WithContext(ctx)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	finished := mtracer.FinishedSpans()
+	assert.Len(t, finished, 1)
+
+	tags := finished[0].Tags()
+	assert.Len(t, tags, 4)
+	assert.Equal(t, "123456", tags["error_id"])
+	assert.Equal(t, "because I should", tags[ext.ErrorMsg])
+	assert.Equal(t, "panic", tags[ext.ErrorType])
+	assert.Equal(t, 500, tags[ext.HTTPCode])
+}
+
+func TestRecoveryInternalTracer(t *testing.T) {
+	logger, hook := test.NewNullLogger()
+	w, r, _ := tracing.NewTracer(
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		logger,
+		t.Name(),
+	)
+	mw := Recoverer(logrus.New())
+	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic(errors.New("because I should"))
+	}))
+	handler.ServeHTTP(w, r)
+
+	var found bool
+	for _, e := range hook.Entries {
+		found = e.Message == "Completed Request"
+		if found {
+			assert.Equal(t, 500, e.Data["status_code"])
+			break
+		}
+	}
+	assert.True(t, found)
 }
