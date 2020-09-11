@@ -134,10 +134,29 @@ func TestHandleError_ErrorGoesToBugsnag(t *testing.T) {
 		assert.NotNil(t, config)
 		return errors.New("this should stop us from sending to bugsnag")
 	})
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	HandleError(errors.New("this is an error"), w, r)
+
+	HandleError(
+		errors.New("this is an error"),
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+	)
 	assert.Equal(t, 1, called)
+
+	// we shouldn't be notified of regular errors
+	HandleError(
+		NotFoundError("not found"),
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+	)
+	assert.Equal(t, 1, called)
+
+	// we should be notified of internal server errors
+	HandleError(
+		InternalServerError("this is an error"),
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+	)
+	assert.Equal(t, 2, called)
 }
 func TestHandleError_ErrorEmitsMetric(t *testing.T) {
 	sink := metrics.NewInmemSink(time.Minute, time.Minute)
