@@ -30,7 +30,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
@@ -45,7 +45,7 @@ require (
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.3.5
+	go.mongodb.org/mongo-driver v1.4.1
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
 	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
