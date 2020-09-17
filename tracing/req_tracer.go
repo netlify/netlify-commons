@@ -6,6 +6,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 type RequestTracer struct {
@@ -75,6 +76,7 @@ func (rt *RequestTracer) Finish() {
 	fields["dur"] = dur.String()
 	fields["dur_ns"] = dur.Nanoseconds()
 
+	rt.span.SetTag(ext.HTTPCode, rt.trackingWriter.status)
 	rt.span.Finish()
 	rt.WithFields(fields).Info("Completed Request")
 }

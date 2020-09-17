@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/bugsnag/bugsnag-go"
+	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 )
 
@@ -88,6 +90,9 @@ func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 	log := tracing.GetLogger(r)
 	errorID := tracing.GetRequestID(r)
+
+	var notifyBugsnag bool
+
 	switch e := err.(type) {
 	case nil:
 		return
@@ -97,12 +102,14 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		if httpErr == nil {
 			return
 		}
+
 		if e.Code >= http.StatusInternalServerError {
 			e.ErrorID = errorID
 			// this will get us the stack trace too
 			log.WithError(e.Cause()).Error(e.Error())
+			notifyBugsnag = true
 		} else {
-			log.WithError(e.Cause()).Info(e.Error())
+			log.WithError(e.Cause()).Infof("unexpected error: %s", e.Error())
 		}
 
 		if jsonErr := SendJSON(w, e.Code, e); jsonErr != nil {
@@ -113,11 +120,23 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 		if reflect.ValueOf(err).IsNil() {
 			return
 		}
+		notifyBugsnag = true
+		metriks.Inc("unhandled_errors", 1)
 		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
 		// hide real error details from response to prevent info leaks
 		w.WriteHeader(http.StatusInternalServerError)
 		if _, writeErr := w.Write([]byte(`{"code":500,"msg":"Internal server error","error_id":"` + errorID + `"}`)); writeErr != nil {
 			log.WithError(writeErr).Error("Error writing generic error message")
 		}
+	}
+	if notifyBugsnag {
+		bugsnag.Notify(err, r, r.Context(), bugsnag.MetaData{
+			"meta": map[string]interface{}{
+				"error_id":    errorID,
+				"error_msg":   err.Error(),
+				"status_code": http.StatusInternalServerError,
+				"unhandled":   true,
+			},
+		})
 	}
 }
