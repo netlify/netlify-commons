@@ -43,11 +43,10 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.6.0
 	github.com/tidwall/pretty v1.0.1 // indirect
-	github.com/tinylib/msgp v1.1.0 // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.4.1
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
-	gopkg.in/DataDog/dd-trace-go.v1 v1.12.1
+	gopkg.in/DataDog/dd-trace-go.v1 v1.26.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01 // indirect
 	gopkg.in/launchdarkly/go-server-sdk.v4 v4.0.0-20200729232655-2a44fb361895
