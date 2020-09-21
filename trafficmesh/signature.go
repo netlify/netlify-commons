@@ -11,10 +11,12 @@ import (
 
 const signatureHeader = "X-NF-Mesh-Signature"
 
+// SignatureDecoder decodes a signed traffic-mesh header.
 type SignatureDecoder struct {
 	secret string
 }
 
+// SignaturePayload represents the fields in a traffic-mesh signature.
 type SignaturePayload struct {
 	jwt.StandardClaims
 	SiteID    string `json:"sid,omitempty"`
@@ -24,12 +26,16 @@ type SignaturePayload struct {
 	Remapped  bool   `json:"remapped,omitempty"`
 }
 
+// NewSignatureDecoder constructs a new SignatureDecoder. When secret is an empty string,
+// DecodeSignature is a no-op.
 func NewSignatureDecoder(secret string) *SignatureDecoder {
 	return &SignatureDecoder{
 		secret: secret,
 	}
 }
 
+// DecodeSignature decodes a traffic-mesh signature. When either the secret or the header is an
+// empty string, this method returns a nil payload and nil error.
 func (d *SignatureDecoder) DecodeSignature(req *http.Request) (*SignaturePayload, error) {
 	if d.secret == "" || req.Header.Get(signatureHeader) == "" {
 		return nil, nil
