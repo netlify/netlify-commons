@@ -10,7 +10,10 @@ import (
 
 type Client interface {
 	Enabled(key, userID string) bool
+	EnabledUser(key string, user ld.User) bool
+
 	Variation(key, defaultVal, userID string) string
+	VariationUser(key string, defaultVal string, user ld.User) string
 }
 
 type ldClient struct {
@@ -41,7 +44,11 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 }
 
 func (c *ldClient) Enabled(key string, userID string) bool {
-	res, err := c.BoolVariation(key, ld.NewUser(userID), false)
+	return c.EnabledUser(key, ld.NewUser(userID))
+}
+
+func (c *ldClient) EnabledUser(key string, user ld.User) bool {
+	res, err := c.BoolVariation(key, user, false)
 	if err != nil {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
@@ -49,7 +56,11 @@ func (c *ldClient) Enabled(key string, userID string) bool {
 }
 
 func (c *ldClient) Variation(key, defaultVal, userID string) string {
-	res, err := c.StringVariation(key, ld.NewUser(userID), defaultVal)
+	return c.VariationUser(key, defaultVal, ld.NewUser(userID))
+}
+
+func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) string {
+	res, err := c.StringVariation(key, user, defaultVal)
 	if err != nil {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
