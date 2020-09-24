@@ -1,7 +1,6 @@
 package kafka
 
 import (
-	"context"
 	"fmt"
 	"log/syslog"
 	"strings"
@@ -153,7 +152,7 @@ func (c Config) configureAuth(configMap *kafkalib.ConfigMap) error {
 type ConfigOpt func(c *kafkalib.ConfigMap)
 
 // WithLogger adds a logger to a Kafka consumer or producer.
-func WithLogger(ctx context.Context, log logrus.FieldLogger) ConfigOpt {
+func WithLogger(log logrus.FieldLogger) ConfigOpt {
 	return func(c *kafkalib.ConfigMap) {
 
 		syslogToLogrusLevelMapping := map[syslog.Priority]logrus.Level{
@@ -178,25 +177,21 @@ func WithLogger(ctx context.Context, log logrus.FieldLogger) ConfigOpt {
 			// Do not close logsChan because confluent-kafka-go will send logs until we close the client.
 			// Otherwise it will panic trying to send messages to a closed channel.
 			for {
-				select {
-				case <-ctx.Done():
+				m, ok := <-logsChan
+				if !ok {
 					return
-				case m, ok := <-logsChan:
-					if !ok {
-						return
-					}
-					l := log.WithFields(logrus.Fields{
-						"kafka_context": m.Tag,
-						"kafka_client":  m.Name,
-					}).WithTime(m.Timestamp)
+				}
+				l := log.WithFields(logrus.Fields{
+					"kafka_context": m.Tag,
+					"kafka_client":  m.Name,
+				}).WithTime(m.Timestamp)
 
-					logrusLevel := syslogToLogrusLevelMapping[syslog.Priority(m.Level)]
-					switch logrusLevel {
-					case logrus.ErrorLevel:
-						l.WithError(errors.New(m.Message)).Error("Error in Kafka Consumer")
-					default:
-						l.Log(logrusLevel, m.Message)
-					}
+				logrusLevel := syslogToLogrusLevelMapping[syslog.Priority(m.Level)]
+				switch logrusLevel {
+				case logrus.ErrorLevel:
+					l.WithError(errors.New(m.Message)).Error("Error in Kafka Consumer")
+				default:
+					l.Log(logrusLevel, m.Message)
 				}
 			}
 		}()
