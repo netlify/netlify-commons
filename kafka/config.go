@@ -175,7 +175,8 @@ func WithLogger(ctx context.Context, log logrus.FieldLogger) ConfigOpt {
 
 		// Read from channel and print logs using the provided logger.
 		go func() {
-			defer close(logsChan)
+			// Do not close logsChan because confluent-kafka-go will send logs until we close the client.
+			// Otherwise it will panic trying to send messages to a closed channel.
 			for {
 				select {
 				case <-ctx.Done():
