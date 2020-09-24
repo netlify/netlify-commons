@@ -50,7 +50,7 @@ func TestIntegration(t *testing.T) {
 		}
 
 		// create the producer
-		p, err := NewProducer(conf, WithLogger(ctx, log), WithPartitionerAlgorithm(PartitionerMurMur2))
+		p, err := NewProducer(conf, WithLogger(log), WithPartitionerAlgorithm(PartitionerMurMur2))
 		assert.NoError(err)
 		assert.NotNil(p)
 
@@ -131,7 +131,7 @@ func TestIntegration(t *testing.T) {
 		val := "gotestval"
 
 		// create the producer
-		p, err := NewProducer(conf, WithLogger(ctx, log), WithPartitionerAlgorithm(PartitionerMurMur2))
+		p, err := NewProducer(conf, WithLogger(log), WithPartitionerAlgorithm(PartitionerMurMur2))
 		assert.NoError(err)
 		assert.NotNil(p)
 
