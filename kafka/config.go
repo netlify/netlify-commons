@@ -176,11 +176,7 @@ func WithLogger(log logrus.FieldLogger) ConfigOpt {
 		go func() {
 			// Do not close logsChan because confluent-kafka-go will send logs until we close the client.
 			// Otherwise it will panic trying to send messages to a closed channel.
-			for {
-				m, ok := <-logsChan
-				if !ok {
-					return
-				}
+			for m := range logsChan {
 				l := log.WithFields(logrus.Fields{
 					"kafka_context": m.Tag,
 					"kafka_client":  m.Name,
