@@ -65,6 +65,15 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 	return res
 }
 
+func (c *ldClient) AllEnabledFlags(userId string) []string {
+	// Ask launch darkly for all the flags for the user, return ld.FeatureFlagsState
+	// getEnabledFlags()
+}
+
+func getEnabledFlagsFromState(ffState ld.FeatureFlagsState) []string {
+
+}
+
 func noopLogger() *logrus.Logger {
 	l := logrus.New()
 	l.SetOutput(ioutil.Discard)

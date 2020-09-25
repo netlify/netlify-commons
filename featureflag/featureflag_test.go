@@ -39,3 +39,7 @@ func TestMockClient(t *testing.T) {
 	require.Equal(t, "BAR", mock.Variation("FOO", "DFLT", "12345"))
 	require.Equal(t, "DFLT", mock.Variation("FOOBAR", "DFLT", "12345"))
 }
+
+func TestGetEnabledFlagsFromState(t *testing.T) {
+
+}
