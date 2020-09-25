@@ -37,10 +37,8 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
 	if err != nil {
 		logger.WithError(err).Error("Unable to construct LD client")
-		return nil, err
 	}
-
-	return &ldClient{inner, logger}, nil
+	return &ldClient{inner, logger}, err
 }
 
 func (c *ldClient) Enabled(key string, userID string) bool {
