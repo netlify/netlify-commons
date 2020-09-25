@@ -67,10 +67,11 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 
 func (c *ldClient) AllEnabledFlags(userId string) []string {
 	// Ask launch darkly for all the flags for the user, return ld.FeatureFlagsState
-	// getEnabledFlags()
+	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
+	return getEnabledFromState(res)
 }
 
-func getEnabledFlagsFromState(ffState ld.FeatureFlagsState) []string {
+func getEnabledFromState(ffState ld.FeatureFlagsState) []string {
 
 }
 
