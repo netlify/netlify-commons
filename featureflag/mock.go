@@ -1,6 +1,8 @@
 package featureflag
 
-import ld "gopkg.in/launchdarkly/go-server-sdk.v4"
+import (
+	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
+)
 
 type MockClient struct {
 	BoolVars   map[string]bool
@@ -27,4 +29,8 @@ func (c MockClient) VariationUser(key string, defaultVal string, _ ld.User) stri
 		return defaultVal
 	}
 	return res
+}
+
+func (c MockClient) AllEnabledFlags(string) []string {
+	return []string{}
 }

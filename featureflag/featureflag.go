@@ -2,6 +2,7 @@ package featureflag
 
 import (
 	"io/ioutil"
+	"log"
 
 	"github.com/sirupsen/logrus"
 
@@ -14,6 +15,8 @@ type Client interface {
 
 	Variation(key, defaultVal, userID string) string
 	VariationUser(key string, defaultVal string, user ld.User) string
+
+	AllEnabledFlags(userID string) []string
 }
 
 type ldClient struct {
@@ -28,6 +31,10 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 
 	if !cfg.Enabled {
 		config.Offline = true
+	}
+
+	if cfg.updateProcessorFactory != nil {
+		config.UpdateProcessorFactory = cfg.updateProcessorFactory
 	}
 
 	if logger == nil {
@@ -68,11 +75,8 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 func (c *ldClient) AllEnabledFlags(userId string) []string {
 	// Ask launch darkly for all the flags for the user, return ld.FeatureFlagsState
 	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
-	return getEnabledFromState(res)
-}
-
-func getEnabledFromState(ffState ld.FeatureFlagsState) []string {
-
+	log.Println(res)
+	return []string{}
 }
 
 func noopLogger() *logrus.Logger {

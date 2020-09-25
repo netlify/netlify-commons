@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/launchdarkly/go-server-sdk.v4/ldfiledata"
 )
 
 func TestOfflineClient(t *testing.T) {
@@ -40,6 +41,16 @@ func TestMockClient(t *testing.T) {
 	require.Equal(t, "DFLT", mock.Variation("FOOBAR", "DFLT", "12345"))
 }
 
-func TestGetEnabledFromState(t *testing.T) {
+func TestAllEnabledFlags(t *testing.T) {
+	fileSource := ldfiledata.NewFileDataSourceFactory(ldfiledata.FilePaths("./fixtures/flags.yml"))
+	cfg := Config{
+		Key:                    "ABCD",
+		RequestTimeout:         time.Second,
+		Enabled:                true,
+		updateProcessorFactory: fileSource,
+	}
+	client, err := NewClient(&cfg, nil)
+	require.NoError(t, err)
 
+	client.AllEnabledFlags("foo")
 }
