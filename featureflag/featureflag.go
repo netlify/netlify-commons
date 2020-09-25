@@ -2,7 +2,6 @@ package featureflag
 
 import (
 	"io/ioutil"
-	"log"
 
 	"github.com/sirupsen/logrus"
 
@@ -75,7 +74,10 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 func (c *ldClient) AllEnabledFlags(userId string) []string {
 	// Ask launch darkly for all the flags for the user, return ld.FeatureFlagsState
 	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
-	log.Println(res)
+	flagMap := res.ToValuesMap()
+	for key, value := range flagMap {
+		// get the "true" flags
+	}
 	return []string{}
 }
 
