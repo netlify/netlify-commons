@@ -52,5 +52,5 @@ func TestAllEnabledFlags(t *testing.T) {
 	client, err := NewClient(&cfg, nil)
 	require.NoError(t, err)
 
-	client.AllEnabledFlags("foo")
+	client.AllEnabledFlags("userid")
 }

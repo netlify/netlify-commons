@@ -34,6 +34,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 
 	if cfg.updateProcessorFactory != nil {
 		config.UpdateProcessorFactory = cfg.updateProcessorFactory
+		config.SendEvents = false
 	}
 
 	if logger == nil {
@@ -72,7 +73,6 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 }
 
 func (c *ldClient) AllEnabledFlags(userId string) []string {
-	// Ask launch darkly for all the flags for the user, return ld.FeatureFlagsState
 	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
 	flagMap := res.ToValuesMap()
 	for key, value := range flagMap {
