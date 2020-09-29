@@ -20,6 +20,7 @@ type LoggingConfig struct {
 var DefaultLoggingConfig = LoggingConfig{
 	Level:            "info",
 	QuoteEmptyFields: true,
+	Fields:           make(map[string]interface{}),
 }
 
 func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
