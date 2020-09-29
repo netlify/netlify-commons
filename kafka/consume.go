@@ -128,7 +128,7 @@ func NewDetachedConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt)
 // NewConsumer creates a ConfluentConsumer based on config.
 // - NOTE if the partition is set and the partition key is not set in config we have no way
 //   of knowing where to assign the consumer to in the case of a rebalance
-func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consumer, error) {
+func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (*ConfluentConsumer, error) {
 	// See Reference at https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 	kafkaConf := conf.baseKafkaConfig()
 	_ = kafkaConf.SetKey("enable.auto.offset.store", false) // manually StoreOffset after processing a message. Otherwise races may happen.)
@@ -173,7 +173,7 @@ func NewConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consum
 		}
 
 		logFields["kafka_partition_key"] = cc.conf.Consumer.PartitionKey
-		logFields["kafka_partition"] = cc.conf.Consumer.Partition
+		logFields["kafka_partition"] = *cc.conf.Consumer.Partition
 	}
 
 	cc.setupRebalanceHandler()

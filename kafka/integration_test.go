@@ -15,7 +15,6 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-
 	testBrokers := os.Getenv("KAFKA_TEST_BROKERS")
 	if testBrokers == "" {
 		t.Skipf("No local Kafka broker available to run tests")
@@ -36,16 +35,14 @@ func TestIntegration(t *testing.T) {
 		assert := assert.New(t)
 
 		ctx := context.Background()
-		offset := int64(0)
 
 		// create netlify kafka config
 		conf := Config{
 			Brokers: strings.Split(testBrokers, ","),
 			Topic:   "gotest",
 			Consumer: ConsumerConfig{
-				GroupID:       "gotest",
-				PartitionKey:  "test",
-				InitialOffset: &offset,
+				GroupID:      "gotest",
+				PartitionKey: "test",
 			},
 		}
 
@@ -65,7 +62,7 @@ func TestIntegration(t *testing.T) {
 		assert.NoError(err)
 		assert.Len(parts, 3)
 
-		c, err := NewConsumer(log, conf)
+		c, err := NewDetachedConsumer(log, conf)
 		assert.NoError(err)
 		assert.NotNil(c)
 
@@ -82,16 +79,12 @@ func TestIntegration(t *testing.T) {
 			}
 
 			t := time.Now()
-			err = p.Produce(ctx, m)
-			assert.NoError(err)
+			assert.NoError(p.Produce(ctx, m))
 
 			p := GetPartition(k, parts, PartitionerMurMur2)
 
-			err = c.AssignPartitionByKey(k, PartitionerMurMur2)
-			assert.NoError(err)
-
-			err = c.SeekToTime(t)
-			assert.NoError(err)
+			assert.NoError(c.AssignPartitionByKey(k, PartitionerMurMur2))
+			assert.NoError(c.SeekToTime(t))
 
 			m, err = c.FetchMessage(ctx)
 			assert.NoError(err)
@@ -99,18 +92,14 @@ func TestIntegration(t *testing.T) {
 			assert.Equal([]byte(k), m.Key, "Partition to read from: %d, Msg: %+v", p, m)
 			assert.Equal([]byte(v), m.Value, "Partition to read from: %d, Msg: %+v", p, m)
 
-			err = c.CommitMessage(m)
-			assert.NoError(err)
-
+			assert.NoError(c.CommitMessage(m))
 		}
 
 		// chaos 🙈🙊🙉
 		// force a rebalance event
 		chaosTest(testBrokers, assert)
 
-		err = c.Close()
-		assert.NoError(err)
-
+		assert.NoError(c.Close())
 	})
 
 	t.Run("ConsumerWithGroup", func(t *testing.T) {
@@ -143,20 +132,17 @@ func TestIntegration(t *testing.T) {
 			Value: []byte(val),
 		}
 
-		err = p.Produce(ctx, m)
-		assert.NoError(err)
+		assert.NoError(p.Produce(ctx, m))
 
-		c, err := NewConsumer(log, conf, WithConsumerGroupID("gotest"))
+		c, err := NewConsumer(log, conf) // Consumer attached to consumer group
 		assert.NoError(err)
 		assert.NotNil(c)
 
 		m, err = c.FetchMessage(ctx)
 		assert.NoError(err)
 		assert.Contains(string(m.Value), val)
-		assert.Equal(kafkalib.Offset(30), m.TopicPartition.Offset)
 
-		err = c.CommitMessage(m)
-		assert.NoError(err)
+		assert.NoError(c.CommitMessage(m))
 
 		// chaos 🙈🙊🙉
 		// force a rebalance event
@@ -171,7 +157,7 @@ func TestIntegration(t *testing.T) {
 		assert := assert.New(t)
 
 		ctx := context.Background()
-		offset := int64(1)
+		initialOffset := int64(1)
 
 		// create netlify kafka config
 		conf := Config{
@@ -179,7 +165,7 @@ func TestIntegration(t *testing.T) {
 			Topic:   "gotest",
 			Consumer: ConsumerConfig{
 				GroupID:       "gotest",
-				InitialOffset: &offset,
+				InitialOffset: &initialOffset,
 			},
 		}
 
@@ -246,5 +232,4 @@ func chaosTest(testBrokers string, assert *assert.Assertions) {
 		assert.NotNil(results)
 		a.Close()
 	}
-
 }
