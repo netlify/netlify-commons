@@ -42,6 +42,12 @@ type Consumer interface {
 
 	// SeekToTime seeks to the specified time.
 	SeekToTime(t time.Time) error
+
+	// QueryWatermarkOffsets queries the broker for the low (oldest stored message) and high (latest stored message) offsets for the given topic and partition.
+	QueryWatermarkOffsets(topic string, partition int32) (low, high int64, err error)
+
+	// Position returns the offset of next message to read from the partition.
+	Position(topic string, partition int32) (kafkalib.Offset, error)
 }
 
 // ConfluentConsumer implements Consumer interface.
@@ -392,6 +398,38 @@ func (cc *ConfluentConsumer) AssignPartitionByID(id int32) error {
 	cc.log.WithField("kafka_partition_id", id).Debug("Assigning Kafka partition")
 
 	return nil
+}
+
+// QueryWatermarkOffsets queries the broker for the low (oldest stored message) and high (latest stored message) offsets for the given topic and partition.
+func (cc *ConfluentConsumer) QueryWatermarkOffsets(topic string, partition int32) (low, high int64, err error) {
+	return cc.c.QueryWatermarkOffsets(topic, partition, int(cc.conf.RequestTimeout.Milliseconds()))
+}
+
+// Position returns the offset of next message to read from the given topic and partition.
+func (cc *ConfluentConsumer) Position(topic string, partition int32) (kafkalib.Offset, error) {
+	a, err := cc.c.Assignment()
+	if err != nil {
+		return kafkalib.OffsetInvalid, err
+	}
+
+	topicPartition := a[:0]
+	for _, p := range a {
+		if *p.Topic == topic && p.Partition == partition {
+			topicPartition = append(topicPartition, p)
+			break // Only one topic + partition combination is possible.
+		}
+	}
+
+	offsets, err := cc.c.Position(topicPartition)
+	if err != nil {
+		return kafkalib.OffsetInvalid, err
+	}
+
+	if l := len(offsets); l != 1 {
+		return kafkalib.OffsetInvalid, fmt.Errorf("one offset position is expected for a given topic + partition. %d were found", l)
+	}
+
+	return offsets[0].Offset, nil
 }
 
 // handleConfluentReadMessageError returns an error if the error is fatal.
