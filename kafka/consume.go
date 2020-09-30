@@ -62,7 +62,7 @@ type ConfluentConsumer struct {
 //       permission on the group coordinator for managing commits, so it needs a consumer group in the broker.
 //       In order to simplify, the default consumer group id is copied from the configured topic name, so make sure you have a
 //       policy that gives permission to such consumer group.
-func NewDetachedConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (Consumer, error) {
+func NewDetachedConsumer(log logrus.FieldLogger, conf Config, opts ...ConfigOpt) (*ConfluentConsumer, error) {
 	// See Reference at https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 	kafkaConf := conf.baseKafkaConfig()
 	_ = kafkaConf.SetKey("enable.auto.offset.store", false) // manually StoreOffset after processing a message. It is mandatory for detached consumers.
