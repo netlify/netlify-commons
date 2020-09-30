@@ -101,12 +101,15 @@ func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
 		case "url":
 			ut.URL = parts[1]
 		case "sid":
-			//SID's somewhat frequently have a trailing comma, while we try not to manipulate
+			//SID's & AID's somewhat frequently have a trailing comma, while we try not to manipulate
 			//or clean up the log lines inline this was an easy one that we felt we should
 			//proactively handle
 			ut.SID = strings.TrimSuffix(parts[1], ",")
 		case "aid":
-			ut.AID = parts[1]
+			//SID's & AID's somewhat frequently have a trailing comma, while we try not to manipulate
+			//or clean up the log lines inline this was an easy one that we felt we should
+			//proactively handle
+			ut.AID = strings.TrimSuffix(parts[1], ",")
 		case "did":
 			ut.DID = parts[1]
 		case "cancel":

@@ -189,6 +189,14 @@ func TestSidWithComma(t *testing.T) {
 	assert.Equal(t, sidField, ut.SID)
 }
 
+func TestAidWithComma(t *testing.T) {
+	fields := defaultValues()
+	fields["aidField"] = fields["aidField"] + ","
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	require.NoError(t, err)
+	assert.Equal(t, sidField, ut.SID)
+}
+
 func TestErrOnExtraTimestamp(t *testing.T) {
 	withExtraTimestamp := "@timestamp=181818181 " + genUserTrafficLine(t, defaultValues())
 	ut, err := ParseUserTrafficRecord(withExtraTimestamp)
