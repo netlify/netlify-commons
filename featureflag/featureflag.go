@@ -75,10 +75,18 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 func (c *ldClient) AllEnabledFlags(userId string) []string {
 	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
 	flagMap := res.ToValuesMap()
-	for key, value := range flagMap {
-		// get the "true" flags
+
+	var flags []string
+	for flag, value := range flagMap {
+		switch value.(type) {
+		case bool:
+			if value == true {
+				flags = append(flags, flag)
+			}
+		}
 	}
-	return []string{}
+
+	return flags
 }
 
 func noopLogger() *logrus.Logger {

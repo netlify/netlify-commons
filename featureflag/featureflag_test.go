@@ -52,5 +52,7 @@ func TestAllEnabledFlags(t *testing.T) {
 	client, err := NewClient(&cfg, nil)
 	require.NoError(t, err)
 
-	client.AllEnabledFlags("userid")
+	flags := client.AllEnabledFlags("userid")
+
+	require.Equal(t, []string{"my-boolean-flag-key"}, flags)
 }
