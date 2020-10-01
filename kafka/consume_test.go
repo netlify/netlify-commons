@@ -38,5 +38,5 @@ func consumer(t *testing.T) (*ConfluentConsumer, Config) {
 	c, err := NewConsumer(logger(), conf)
 	require.NoError(t, err)
 
-	return c.(*ConfluentConsumer), conf
+	return c, conf
 }
