@@ -14,6 +14,8 @@ type Client interface {
 
 	Variation(key, defaultVal, userID string) string
 	VariationUser(key string, defaultVal string, user ld.User) string
+
+	AllEnabledFlags(key string) []string
 }
 
 type ldClient struct {
@@ -28,6 +30,11 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 
 	if !cfg.Enabled {
 		config.Offline = true
+	}
+
+	if cfg.updateProcessorFactory != nil {
+		config.UpdateProcessorFactory = cfg.updateProcessorFactory
+		config.SendEvents = false
 	}
 
 	if logger == nil {
@@ -63,6 +70,23 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
 	return res
+}
+
+func (c *ldClient) AllEnabledFlags(key string) []string {
+	res := c.AllFlagsState(ld.NewUser(key), ld.DetailsOnlyForTrackedFlags)
+	flagMap := res.ToValuesMap()
+
+	var flags []string
+	for flag, value := range flagMap {
+		switch value.(type) {
+		case bool:
+			if value == true {
+				flags = append(flags, flag)
+			}
+		}
+	}
+
+	return flags
 }
 
 func noopLogger() *logrus.Logger {
