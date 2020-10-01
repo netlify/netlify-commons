@@ -14,8 +14,9 @@ import (
 type chiWrapper struct {
 	chi chi.Router
 
-	version string
-	svcName string
+	version    string
+	svcName    string
+	rootLogger logrus.FieldLogger
 
 	healthEndpoint string
 	healthHandler  APIHandler
@@ -51,11 +52,12 @@ type Router interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
 }
 
-//  creates a router with sensible defaults (xff, request id, cors)
+// New creates a router with sensible defaults (xff, request id, cors)
 func New(log logrus.FieldLogger, options ...Option) Router {
 	r := &chiWrapper{
-		chi:     chi.NewRouter(),
-		version: "unknown",
+		chi:        chi.NewRouter(),
+		version:    "unknown",
+		rootLogger: log,
 	}
 
 	xffmw, _ := xff.Default()
@@ -81,9 +83,6 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 	if r.healthEndpoint != "" {
 		r.Use(HealthCheck(r.healthEndpoint, r.healthHandler))
 	}
-	if r.enableTracing {
-		r.Use(tracing.Middleware(log, r.svcName))
-	}
 
 	return r
 }
@@ -97,27 +96,27 @@ func (r *chiWrapper) Route(pattern string, fn func(Router)) {
 
 // Method adds a routes for a `pattern` that matches the `method` HTTP method.
 func (r *chiWrapper) Method(method, pattern string, h APIHandler) {
-	r.chi.Method(method, pattern, HandlerFunc(h))
+	r.chi.Method(method, pattern, r.traceRequest(pattern, h))
 }
 
 // Get adds a GET route
 func (r *chiWrapper) Get(pattern string, fn APIHandler) {
-	r.chi.Get(pattern, HandlerFunc(fn))
+	r.chi.Get(pattern, r.traceRequest(pattern, fn))
 }
 
 // Post adds a POST route
 func (r *chiWrapper) Post(pattern string, fn APIHandler) {
-	r.chi.Post(pattern, HandlerFunc(fn))
+	r.chi.Post(pattern, r.traceRequest(pattern, fn))
 }
 
 // Put adds a PUT route
 func (r *chiWrapper) Put(pattern string, fn APIHandler) {
-	r.chi.Put(pattern, HandlerFunc(fn))
+	r.chi.Put(pattern, r.traceRequest(pattern, fn))
 }
 
 // Delete adds a DELETE route
 func (r *chiWrapper) Delete(pattern string, fn APIHandler) {
-	r.chi.Delete(pattern, HandlerFunc(fn))
+	r.chi.Delete(pattern, r.traceRequest(pattern, fn))
 }
 
 // WithBypass adds an inline chi middleware for an endpoint handler
@@ -138,6 +137,11 @@ func (r *chiWrapper) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Mount attaches another http.Handler along ./pattern/*
 func (r *chiWrapper) Mount(pattern string, h http.Handler) {
+	if r.enableTracing {
+		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, h)
+		})
+	}
 	r.chi.Mount(pattern, h)
 }
 
@@ -152,5 +156,15 @@ func HandlerFunc(fn APIHandler) http.HandlerFunc {
 		if err := fn(w, r); err != nil {
 			HandleError(err, w, r)
 		}
+	}
+}
+
+func (r *chiWrapper) traceRequest(pattern string, fn APIHandler) http.HandlerFunc {
+	if !r.enableTracing {
+		return HandlerFunc(fn)
+	}
+
+	return func(w http.ResponseWriter, req *http.Request) {
+		tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, HandlerFunc(fn))
 	}
 }

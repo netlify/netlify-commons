@@ -6,18 +6,21 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/mocktracer"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 func TestTracerLogging(t *testing.T) {
-	// func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service string) (http.ResponseWriter, *http.Request, *RequestTracer) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "http://whatever.com/something", nil)
 
 	log, hook := logtest.NewNullLogger()
 
-	_, r, rt := NewTracer(rec, req, log, t.Name())
+	_, r, rt := NewTracer(rec, req, log, t.Name(), "some_resource")
 
 	rt.Start()
 	e := hook.LastEntry()
@@ -64,4 +67,26 @@ func TestTracerLogging(t *testing.T) {
 	// the value that we added above
 	assert.Equal(t, "second", e.Data["first"])
 	assert.Equal(t, "line", e.Data["final"])
+}
+
+func TestTracerSpans(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://whatever.com/something", nil)
+
+	log, _ := logtest.NewNullLogger()
+
+	mt := mocktracer.New()
+	opentracing.SetGlobalTracer(mt)
+	_, _, rt := NewTracer(rec, req, log, t.Name(), "some_resource")
+	rt.Start()
+	rt.WriteHeader(http.StatusOK)
+	rt.Finish()
+
+	require.Len(t, mt.FinishedSpans(), 1)
+	span := mt.FinishedSpans()[0]
+	assert.Equal(t, t.Name(), span.Tag(ext.ServiceName))
+	assert.Equal(t, "some_resource", span.Tag(ext.ResourceName))
+	assert.Equal(t, http.MethodGet, span.Tag(ext.HTTPMethod))
+	assert.Equal(t, http.StatusOK, span.Tag(ext.HTTPCode))
+	assert.Equal(t, rt.RequestID, span.Tag("http.request_id"))
 }

@@ -25,6 +25,7 @@ func TestHandleError_ErrorIsNil(t *testing.T) {
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
 		"test",
+		"test",
 	)
 
 	HandleError(nil, w, r)
@@ -39,6 +40,7 @@ func TestHandleError_ErrorIsNilPointerToTypeHTTPError(t *testing.T) {
 		httptest.NewRecorder(),
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
+		"test",
 		"test",
 	)
 
@@ -59,6 +61,7 @@ func TestHandleError_StandardError(t *testing.T) {
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
 		"test",
+		"test",
 	)
 
 	HandleError(errors.New("random error"), w, r)
@@ -75,6 +78,7 @@ func TestHandleError_HTTPError(t *testing.T) {
 		recorder,
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
+		"test",
 		"test",
 	)
 
@@ -112,6 +116,7 @@ func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
 		httptest.NewRecorder(),
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
+		"test",
 		"test",
 	)
 
