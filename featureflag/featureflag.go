@@ -15,7 +15,7 @@ type Client interface {
 	Variation(key, defaultVal, userID string) string
 	VariationUser(key string, defaultVal string, user ld.User) string
 
-	AllEnabledFlags(userID string) []string
+	AllEnabledFlags(key string) []string
 }
 
 type ldClient struct {
@@ -72,8 +72,8 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 	return res
 }
 
-func (c *ldClient) AllEnabledFlags(userId string) []string {
-	res := c.AllFlagsState(ld.NewUser(userId), ld.DetailsOnlyForTrackedFlags)
+func (c *ldClient) AllEnabledFlags(key string) []string {
+	res := c.AllFlagsState(ld.NewUser(key), ld.DetailsOnlyForTrackedFlags)
 	flagMap := res.ToValuesMap()
 
 	var flags []string
