@@ -160,11 +160,11 @@ func HandlerFunc(fn APIHandler) http.HandlerFunc {
 }
 
 func (r *chiWrapper) traceRequest(pattern string, fn APIHandler) http.HandlerFunc {
-	if !r.enableTracing {
-		return HandlerFunc(fn)
+	f := HandlerFunc(fn)
+	if r.enableTracing {
+		return func(w http.ResponseWriter, req *http.Request) {
+			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, f)
+		}
 	}
-
-	return func(w http.ResponseWriter, req *http.Request) {
-		tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, HandlerFunc(fn))
-	}
+	return f
 }

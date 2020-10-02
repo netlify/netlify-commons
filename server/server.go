@@ -60,7 +60,7 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 	r := router.New(
 		log,
 		router.OptHealthCheck(config.HealthPath, healthHandler),
-		router.OptTracingMiddleware(log, api.Info().Name),
+		router.OptEnableTracing(api.Info().Name),
 		router.OptVersionHeader(api.Info().Name, api.Info().Version),
 		router.OptRecoverer(),
 	)
