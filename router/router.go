@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/rs/cors"
@@ -14,9 +15,10 @@ import (
 type chiWrapper struct {
 	chi chi.Router
 
-	version    string
-	svcName    string
-	rootLogger logrus.FieldLogger
+	version       string
+	svcName       string
+	tracingPrefix string
+	rootLogger    logrus.FieldLogger
 
 	healthEndpoint string
 	healthHandler  APIHandler
@@ -90,33 +92,37 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 // Route allows creating a generic route
 func (r *chiWrapper) Route(pattern string, fn func(Router)) {
 	r.chi.Route(pattern, func(c chi.Router) {
-		fn(&chiWrapper{chi: c})
+		wrapper := new(chiWrapper)
+		*wrapper = *r
+		wrapper.chi = c
+		wrapper.tracingPrefix = sanitizePattern(pattern)
+		fn(wrapper)
 	})
 }
 
 // Method adds a routes for a `pattern` that matches the `method` HTTP method.
 func (r *chiWrapper) Method(method, pattern string, h APIHandler) {
-	r.chi.Method(method, pattern, r.traceRequest(pattern, h))
+	r.chi.Method(method, pattern, r.traceRequest(method, pattern, h))
 }
 
 // Get adds a GET route
 func (r *chiWrapper) Get(pattern string, fn APIHandler) {
-	r.chi.Get(pattern, r.traceRequest(pattern, fn))
+	r.chi.Get(pattern, r.traceRequest(http.MethodGet, pattern, fn))
 }
 
 // Post adds a POST route
 func (r *chiWrapper) Post(pattern string, fn APIHandler) {
-	r.chi.Post(pattern, r.traceRequest(pattern, fn))
+	r.chi.Post(pattern, r.traceRequest(http.MethodPost, pattern, fn))
 }
 
 // Put adds a PUT route
 func (r *chiWrapper) Put(pattern string, fn APIHandler) {
-	r.chi.Put(pattern, r.traceRequest(pattern, fn))
+	r.chi.Put(pattern, r.traceRequest(http.MethodPut, pattern, fn))
 }
 
 // Delete adds a DELETE route
 func (r *chiWrapper) Delete(pattern string, fn APIHandler) {
-	r.chi.Delete(pattern, r.traceRequest(pattern, fn))
+	r.chi.Delete(pattern, r.traceRequest(http.MethodDelete, pattern, fn))
 }
 
 // WithBypass adds an inline chi middleware for an endpoint handler
@@ -159,12 +165,31 @@ func HandlerFunc(fn APIHandler) http.HandlerFunc {
 	}
 }
 
-func (r *chiWrapper) traceRequest(pattern string, fn APIHandler) http.HandlerFunc {
+func (r *chiWrapper) traceRequest(method, pattern string, fn APIHandler) http.HandlerFunc {
 	f := HandlerFunc(fn)
 	if r.enableTracing {
+		pattern = sanitizePattern(pattern)
+		if r.tracingPrefix != "" {
+			pattern = r.tracingPrefix + "." + pattern
+		}
+
+		resourceName := strings.ToLower(method)
+		if pattern != "" {
+			resourceName += "." + pattern
+		}
+
 		return func(w http.ResponseWriter, req *http.Request) {
-			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, f)
+			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, f)
 		}
 	}
 	return f
+}
+
+func sanitizePattern(pattern string) string {
+	pattern = strings.TrimPrefix(pattern, "/")
+	pattern = strings.ReplaceAll(pattern, "{", "")
+	pattern = strings.ReplaceAll(pattern, "}", "")
+	pattern = strings.ReplaceAll(pattern, "/", ".")
+	pattern = strings.TrimSuffix(pattern, ".")
+	return pattern
 }

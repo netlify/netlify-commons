@@ -5,9 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
 func TestCORS(t *testing.T) {
@@ -66,6 +69,59 @@ func TestHealthEndpoint(t *testing.T) {
 	}
 }
 
+func TestTracing(t *testing.T) {
+	og := opentracing.GlobalTracer()
+	mt := mocktracer.New()
+	opentracing.SetGlobalTracer(mt)
+	defer func() {
+		opentracing.SetGlobalTracer(og)
+	}()
+
+	noop := func(w http.ResponseWriter, r *http.Request) error {
+		return nil
+	}
+
+	r := New(logrus.WithField("test", t.Name()), OptEnableTracing("some-service"))
+
+	r.Method(http.MethodPatch, "/patch", noop)
+	r.Delete("/abc/{def}", noop)
+	r.Get("/abc/{def}", noop)
+	r.Get("/", noop)
+	r.Post("/def/ghi", noop)
+	r.Put("/asdf/", noop)
+	r.Route("/sub", func(r Router) {
+		r.Get("/path", noop) // func(w http.ResponseWriter, r *http.Request) error { fmt.Println("!!!!!"); return nil })
+	})
+
+	scenes := map[string]struct {
+		method, path, resourceName string
+	}{
+		"get":          {http.MethodGet, "/abc/def", "get.abc.def"},
+		"delete":       {http.MethodDelete, "/abc/hfj", "delete.abc.def"},
+		"post":         {http.MethodPost, "/def/ghi", "post.def.ghi"},
+		"put":          {http.MethodPut, "/asdf/", "put.asdf"},
+		"patch":        {http.MethodPatch, "/patch", "patch.patch"},
+		"subroute":     {http.MethodGet, "/sub/path", "get.sub.path"},
+		"single_slash": {http.MethodGet, "/", "get"},
+	}
+
+	for name, scene := range scenes {
+		t.Run(name, func(t *testing.T) {
+			mt.Reset()
+
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, httptest.NewRequest(scene.method, scene.path, nil))
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			spans := mt.FinishedSpans()
+			if assert.Equal(t, 1, len(spans)) {
+				assert.Equal(t, "some-service", spans[0].Tag(ext.ServiceName))
+				assert.Equal(t, scene.resourceName, spans[0].Tag(ext.ResourceName))
+			}
+		})
+	}
+}
+
 func TestVersionHeader(t *testing.T) {
 	scenes := map[string]struct {
 		version  string
@@ -78,8 +134,8 @@ func TestVersionHeader(t *testing.T) {
 	}
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	require.NoError(t, err)
-	for name, scene := range scenes {
 
+	for name, scene := range scenes {
 		t.Run(name, func(t *testing.T) {
 			opts := []Option{OptVersionHeader(scene.svc, scene.version)}
 			rsp := do(t, opts, scene.svc, "/", nil, req)
