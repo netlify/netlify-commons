@@ -173,9 +173,9 @@ func (r *chiWrapper) traceRequest(method, pattern string, fn APIHandler) http.Ha
 			pattern = r.tracingPrefix + "." + pattern
 		}
 
-		resourceName := strings.ToLower(method)
+		resourceName := strings.ToUpper(method)
 		if pattern != "" {
-			resourceName += "." + pattern
+			resourceName += "::" + pattern
 		}
 
 		return func(w http.ResponseWriter, req *http.Request) {

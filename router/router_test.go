@@ -78,6 +78,7 @@ func TestTracing(t *testing.T) {
 	}()
 
 	noop := func(w http.ResponseWriter, r *http.Request) error {
+		w.WriteHeader(http.StatusOK)
 		return nil
 	}
 
@@ -96,13 +97,13 @@ func TestTracing(t *testing.T) {
 	scenes := map[string]struct {
 		method, path, resourceName string
 	}{
-		"get":          {http.MethodGet, "/abc/def", "get.abc.def"},
-		"delete":       {http.MethodDelete, "/abc/hfj", "delete.abc.def"},
-		"post":         {http.MethodPost, "/def/ghi", "post.def.ghi"},
-		"put":          {http.MethodPut, "/asdf/", "put.asdf"},
-		"patch":        {http.MethodPatch, "/patch", "patch.patch"},
-		"subroute":     {http.MethodGet, "/sub/path", "get.sub.path"},
-		"single_slash": {http.MethodGet, "/", "get"},
+		"get":          {http.MethodGet, "/abc/def", "GET::abc.def"},
+		"delete":       {http.MethodDelete, "/abc/hfj", "DELETE::abc.def"},
+		"post":         {http.MethodPost, "/def/ghi", "POST::def.ghi"},
+		"put":          {http.MethodPut, "/asdf/", "PUT::asdf"},
+		"patch":        {http.MethodPatch, "/patch", "PATCH::patch"},
+		"subroute":     {http.MethodGet, "/sub/path", "GET::sub.path"},
+		"single_slash": {http.MethodGet, "/", "GET"},
 	}
 
 	for name, scene := range scenes {
@@ -117,6 +118,7 @@ func TestTracing(t *testing.T) {
 			if assert.Equal(t, 1, len(spans)) {
 				assert.Equal(t, "some-service", spans[0].Tag(ext.ServiceName))
 				assert.Equal(t, scene.resourceName, spans[0].Tag(ext.ResourceName))
+				assert.Equal(t, http.StatusOK, spans[0].Tag(ext.HTTPCode))
 			}
 		})
 	}
