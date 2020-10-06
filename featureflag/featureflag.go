@@ -37,9 +37,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 		config.SendEvents = false
 	}
 
-	if logger == nil {
-		logger = noopLogger()
-	}
+	config.Loggers.SetBaseLogger(wrapLogger(logger))
 
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
 	if err != nil {
@@ -89,8 +87,23 @@ func (c *ldClient) AllEnabledFlags(key string) []string {
 	return flags
 }
 
-func noopLogger() *logrus.Logger {
-	l := logrus.New()
-	l.SetOutput(ioutil.Discard)
-	return l
+func wrapLogger(logger logrus.FieldLogger) infoToDebugLogger {
+	if logger == nil {
+		l := logrus.New()
+		l.SetOutput(ioutil.Discard)
+		logger = l
+	}
+
+	return infoToDebugLogger{logger.WithField("component", "launch_darkly")}
+}
+
+type infoToDebugLogger struct {
+	log logrus.FieldLogger
+}
+
+func (l infoToDebugLogger) Println(values ...interface{}) {
+	l.log.Debugln(values...)
+}
+func (l infoToDebugLogger) Printf(format string, values ...interface{}) {
+	l.log.Debugf(format, values...)
 }
