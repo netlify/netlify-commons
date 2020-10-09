@@ -32,5 +32,11 @@ func (c MockClient) VariationUser(key string, defaultVal string, _ ld.User) stri
 }
 
 func (c MockClient) AllEnabledFlags(string) []string {
-	return []string{}
+	var res []string
+	for key, value := range c.BoolVars {
+		if value {
+			res = append(res, key)
+		}
+	}
+	return res
 }
