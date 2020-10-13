@@ -54,6 +54,26 @@ func TestHandleError_ErrorIsNilPointerToTypeHTTPError(t *testing.T) {
 	assert.Empty(t, w.Header())
 }
 
+func TestHandleError_ErrorIsNilInterface(t *testing.T) {
+	logger, loggerOutput := test.NewNullLogger()
+	w, r, _ := tracing.NewTracer(
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		logger,
+		"test",
+		"test",
+	)
+
+	h := func(_ http.ResponseWriter, _ *http.Request) error {
+		return nil
+	}
+
+	HandleError(h(w, r), w, r)
+
+	assert.Empty(t, loggerOutput.AllEntries())
+	assert.Empty(t, w.Header())
+}
+
 func TestHandleError_StandardError(t *testing.T) {
 	logger, loggerOutput := test.NewNullLogger()
 	w, r, _ := tracing.NewTracer(
@@ -99,7 +119,33 @@ func TestHandleError_HTTPError(t *testing.T) {
 	assert.Equal(t, expectedBody, string(b))
 
 	require.Len(t, loggerOutput.AllEntries(), 1)
-	assert.Equal(t, httpErr.InternalMessage, loggerOutput.AllEntries()[0].Message)
+	assert.Equal(t, "internal server error: "+httpErr.InternalMessage, loggerOutput.AllEntries()[0].Message)
+}
+
+func TestHandleError_NoLogForNormalErrors(t *testing.T) {
+	logger, loggerOutput := test.NewNullLogger()
+	recorder := httptest.NewRecorder()
+	w, r, _ := tracing.NewTracer(
+		recorder,
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		logger,
+		"test",
+		"test",
+	)
+
+	httpErr := BadRequestError("not found yo.")
+
+	HandleError(httpErr, w, r)
+
+	resp := recorder.Result()
+	b, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	expectedBody := fmt.Sprintf(`{"code":400,"msg":"not found yo.","error_id":"%s"}`, tracing.GetRequestID(r))
+	assert.Equal(t, expectedBody, string(b))
+
+	// we shouldn't log anything, this is a normal error
+	require.Len(t, loggerOutput.AllEntries(), 0)
 }
 
 type OtherError struct {
