@@ -12,6 +12,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func FakeKafkaConsumerFactory(distri <-chan *kafkalib.Message) kafka.ConsumerFactory {
+	return func(log logrus.FieldLogger, _ kafka.Config, _ ...kafka.ConfigOpt) (kafka.Consumer, error) {
+		return NewFakeKafkaConsumer(log, distri), nil
+	}
+}
+
+func KafkaConsumerFactoryFromConsumer(c kafka.Consumer) kafka.ConsumerFactory {
+	return func(_ logrus.FieldLogger, _ kafka.Config, _ ...kafka.ConfigOpt) (kafka.Consumer, error) {
+		return c, nil
+	}
+}
+
 func KafkaPipe(log logrus.FieldLogger) (*FakeKafkaConsumer, *FakeKafkaProducer) {
 	distri := make(chan *kafkalib.Message, 200)
 	rdr := NewFakeKafkaConsumer(log, distri)

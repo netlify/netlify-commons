@@ -22,11 +22,11 @@ func TestConsumerFetchMessageContextAwareness(t *testing.T) {
 func TestConsumerSeek(t *testing.T) {
 	c, conf := consumer(t)
 	defer checkClose(t, c)
-	require.NoError(t, c.c.Assign(kafkalib.TopicPartitions{{Topic: &conf.Topic, Partition: 0}})) // manually assign partition
+	require.NoError(t, c.(*ConfluentConsumer).c.Assign(kafkalib.TopicPartitions{{Topic: &conf.Topic, Partition: 0}})) // manually assign partition
 	require.NoError(t, c.Seek(2))
 }
 
-func consumer(t *testing.T) (*ConfluentConsumer, Config) {
+func consumer(t *testing.T) (Consumer, Config) {
 	conf := Config{
 		Brokers: nil, // No brokers are used for unit test.
 		Topic:   "gotest",
