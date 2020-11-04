@@ -13,32 +13,19 @@ jobs:
   fossa:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Fossa init
-      run: |- 
-        curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
-        fossa init
-    - name: Set env
-      run: echo ::set-env name=line_number::$(grep -n "project" .fossa.yml | cut -f1 -d:)
-    - name: Configuration
-      run: |-
-        sed -i "${line_number}s|.*|  project: git@github.com:${GITHUB_REPOSITORY}.git|" .fossa.yml
-        sed -i '$d' .fossa.yml
-        echo -e "analyze:\n  modules:\n    - name: discovery\n      type: go\n      target: github.com/netlify/netlify-commons/discovery\n      path: ./discovery" >> .fossa.yml
-        echo -e "    - name: graceful\n      type: go\n      target: github.com/netlify/netlify-commons/graceful\n      path: ./graceful" >> .fossa.yml
-        echo -e "    - name: http\n      type: go\n      target: github.com/netlify/netlify-commons/http\n      path: ./http" >> .fossa.yml
-        echo -e "    - name: messaging\n      type: go\n      target: github.com/netlify/netlify-commons/messaging\n      path: ./messaging" >> .fossa.yml
-        echo -e "    - name: metriks\n      type: go\n      target: github.com/netlify/netlify-commons/metriks\n      path: ./metriks" >> .fossa.yml
-        echo -e "    - name: mongo\n      type: go\n      target: github.com/netlify/netlify-commons/mongo\n      path: ./mongo" >> .fossa.yml
-        echo -e "    - name: nconf\n      type: go\n      target: github.com/netlify/netlify-commons/nconf\n      path: ./nconf" >> .fossa.yml
-        echo -e "    - name: ntoml\n      type: go\n      target: github.com/netlify/netlify-commons/ntoml\n      path: ./ntoml" >> .fossa.yml
-        echo -e "    - name: router\n      type: go\n      target: github.com/netlify/netlify-commons/router\n      path: ./router" >> .fossa.yml
-        echo -e "    - name: server\n      type: go\n      target: github.com/netlify/netlify-commons/server\n      path: ./server" >> .fossa.yml
-        echo -e "    - name: tracing\n      type: go\n      target: github.com/netlify/netlify-commons/tracing\n      path: ./tracing" >> .fossa.yml
-        echo -e "    - name: util\n      type: go\n      target: github.com/netlify/netlify-commons/util\n      path: ./util" >> .fossa.yml
-        cat .fossa.yml
-    - name: Upload dependencies
-      run: fossa analyze --debug
-      env:
-        FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Fossa init
+        run: |-
+          curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
+          fossa init
+      - name: Set env
+        run: echo "line_number=$(grep -n "project" .fossa.yml | cut -f1 -d:)" >> $GITHUB_ENV
+      - name: Configuration
+        run: |-
+          sed -i "${line_number}s|.*|  project: git@github.com:${GITHUB_REPOSITORY}.git|" .fossa.yml
+          cat .fossa.yml
+      - name: Upload dependencies
+        run: fossa analyze --debug
+        env:
+          FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
