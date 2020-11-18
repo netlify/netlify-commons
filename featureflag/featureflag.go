@@ -41,6 +41,16 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 		logger = noopLogger()
 	}
 
+	if cfg.RelayHost != "" {
+		config.BaseUri = cfg.RelayHost
+		config.StreamUri = cfg.RelayHost
+		config.EventsUri = cfg.RelayHost
+	}
+
+	if cfg.DisableEvents {
+		config.SendEvents = false
+	}
+
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
 	if err != nil {
 		logger.WithError(err).Error("Unable to construct LD client")
