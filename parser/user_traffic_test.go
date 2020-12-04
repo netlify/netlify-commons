@@ -148,7 +148,7 @@ func TestParseUserTrafficPayload(t *testing.T) {
 		Other:        map[string]string{"stuff": "things", "oneother": "\"onething\""},
 	}
 
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, defaultValues()))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, defaultValues()), false)
 	require.NoError(t, err)
 	assert.Equal(t, expected, ut)
 
@@ -167,7 +167,22 @@ func TestParseUserTrafficPayload(t *testing.T) {
 		Address:      "2605:6000:1714:56e:c98a:445c:febd:6baf",
 	}
 
-	ut, err = ParseUserTrafficRecord(rawUTRecord)
+	//test using the string based extractor
+	ut, err = ParseUserTrafficRecord(rawUTRecord, false)
+	require.NoError(t, err)
+	assert.Equal(t, failSafeUT.Status, ut.Status)
+	assert.Equal(t, failSafeUT.RequestSize, ut.RequestSize)
+	assert.Equal(t, failSafeUT.ResponseSize, ut.ResponseSize)
+	assert.Equal(t, failSafeUT.Timing, ut.Timing)
+	assert.Equal(t, failSafeUT.Timestamp, ut.Timestamp)
+	assert.Equal(t, failSafeUT.URL, ut.URL)
+	assert.Equal(t, failSafeUT.SID, ut.SID)
+	assert.Equal(t, failSafeUT.AID, ut.AID)
+	assert.Equal(t, failSafeUT.DID, ut.DID)
+	assert.Equal(t, failSafeUT.Address, ut.Address)
+
+	//and test using the regex extractor
+	ut, err = ParseUserTrafficRecord(rawUTRecord, true)
 	require.NoError(t, err)
 	assert.Equal(t, failSafeUT.Status, ut.Status)
 	assert.Equal(t, failSafeUT.RequestSize, ut.RequestSize)
@@ -184,7 +199,11 @@ func TestParseUserTrafficPayload(t *testing.T) {
 func TestSidWithComma(t *testing.T) {
 	fields := defaultValues()
 	fields["sidField"] = fields["sidField"] + ","
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.NoError(t, err)
+	assert.Equal(t, sidField, ut.SID)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.NoError(t, err)
 	assert.Equal(t, sidField, ut.SID)
 }
@@ -192,29 +211,43 @@ func TestSidWithComma(t *testing.T) {
 func TestAidWithComma(t *testing.T) {
 	fields := defaultValues()
 	fields["aidField"] = fields["aidField"] + ","
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
 	require.NoError(t, err)
 	assert.Equal(t, sidField, ut.SID)
 }
 
 func TestErrOnExtraTimestamp(t *testing.T) {
 	withExtraTimestamp := "@timestamp=181818181 " + genUserTrafficLine(t, defaultValues())
-	ut, err := ParseUserTrafficRecord(withExtraTimestamp)
+	ut, err := ParseUserTrafficRecord(withExtraTimestamp, false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(withExtraTimestamp, true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
 
 func TestErrOnKeyWithNoValue(t *testing.T) {
 	keyMissingValue := "randomKeyWithNoValue " + genUserTrafficLine(t, defaultValues())
-	ut, err := ParseUserTrafficRecord(keyMissingValue)
+	ut, err := ParseUserTrafficRecord(keyMissingValue, false)
 	require.Error(t, err)
 	require.Nil(t, ut)
+}
+
+func TestNoErrOnKeyWithNoValueWhenRegex(t *testing.T) {
+	keyMissingValue := "randomKeyWithNoValue " + genUserTrafficLine(t, defaultValues())
+	_, err := ParseUserTrafficRecord(keyMissingValue, true)
+	require.NoError(t, err)
 }
 
 func TestMalformedTimestamp(t *testing.T) {
 	fields := defaultValues()
 	fields["atTimestampField"] = "time_is_relative"
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
@@ -222,7 +255,11 @@ func TestMalformedTimestamp(t *testing.T) {
 func TestMalformedTiming(t *testing.T) {
 	fields := defaultValues()
 	fields["timingField"] = "somestring"
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
@@ -230,7 +267,11 @@ func TestMalformedTiming(t *testing.T) {
 func TestMalformedStatus(t *testing.T) {
 	fields := defaultValues()
 	fields["statusField"] = "somestring"
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
@@ -238,7 +279,11 @@ func TestMalformedStatus(t *testing.T) {
 func TestMalformedRequestSize(t *testing.T) {
 	fields := defaultValues()
 	fields["requestSizeField"] = "somestring"
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }
@@ -246,7 +291,11 @@ func TestMalformedRequestSize(t *testing.T) {
 func TestMalformedResponseSize(t *testing.T) {
 	fields := defaultValues()
 	fields["responseSizeField"] = "somestring"
-	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields), false)
+	require.Error(t, err)
+	require.Nil(t, ut)
+
+	ut, err = ParseUserTrafficRecord(genUserTrafficLine(t, fields), true)
 	require.Error(t, err)
 	require.Nil(t, ut)
 }

@@ -2,9 +2,15 @@ package parser
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+)
+
+var (
+	// regex to try and extract key=value entries
+	re = regexp.MustCompile(`(?m)(\w+)=([^\s]+)`)
 )
 
 //UserTraffic is a single decoded user traffic log line
@@ -41,8 +47,16 @@ type UserTraffic struct {
 	Other        map[string]string `json:"other"`
 }
 
+func extractPair(s string, useRegex bool) []string {
+	if useRegex {
+		return re.FindAllString(s, -1)
+	}
+	return strings.Fields(s)
+}
+
 //ParseUserTrafficRecord parses a raw user traffic log line into a UserTraffic struct
-func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
+//opting to use the regex extractor will result
+func ParseUserTrafficRecord(raw string, useRegexExtractor bool) (*UserTraffic, error) {
 	var ut UserTraffic
 	var err error
 
@@ -56,7 +70,7 @@ func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
 		ut.UserAgent = praw[1]
 	}
 
-	for _, field := range strings.Fields(praw[0]) {
+	for _, field := range extractPair(praw[0], useRegexExtractor) {
 		parts := strings.SplitN(field, "=", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("found key field with no value: %s", parts)
@@ -64,7 +78,7 @@ func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
 		switch parts[0] {
 		case "request_id":
 			ut.RequestID = parts[1]
-		case "@timestamp":
+		case "@timestamp", "timestamp":
 			tsFloat, err := strconv.ParseFloat(parts[1], 64)
 			if err != nil {
 				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
