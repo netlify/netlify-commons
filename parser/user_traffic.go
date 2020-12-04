@@ -55,7 +55,10 @@ func extractPair(s string, useRegex bool) []string {
 }
 
 //ParseUserTrafficRecord parses a raw user traffic log line into a UserTraffic struct
-//opting to use the regex extractor will result
+//opting to use the regex extractor will cause the parser to use a regex expression to
+//select underlying k=v value fields rather than using string splitting. The regex based
+//parser is a bit more forgiving in that it's less likely to select dangling value field
+//entries as key's.
 func ParseUserTrafficRecord(raw string, useRegexExtractor bool) (*UserTraffic, error) {
 	var ut UserTraffic
 	var err error
