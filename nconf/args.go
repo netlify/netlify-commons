@@ -53,7 +53,7 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	}
 
 	// Handles the 'enabled' flag itself
-	tracing.Configure(&rootConfig.Tracing, serviceName)
+	tracing.Configure(&rootConfig.Tracing, log, serviceName)
 
 	if err := featureflag.Init(rootConfig.FeatureFlag, log); err != nil {
 		return nil, errors.Wrap(err, "Failed to configure featureflags")

@@ -134,6 +134,7 @@ func TestRecoveryInternalTracer(t *testing.T) {
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		logger,
 		t.Name(),
+		"some_resource",
 	)
 	mw := Recoverer(logrus.New())
 	handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

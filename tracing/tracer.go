@@ -11,14 +11,14 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
 )
 
-func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service string, next http.Handler) {
-	w, r, rt := NewTracer(w, r, log, service)
+func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string, next http.Handler) {
+	w, r, rt := NewTracer(w, r, log, service, resource)
 	rt.Start()
 	next.ServeHTTP(w, r)
 	rt.Finish()
 }
 
-func WrapWithSpan(r *http.Request, reqID, service string) (*http.Request, opentracing.Span) {
+func WrapWithSpan(r *http.Request, reqID, service, resource string) (*http.Request, opentracing.Span) {
 	span := opentracing.SpanFromContext(r.Context())
 	if span != nil {
 		return r, span
@@ -28,7 +28,7 @@ func WrapWithSpan(r *http.Request, reqID, service string) (*http.Request, opentr
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), "http.handler",
 		ext.RPCServerOption(clientContext),
 		opentracer.ServiceName(service),
-		opentracer.ResourceName(r.Method),
+		opentracer.ResourceName(resource),
 		opentracer.SpanType(ddtrace_ext.AppTypeWeb),
 		opentracing.Tag{Key: "http.content_length", Value: strconv.FormatInt(r.ContentLength, 10)},
 	)

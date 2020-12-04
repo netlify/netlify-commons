@@ -24,11 +24,11 @@ type RequestTracer struct {
 	start       time.Time
 }
 
-func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service string) (http.ResponseWriter, *http.Request, *RequestTracer) {
+func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string) (http.ResponseWriter, *http.Request, *RequestTracer) {
 	var reqID string
 	log, reqID = requestLogger(r, log)
 
-	r, span := WrapWithSpan(r, reqID, service)
+	r, span := WrapWithSpan(r, reqID, service, resource)
 	trackWriter := &trackingWriter{
 		writer: w,
 		log:    log,

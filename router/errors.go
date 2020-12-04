@@ -86,40 +86,40 @@ func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 	}
 }
 
-// HandleError will handle an error
+// HandleError will handle any error. If it is of type *HTTPError then it will
+// log anything of a 50x or an InternalError. It will write the right error response
+// to the client. This way if you return a BadRequestError, it will simply write to the client.
+// Any non-HTTPError will be treated as unhandled and result in a 50x
 func HandleError(err error, w http.ResponseWriter, r *http.Request) {
+	if err == nil || reflect.ValueOf(err).IsNil() {
+		return
+	}
+
 	log := tracing.GetLogger(r)
 	errorID := tracing.GetRequestID(r)
 
 	var notifyBugsnag bool
 
 	switch e := err.(type) {
-	case nil:
-		return
 	case *HTTPError:
-		// assert to *HTTPError to check nil intrface
-		httpErr := err.(*HTTPError)
-		if httpErr == nil {
-			return
-		}
-
+		e.ErrorID = errorID
 		if e.Code >= http.StatusInternalServerError {
-			e.ErrorID = errorID
-			// this will get us the stack trace too
-			log.WithError(e.Cause()).Error(e.Error())
 			notifyBugsnag = true
-		} else {
-			log.WithError(e.Cause()).Infof("unexpected error: %s", e.Error())
+			elog := log.WithError(e)
+			if e.InternalError != nil {
+				elog = elog.WithField("internal_err", e.InternalError.Error())
+			}
+
+			elog.Errorf("internal server error: %s", e.InternalMessage)
+		} else if e.InternalError != nil {
+			notifyBugsnag = true
+			log.WithError(e).Infof("unexpected error: %s", e.InternalMessage)
 		}
 
 		if jsonErr := SendJSON(w, e.Code, e); jsonErr != nil {
 			log.WithError(jsonErr).Error("Failed to write the JSON error response")
 		}
 	default:
-		// this is 5ns slower than using unsafe but a unhandled internal server error should not happen that often
-		if reflect.ValueOf(err).IsNil() {
-			return
-		}
 		notifyBugsnag = true
 		metriks.Inc("unhandled_errors", 1)
 		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
@@ -129,6 +129,7 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 			log.WithError(writeErr).Error("Error writing generic error message")
 		}
 	}
+
 	if notifyBugsnag {
 		bugsnag.Notify(err, r, r.Context(), bugsnag.MetaData{
 			"meta": map[string]interface{}{

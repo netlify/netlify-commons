@@ -1,9 +1,5 @@
 package router
 
-import (
-	"github.com/sirupsen/logrus"
-)
-
 type Option func(r *chiWrapper)
 
 func OptEnableCORS(r *chiWrapper) {
@@ -27,7 +23,7 @@ func OptVersionHeader(svcName, version string) Option {
 	}
 }
 
-func OptTracingMiddleware(log logrus.FieldLogger, svcName string) Option {
+func OptEnableTracing(svcName string) Option {
 	return func(r *chiWrapper) {
 		r.svcName = svcName
 		r.enableTracing = true
