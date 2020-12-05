@@ -145,7 +145,7 @@ func TestParseUserTrafficPayload(t *testing.T) {
 		ENC:          "-",
 		CW:           "-",
 		UserAgent:    "Mozilla/5.0 (X11; CrOS x86_64 12239.92.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.136 Safari/537.36",
-		Other:        map[string]string{"stuff": "things", "oneother": "\"onething\""},
+		Unparsed:     []string{"stuff=things", "oneother=\"onething\""},
 	}
 
 	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, defaultValues()))
@@ -179,6 +179,9 @@ func TestParseUserTrafficPayload(t *testing.T) {
 	assert.Equal(t, failSafeUT.AID, ut.AID)
 	assert.Equal(t, failSafeUT.DID, ut.DID)
 	assert.Equal(t, failSafeUT.Address, ut.Address)
+	assert.Len(t, ut.Unparsed, 2)
+	assert.Contains(t, ut.Unparsed, "stuff=things")
+	assert.Contains(t, ut.Unparsed, "oneother=\"onething\"")
 }
 
 func TestSidWithComma(t *testing.T) {
@@ -204,11 +207,12 @@ func TestErrOnExtraTimestamp(t *testing.T) {
 	require.Nil(t, ut)
 }
 
-func TestErrOnKeyWithNoValue(t *testing.T) {
+func TestKeyWithNoValue(t *testing.T) {
 	keyMissingValue := "randomKeyWithNoValue " + genUserTrafficLine(t, defaultValues())
 	ut, err := ParseUserTrafficRecord(keyMissingValue)
-	require.Error(t, err)
-	require.Nil(t, ut)
+	require.NoError(t, err)
+	require.Len(t, ut.Unparsed, 3)
+	require.Contains(t, ut.Unparsed, "randomKeyWithNoValue")
 }
 
 func TestMalformedTimestamp(t *testing.T) {
@@ -249,4 +253,16 @@ func TestMalformedResponseSize(t *testing.T) {
 	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
 	require.Error(t, err)
 	require.Nil(t, ut)
+}
+
+func TestDuplicateValueFields(t *testing.T) {
+	fields := defaultValues()
+	fields["countryField"] = "US, US"
+	ut, err := ParseUserTrafficRecord(genUserTrafficLine(t, fields))
+	require.NoError(t, err)
+	require.Equal(t, "US", ut.Country)
+	require.Len(t, ut.Unparsed, 3)
+	require.Contains(t, ut.Unparsed, "stuff=things")
+	require.Contains(t, ut.Unparsed, "oneother=\"onething\"")
+	require.Contains(t, ut.Unparsed, "US")
 }
