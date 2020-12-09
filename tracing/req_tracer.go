@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -76,7 +77,9 @@ func (rt *RequestTracer) Finish() {
 	fields["dur"] = dur.String()
 	fields["dur_ns"] = dur.Nanoseconds()
 
-	rt.span.SetTag(ext.HTTPCode, rt.trackingWriter.status)
+	// Setting the status as an int doesn't propogate for use in datadog dashboards,
+	// so we convert to a string.
+	rt.span.SetTag(ext.HTTPCode, strconv.Itoa(rt.trackingWriter.status))
 	rt.span.Finish()
 	rt.WithFields(fields).Info("Completed Request")
 }
