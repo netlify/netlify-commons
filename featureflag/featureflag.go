@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
+	"gopkg.in/launchdarkly/go-server-sdk.v4/ldlog"
 )
 
 type Client interface {
@@ -37,7 +38,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 		config.SendEvents = false
 	}
 
-	config.Loggers.SetBaseLogger(wrapLogger(logger))
+	configureLogger(config.Loggers, logger)
 
 	if cfg.RelayHost != "" {
 		config.BaseUri = cfg.RelayHost
@@ -97,23 +98,29 @@ func (c *ldClient) AllEnabledFlags(key string) []string {
 	return flags
 }
 
-func wrapLogger(logger logrus.FieldLogger) infoToDebugLogger {
-	if logger == nil {
+func configureLogger(ldLogger ldlog.Loggers, log logrus.FieldLogger) {
+	if log == nil {
 		l := logrus.New()
 		l.SetOutput(ioutil.Discard)
-		logger = l
+		log = l
 	}
+	log = log.WithField("component", "launch_darkly")
 
-	return infoToDebugLogger{logger.WithField("component", "launch_darkly")}
+	ldLogger.SetBaseLoggerForLevel(ldlog.Debug, &wrapLog{log.Debugln, log.Debugf})
+	ldLogger.SetBaseLoggerForLevel(ldlog.Info, &wrapLog{log.Infoln, log.Infof})
+	ldLogger.SetBaseLoggerForLevel(ldlog.Warn, &wrapLog{log.Warnln, log.Warnf})
+	ldLogger.SetBaseLoggerForLevel(ldlog.Error, &wrapLog{log.Errorln, log.Errorf})
 }
 
-type infoToDebugLogger struct {
-	log logrus.FieldLogger
+type wrapLog struct {
+	println func(values ...interface{})
+	printf  func(format string, values ...interface{})
 }
 
-func (l infoToDebugLogger) Println(values ...interface{}) {
-	l.log.Debugln(values...)
+func (l *wrapLog) Println(values ...interface{}) {
+	l.println(values...)
 }
-func (l infoToDebugLogger) Printf(format string, values ...interface{}) {
-	l.log.Debugf(format, values...)
+
+func (l *wrapLog) Printf(format string, values ...interface{}) {
+	l.printf(format, values...)
 }
