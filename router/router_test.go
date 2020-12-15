@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
@@ -118,7 +119,7 @@ func TestTracing(t *testing.T) {
 			if assert.Equal(t, 1, len(spans)) {
 				assert.Equal(t, "some-service", spans[0].Tag(ext.ServiceName))
 				assert.Equal(t, scene.resourceName, spans[0].Tag(ext.ResourceName))
-				assert.Equal(t, http.StatusOK, spans[0].Tag(ext.HTTPCode))
+				assert.Equal(t, strconv.Itoa(http.StatusOK), spans[0].Tag(ext.HTTPCode))
 			}
 		})
 	}
