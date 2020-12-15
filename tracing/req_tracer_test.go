@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
@@ -87,6 +88,6 @@ func TestTracerSpans(t *testing.T) {
 	assert.Equal(t, t.Name(), span.Tag(ext.ServiceName))
 	assert.Equal(t, "some_resource", span.Tag(ext.ResourceName))
 	assert.Equal(t, http.MethodGet, span.Tag(ext.HTTPMethod))
-	assert.Equal(t, http.StatusOK, span.Tag(ext.HTTPCode))
+	assert.Equal(t, strconv.Itoa(http.StatusOK), span.Tag(ext.HTTPCode))
 	assert.Equal(t, rt.RequestID, span.Tag("http.request_id"))
 }
