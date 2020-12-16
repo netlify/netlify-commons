@@ -51,7 +51,7 @@ func LoadFromFile(configFile string, input interface{}) error {
 		return fmt.Errorf("failed to read config: %w", err)
 	}
 
-	if err := mapstructure.Decode(&config, &input); err != nil {
+	if err := mapstructure.Decode(&config, input); err != nil {
 		return fmt.Errorf("failed to map data: %w", err)
 	}
 	return nil
