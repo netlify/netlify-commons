@@ -1,9 +1,12 @@
 package featureflag
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/launchdarkly/go-server-sdk.v4/ldfiledata"
 )
@@ -55,4 +58,20 @@ func TestAllEnabledFlags(t *testing.T) {
 	flags := client.AllEnabledFlags("userid")
 
 	require.Equal(t, []string{"my-boolean-flag-key"}, flags)
+}
+
+func TestLogging(t *testing.T) {
+	cfg := Config{
+		Key:            "ABCD",
+		RequestTimeout: time.Second,
+		Enabled:        false,
+	}
+
+	logBuf := new(bytes.Buffer)
+	log := logrus.New()
+	log.Out = logBuf
+
+	_, err := NewClient(&cfg, log.WithField("component", "launch_darkly"))
+	require.NoError(t, err)
+	assert.NotEmpty(t, logBuf.Bytes())
 }

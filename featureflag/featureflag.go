@@ -38,7 +38,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 		config.SendEvents = false
 	}
 
-	configureLogger(config.Loggers, logger)
+	configureLogger(&config.Loggers, logger)
 
 	if cfg.RelayHost != "" {
 		config.BaseUri = cfg.RelayHost
@@ -98,7 +98,7 @@ func (c *ldClient) AllEnabledFlags(key string) []string {
 	return flags
 }
 
-func configureLogger(ldLogger ldlog.Loggers, log logrus.FieldLogger) {
+func configureLogger(ldLogger *ldlog.Loggers, log logrus.FieldLogger) {
 	if log == nil {
 		l := logrus.New()
 		l.SetOutput(ioutil.Discard)
