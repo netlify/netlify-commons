@@ -9,14 +9,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 type testConfig struct {
-	Hero     string            `json:",omitempty"`
-	Villian  string            `json:",omitempty"`
-	Matchups map[string]string `json:",omitempty"`
-	Cities   []string          `json:",omitempty"`
+	Hero     string
+	Villian  string
+	Matchups map[string]string
+	Cities   []string
+
+	ShootingLocation string `mapstructure:"shooting_location" split_words:"true"`
 }
 
 func exampleConfig() testConfig {
@@ -28,6 +29,8 @@ func exampleConfig() testConfig {
 			"superman": "luther",
 		},
 		Cities: []string{"gotham", "central", "star"},
+
+		ShootingLocation: "LA",
 	}
 }
 
@@ -45,6 +48,7 @@ func TestEnvLoadingNoFile(t *testing.T) {
 	os.Setenv("TEST_HERO", "batman")
 	os.Setenv("TEST_MATCHUPS", "batman:superman,superman:luther")
 	os.Setenv("TEST_CITIES", "gotham,central,star")
+	os.Setenv("TEST_SHOOTING_LOCATION", "LA")
 
 	var results testConfig
 	assert.NoError(t, LoadFromEnv("test", "", &results))
@@ -63,6 +67,7 @@ TEST_VILLIAN=joker
 TEST_HERO=batman
 TEST_MATCHUPS=batman:superman,superman:luther
 TEST_CITIES=gotham,central,star
+TEST_SHOOTING_LOCATION=LA
 `
 	filename := writeTestFile(t, "env", []byte(data))
 	defer os.Remove(filename)
@@ -85,9 +90,18 @@ func TestFileLoadingNoFile(t *testing.T) {
 
 func TestFileLoadJSON(t *testing.T) {
 	expected := exampleConfig()
-	bytes, err := json.Marshal(&expected)
-	require.NoError(t, err)
-	filename := writeTestFile(t, "json", bytes)
+
+	input := `{
+		"hero": "batman",
+		"villian": "joker",
+		"matchups": {
+			"batman": "superman",
+			"superman": "luther"
+		},
+		"cities": ["gotham","central","star"],
+		"shooting_location": "LA"
+	}`
+	filename := writeTestFile(t, "json", []byte(input))
 	defer os.Remove(filename)
 
 	var results testConfig
@@ -97,9 +111,19 @@ func TestFileLoadJSON(t *testing.T) {
 
 func TestFileLoadYAML(t *testing.T) {
 	expected := exampleConfig()
-	bytes, err := yaml.Marshal(&expected)
-	require.NoError(t, err)
-	filename := writeTestFile(t, "yaml", bytes)
+
+	input := `---
+hero: batman
+villian: joker
+matchups:
+  batman: superman
+  superman: luther
+cities:
+  - gotham
+  - central
+  - star
+shooting_location: LA`
+	filename := writeTestFile(t, "yaml", []byte(input))
 	defer os.Remove(filename)
 
 	var results testConfig
@@ -175,4 +199,5 @@ func validateConfig(t *testing.T, expected testConfig, results testConfig) {
 	for k, v := range expected.Matchups {
 		assert.Equal(t, v, results.Matchups[k])
 	}
+	assert.Equal(t, results.ShootingLocation, expected.ShootingLocation)
 }
