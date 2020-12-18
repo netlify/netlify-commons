@@ -91,7 +91,7 @@ func TestArgsLoadFromYAML(t *testing.T) {
 
 	_, err = f.WriteString(`
 log:
-  log_level: debug
+  level: debug
   fields:
     string: value
     int: 4

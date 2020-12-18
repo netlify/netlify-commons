@@ -2,25 +2,14 @@ package nconf
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 )
-
-// ErrUnknownConfigFormat indicates the extension of the config file is not supported as a config source
-type ErrUnknownConfigFormat struct {
-	ext string
-}
-
-func (e *ErrUnknownConfigFormat) Error() string {
-	return fmt.Sprintf("Unknown config format: %s", e.ext)
-}
 
 // LoadFromFile will load the configuration from the specified file based on the file type
 // There is only support for .json and .yml now
@@ -35,26 +24,15 @@ func LoadFromFile(configFile string, input interface{}) error {
 		return err
 	}
 
-	config := make(map[string]interface{})
-
-	configExt := filepath.Ext(configFile)
-
-	switch configExt {
-	case ".json":
-		err = json.Unmarshal(data, &config)
-	case ".yaml", ".yml":
-		err = yaml.Unmarshal(data, &config)
-	default:
-		err = &ErrUnknownConfigFormat{configExt}
+	switch {
+	case strings.HasSuffix(configFile, ".json"):
+		err = json.Unmarshal(data, input)
+	case strings.HasSuffix(configFile, ".yaml"):
+		fallthrough
+	case strings.HasSuffix(configFile, ".yml"):
+		err = yaml.Unmarshal(data, input)
 	}
-	if err != nil {
-		return fmt.Errorf("failed to read config: %w", err)
-	}
-
-	if err := mapstructure.Decode(&config, input); err != nil {
-		return fmt.Errorf("failed to map data: %w", err)
-	}
-	return nil
+	return err
 }
 
 func LoadFromEnv(prefix, filename string, face interface{}) error {
