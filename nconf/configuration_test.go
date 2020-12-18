@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 type testConfig struct {
@@ -97,7 +96,7 @@ func TestFileLoadJSON(t *testing.T) {
 
 func TestFileLoadYAML(t *testing.T) {
 	expected := exampleConfig()
-	bytes, err := yaml.Marshal(&expected)
+	bytes, err := json.Marshal(&expected)
 	require.NoError(t, err)
 	filename := writeTestFile(t, "yaml", bytes)
 	defer os.Remove(filename)

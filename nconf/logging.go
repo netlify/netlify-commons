@@ -17,18 +17,8 @@ type LoggingConfig struct {
 	UseNewLogger     bool                   `mapstructure:"use_new_logger",split_words:"true"`
 }
 
-var DefaultLoggingConfig = LoggingConfig{
-	Level:            "info",
-	QuoteEmptyFields: true,
-	Fields:           make(map[string]interface{}),
-}
-
 func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {
 	logger := logrus.New()
-
-	if config == nil {
-		config = &DefaultLoggingConfig
-	}
 
 	tsFormat := time.RFC3339Nano
 	if config.TSFormat != "" {

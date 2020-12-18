@@ -2,7 +2,6 @@ package nconf
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -67,46 +66,4 @@ func TestArgsAddToCmd(t *testing.T) {
 	cmd.SetArgs([]string{"--config", "file.env", "--prefix", "PF"})
 	require.NoError(t, cmd.Execute())
 	assert.Equal(t, 1, called)
-}
-
-func TestArgsLoadFromYAML(t *testing.T) {
-	f, err := ioutil.TempFile("", "test-config-*.yaml")
-	require.NoError(t, err)
-	defer os.Remove(f.Name())
-
-	args := RootArgs{
-		ConfigFile: f.Name(),
-	}
-
-	t.Run("empty-file", func(t *testing.T) {
-		cfg := RootConfig{
-			Log: DefaultLoggingConfig,
-		}
-		require.NoError(t, args.load(&cfg))
-
-		assert.True(t, cfg.Log.QuoteEmptyFields)
-		assert.Equal(t, DefaultLoggingConfig, cfg.Log)
-		assert.Empty(t, cfg.BugSnag.APIKey)
-	})
-
-	_, err = f.WriteString(`
-log:
-  level: debug
-  fields:
-    string: value
-    int: 4
-`)
-	require.NoError(t, err)
-
-	t.Run("set log field", func(t *testing.T) {
-		cfg := RootConfig{Log: DefaultLoggingConfig}
-		require.NoError(t, args.load(&cfg))
-
-		// retains original value
-		assert.True(t, cfg.Log.QuoteEmptyFields)
-		assert.Equal(t, "debug", cfg.Log.Level)
-		require.Len(t, cfg.Log.Fields, 2)
-		assert.Equal(t, "value", cfg.Log.Fields["string"])
-		assert.Equal(t, 4, cfg.Log.Fields["int"])
-	})
 }

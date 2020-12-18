@@ -1,14 +1,13 @@
 package nconf
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"gopkg.in/yaml.v3"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 // LoadFromFile will load the configuration from the specified file based on the file type
@@ -18,21 +17,24 @@ func LoadFromFile(configFile string, input interface{}) error {
 		return nil
 	}
 
-	// read in all the bytes
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return err
-	}
-
 	switch {
 	case strings.HasSuffix(configFile, ".json"):
-		err = json.Unmarshal(data, input)
+		viper.SetConfigType("json")
 	case strings.HasSuffix(configFile, ".yaml"):
 		fallthrough
 	case strings.HasSuffix(configFile, ".yml"):
-		err = yaml.Unmarshal(data, input)
+		viper.SetConfigType("yaml")
 	}
-	return err
+	viper.SetConfigFile(configFile)
+
+	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
+		_, ok := err.(viper.ConfigFileNotFoundError)
+		if !ok {
+			return errors.Wrap(err, "reading configuration from files")
+		}
+	}
+
+	return viper.Unmarshal(input)
 }
 
 func LoadFromEnv(prefix, filename string, face interface{}) error {

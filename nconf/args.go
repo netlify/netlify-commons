@@ -18,24 +18,30 @@ type RootArgs struct {
 	ConfigFile string
 }
 
-type RootConfig struct {
-	Log         LoggingConfig
-	BugSnag     BugSnagConfig      `mapstructure:",squash"`
-	Metrics     metriks.Config     `mapstructure:",squash"`
-	Tracing     tracing.Config     `mapstructure:",squash"`
-	FeatureFlag featureflag.Config `mapstructure:",squash"`
-}
-
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
-	rootConfig := RootConfig{
-		Log: DefaultLoggingConfig,
+	// first load the logger and BugSnag config
+	rootConfig := &struct {
+		Log         *LoggingConfig
+		BugSnag     *BugSnagConfig
+		Metrics     metriks.Config
+		Tracing     tracing.Config
+		FeatureFlag featureflag.Config
+	}{}
+
+	loader := func(cfg interface{}) error {
+		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
+	}
+	if !strings.HasSuffix(args.ConfigFile, ".env") {
+		loader = func(cfg interface{}) error {
+			return LoadFromFile(args.ConfigFile, cfg)
+		}
 	}
 
-	if err := args.load(&rootConfig); err != nil {
-		return nil, errors.Wrap(err, "Failed to load the root configuration")
+	if err := loader(rootConfig); err != nil {
+		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
-	log, err := ConfigureLogging(&rootConfig.Log)
+	log, err := ConfigureLogging(rootConfig.Log)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create the logger")
 	}
@@ -44,7 +50,7 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	}
 	log = log.WithField("version", version)
 
-	if err := SetupBugSnag(&rootConfig.BugSnag, version); err != nil {
+	if err := SetupBugSnag(rootConfig.BugSnag, version); err != nil {
 		return nil, errors.Wrap(err, "Failed to configure bugsnag")
 	}
 
@@ -65,24 +71,12 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 
 	if config != nil {
 		// second load the config for this project
-		if err := args.load(config); err != nil {
+		if err := loader(config); err != nil {
 			return log, errors.Wrap(err, "Failed to load the config object")
 		}
 		log.Debug("Loaded configuration")
 	}
 	return log, nil
-}
-
-func (args *RootArgs) load(cfg interface{}) error {
-	loader := func(cfg interface{}) error {
-		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
-	}
-	if !strings.HasSuffix(args.ConfigFile, ".env") {
-		loader = func(cfg interface{}) error {
-			return LoadFromFile(args.ConfigFile, cfg)
-		}
-	}
-	return loader(cfg)
 }
 
 func (args *RootArgs) MustSetup(config interface{}, serviceName, version string) logrus.FieldLogger {
