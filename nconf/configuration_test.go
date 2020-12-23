@@ -12,10 +12,12 @@ import (
 )
 
 type testConfig struct {
-	Hero     string            `json:",omitempty"`
-	Villian  string            `json:",omitempty"`
-	Matchups map[string]string `json:",omitempty"`
-	Cities   []string          `json:",omitempty"`
+	Hero     string
+	Villian  string
+	Matchups map[string]string
+	Cities   []string
+
+	ShootingLocation string `json:"shooting_location" yaml:"shooting_location" split_words:"true"`
 }
 
 func exampleConfig() testConfig {
@@ -90,7 +92,7 @@ func TestFileLoadJSON(t *testing.T) {
 	defer os.Remove(filename)
 
 	var results testConfig
-	require.NoError(t, LoadFromFile(filename, &results))
+	require.NoError(t, LoadConfigFromFile(filename, &results))
 	validateConfig(t, expected, results)
 }
 
@@ -102,7 +104,7 @@ func TestFileLoadYAML(t *testing.T) {
 	defer os.Remove(filename)
 
 	var results testConfig
-	require.NoError(t, LoadFromFile(filename, &results))
+	require.NoError(t, LoadConfigFromFile(filename, &results))
 	validateConfig(t, expected, results)
 }
 

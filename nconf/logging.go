@@ -8,13 +8,13 @@ import (
 )
 
 type LoggingConfig struct {
-	Level            string                 `mapstructure:"log_level" json:"log_level"`
-	File             string                 `mapstructure:"log_file" json:"log_file"`
-	DisableColors    bool                   `mapstructure:"disable_colors" split_words:"true" json:"disable_colors"`
-	QuoteEmptyFields bool                   `mapstructure:"quote_empty_fields" split_words:"true" json:"quote_empty_fields"`
-	TSFormat         string                 `mapstructure:"ts_format" json:"ts_format"`
-	Fields           map[string]interface{} `mapstructure:"fields" json:"fields"`
-	UseNewLogger     bool                   `mapstructure:"use_new_logger",split_words:"true"`
+	Level            string                 `mapstructure:"log_level"`
+	File             string                 `mapstructure:"log_file"`
+	DisableColors    bool                   `mapstructure:"disable_colors" split_words:"true" json:"disable_colors" yaml:"disable_colors"`
+	QuoteEmptyFields bool                   `mapstructure:"quote_empty_fields" split_words:"true" json:"quote_empty_fields" yaml:"quote_empty_fields"`
+	TSFormat         string                 `mapstructure:"ts_format" json:"ts_format" yaml:"ts_format"`
+	Fields           map[string]interface{} `mapstructure:"fields"`
+	UseNewLogger     bool                   `mapstructure:"use_new_logger" split_words:"true" json:"use_new_logger" yaml:"use_new_logger"`
 }
 
 func ConfigureLogging(config *LoggingConfig) (*logrus.Entry, error) {

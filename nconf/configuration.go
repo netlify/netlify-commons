@@ -1,17 +1,34 @@
 package nconf
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
-// LoadFromFile will load the configuration from the specified file based on the file type
-// There is only support for .json and .yml now
+// ErrUnknownConfigFormat indicates the extension of the config file is not supported as a config source
+type ErrUnknownConfigFormat struct {
+	ext string
+}
+
+func (e *ErrUnknownConfigFormat) Error() string {
+	return fmt.Sprintf("Unknown config format: %s", e.ext)
+}
+
+/*
+ Deprecated: This method relies on parsing the json/yaml to a map, then running it through mapstructure.
+ This required that both tags exist (annoying!). And so there is now LoadConfigFromFile.
+*/
+// LoadFromFile will load the configuration from the specified file based on the file type	// LoadFromFile will load the configuration from the specified file based on the file type
+// There is only support for .json and .yml now	// There is only support for .json and .yml now
 func LoadFromFile(configFile string, input interface{}) error {
 	if configFile == "" {
 		return nil
@@ -27,14 +44,46 @@ func LoadFromFile(configFile string, input interface{}) error {
 	}
 	viper.SetConfigFile(configFile)
 
-	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
-		_, ok := err.(viper.ConfigFileNotFoundError)
-		if !ok {
-			return errors.Wrap(err, "reading configuration from files")
-		}
+	config := make(map[string]interface{})
+	configExt := filepath.Ext(configFile)
+
+	switch configExt {
+	case ".json":
+		err = json.Unmarshal(data, &config)
+	case ".yaml", ".yml":
+		err = yaml.Unmarshal(data, &config)
+	default:
+		err = &ErrUnknownConfigFormat{configExt}
+	}
+	if err != nil {
+		return fmt.Errorf("failed to read config: %w", err)
 	}
 
 	return viper.Unmarshal(input)
+}
+
+// LoadConfigFromFile will load the configuration from the specified file based on the file type
+// There is only support for .json and .yml now. It will use the underlying json/yaml packages directly.
+// meaning those should be the only required tags.
+func LoadConfigFromFile(configFile string, input interface{}) error {
+	if configFile == "" {
+		return nil
+	}
+
+	// read in all the bytes
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return err
+	}
+
+	configExt := filepath.Ext(configFile)
+	switch configExt {
+	case ".json":
+		return json.Unmarshal(data, input)
+	case ".yaml", ".yml":
+		return yaml.Unmarshal(data, input)
+	}
+	return &ErrUnknownConfigFormat{configExt}
 }
 
 func LoadFromEnv(prefix, filename string, face interface{}) error {

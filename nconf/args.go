@@ -79,6 +79,18 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	return log, nil
 }
 
+func (args *RootArgs) load(cfg interface{}) error {
+	loader := func(cfg interface{}) error {
+		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
+	}
+	if !strings.HasSuffix(args.ConfigFile, ".env") {
+		loader = func(cfg interface{}) error {
+			return LoadConfigFromFile(args.ConfigFile, cfg)
+		}
+	}
+	return loader(cfg)
+}
+
 func (args *RootArgs) MustSetup(config interface{}, serviceName, version string) logrus.FieldLogger {
 	logger, err := args.Setup(config, serviceName, version)
 	if err != nil {

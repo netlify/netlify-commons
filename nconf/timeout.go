@@ -18,12 +18,12 @@ type HTTPClientTimeoutConfig struct {
 	// Dial = net.Dialer.Timeout
 	Dial time.Duration `mapstructure:"dial"`
 	// KeepAlive = net.Dialer.KeepAlive
-	KeepAlive time.Duration `mapstructure:"keep_alive" split_words:"true"`
+	KeepAlive time.Duration `mapstructure:"keep_alive" split_words:"true" json:"keep_alive" yaml:"keep_alive"`
 
 	// TLSHandshake = http.Transport.TLSHandshakeTimeout
-	TLSHandshake time.Duration `mapstructure:"tls_handshake" split_words:"true"`
+	TLSHandshake time.Duration `mapstructure:"tls_handshake" split_words:"true" json:"tls_handshake" yaml:"tls_handshake"`
 	// ResponseHeader = http.Transport.ResponseHeaderTimeout
-	ResponseHeader time.Duration `mapstructure:"response_header" split_words:"true"`
+	ResponseHeader time.Duration `mapstructure:"response_header" split_words:"true" json:"response_header" yaml:"response_header"`
 	// Total = http.Client.Timeout or equivalent
 	// The maximum amount of time a client request can take.
 	Total time.Duration `mapstructure:"total"`
