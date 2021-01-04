@@ -17,7 +17,6 @@ require (
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -26,7 +25,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/launchdarkly/eventsource v1.6.1 // indirect
 	github.com/launchdarkly/go-test-helpers v1.2.0 // indirect
-	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
 	github.com/nats-io/nats.go v1.8.1
 	github.com/nats-io/stan.go v0.5.0
@@ -39,14 +37,16 @@ require (
 	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
 	github.com/shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d
 	github.com/sirupsen/logrus v1.6.0
+	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.4-0.20190321000552-67fc4837d267
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.0
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.4.1
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.26.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
