@@ -80,13 +80,13 @@ func TestArgsLoadFromYAML(t *testing.T) {
 
 	t.Run("empty-file", func(t *testing.T) {
 		cfg := RootConfig{
-			Log: DefaultLoggingConfig,
+			Log: DefaultLoggingConfig(),
 		}
 		require.NoError(t, args.load(&cfg))
 
 		assert.True(t, cfg.Log.QuoteEmptyFields)
-		assert.Equal(t, DefaultLoggingConfig, cfg.Log)
-		assert.Empty(t, cfg.BugSnag.APIKey)
+		assert.Equal(t, DefaultLoggingConfig(), cfg.Log)
+		assert.Nil(t, cfg.BugSnag)
 	})
 
 	_, err = f.WriteString(`
@@ -99,7 +99,7 @@ log:
 	require.NoError(t, err)
 
 	t.Run("set log field", func(t *testing.T) {
-		cfg := RootConfig{Log: DefaultLoggingConfig}
+		cfg := RootConfig{Log: DefaultLoggingConfig()}
 		require.NoError(t, args.load(&cfg))
 
 		// retains original value

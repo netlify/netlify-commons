@@ -10,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
@@ -27,8 +28,8 @@ func (e *ErrUnknownConfigFormat) Error() string {
  Deprecated: This method relies on parsing the json/yaml to a map, then running it through mapstructure.
  This required that both tags exist (annoying!). And so there is now LoadConfigFromFile.
 */
-// LoadFromFile will load the configuration from the specified file based on the file type	// LoadFromFile will load the configuration from the specified file based on the file type
-// There is only support for .json and .yml now	// There is only support for .json and .yml now
+// LoadFromFile will load the configuration from the specified file based on the file type
+// There is only support for .json and .yml now
 func LoadFromFile(configFile string, input interface{}) error {
 	if configFile == "" {
 		return nil
@@ -44,19 +45,11 @@ func LoadFromFile(configFile string, input interface{}) error {
 	}
 	viper.SetConfigFile(configFile)
 
-	config := make(map[string]interface{})
-	configExt := filepath.Ext(configFile)
-
-	switch configExt {
-	case ".json":
-		err = json.Unmarshal(data, &config)
-	case ".yaml", ".yml":
-		err = yaml.Unmarshal(data, &config)
-	default:
-		err = &ErrUnknownConfigFormat{configExt}
-	}
-	if err != nil {
-		return fmt.Errorf("failed to read config: %w", err)
+	if err := viper.ReadInConfig(); err != nil && !os.IsNotExist(err) {
+		_, ok := err.(viper.ConfigFileNotFoundError)
+		if !ok {
+			return errors.Wrap(err, "reading configuration from files")
+		}
 	}
 
 	return viper.Unmarshal(input)

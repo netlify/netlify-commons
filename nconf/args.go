@@ -18,15 +18,17 @@ type RootArgs struct {
 	ConfigFile string
 }
 
+type RootConfig struct {
+	Log         LoggingConfig
+	BugSnag     *BugSnagConfig
+	Metrics     metriks.Config
+	Tracing     tracing.Config
+	FeatureFlag featureflag.Config
+}
+
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
 	// first load the logger and BugSnag config
-	rootConfig := &struct {
-		Log         *LoggingConfig
-		BugSnag     *BugSnagConfig
-		Metrics     metriks.Config
-		Tracing     tracing.Config
-		FeatureFlag featureflag.Config
-	}{}
+	rootConfig := &RootConfig{}
 
 	loader := func(cfg interface{}) error {
 		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
