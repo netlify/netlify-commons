@@ -30,16 +30,7 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 	// first load the logger and BugSnag config
 	rootConfig := &RootConfig{}
 
-	loader := func(cfg interface{}) error {
-		return LoadFromEnv(args.Prefix, args.ConfigFile, cfg)
-	}
-	if !strings.HasSuffix(args.ConfigFile, ".env") {
-		loader = func(cfg interface{}) error {
-			return LoadFromFile(args.ConfigFile, cfg)
-		}
-	}
-
-	if err := loader(rootConfig); err != nil {
+	if err := args.load(rootConfig); err != nil {
 		return nil, errors.Wrap(err, "Failed to load the logging configuration")
 	}
 
@@ -73,7 +64,7 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 
 	if config != nil {
 		// second load the config for this project
-		if err := loader(config); err != nil {
+		if err := args.load(config); err != nil {
 			return log, errors.Wrap(err, "Failed to load the config object")
 		}
 		log.Debug("Loaded configuration")
