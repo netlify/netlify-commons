@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/netlify/netlify-commons/util"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ import (
 func TestOfflineClient(t *testing.T) {
 	cfg := Config{
 		Key:            "ABCD",
-		RequestTimeout: time.Second,
+		RequestTimeout: util.Duration{time.Second},
 		Enabled:        false,
 	}
 	client, err := NewClient(&cfg, nil)
@@ -48,7 +49,7 @@ func TestAllEnabledFlags(t *testing.T) {
 	fileSource := ldfiledata.NewFileDataSourceFactory(ldfiledata.FilePaths("./fixtures/flags.yml"))
 	cfg := Config{
 		Key:                    "ABCD",
-		RequestTimeout:         time.Second,
+		RequestTimeout:         util.Duration{time.Second},
 		Enabled:                true,
 		updateProcessorFactory: fileSource,
 	}
@@ -63,7 +64,7 @@ func TestAllEnabledFlags(t *testing.T) {
 func TestLogging(t *testing.T) {
 	cfg := Config{
 		Key:            "ABCD",
-		RequestTimeout: time.Second,
+		RequestTimeout: util.Duration{time.Second},
 		Enabled:        false,
 	}
 
