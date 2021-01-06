@@ -101,7 +101,7 @@ func (args *RootArgs) loadDefaultConfig() (*RootConfig, error) {
 	}
 
 	if err := args.load(c); err != nil {
-		return nil, errors.Wrap(err, "Failed to load the logging configuration")
+		return nil, errors.Wrap(err, "Failed to load the default configuration")
 	}
 	return c, nil
 }
