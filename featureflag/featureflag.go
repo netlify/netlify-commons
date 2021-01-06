@@ -50,7 +50,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 		config.SendEvents = false
 	}
 
-	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout)
+	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout.Duration)
 	if err != nil {
 		logger.WithError(err).Error("Unable to construct LD client")
 	}

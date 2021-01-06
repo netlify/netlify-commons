@@ -27,11 +27,9 @@ type RootConfig struct {
 }
 
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
-	// first load the logger and BugSnag config
-	rootConfig := &RootConfig{}
-
-	if err := args.load(rootConfig); err != nil {
-		return nil, errors.Wrap(err, "Failed to load the logging configuration")
+	rootConfig, err := args.loadDefaultConfig()
+	if err != nil {
+		return nil, err
 	}
 
 	log, err := ConfigureLogging(rootConfig.Log)
@@ -95,6 +93,17 @@ func (args *RootArgs) MustSetup(config interface{}, serviceName, version string)
 	}
 
 	return logger
+}
+
+func (args *RootArgs) loadDefaultConfig() (*RootConfig, error) {
+	c := &RootConfig{
+		Log: DefaultLoggingConfig(),
+	}
+
+	if err := args.load(c); err != nil {
+		return nil, errors.Wrap(err, "Failed to load the logging configuration")
+	}
+	return c, nil
 }
 
 func (args *RootArgs) AddFlags(cmd *cobra.Command) *cobra.Command {
