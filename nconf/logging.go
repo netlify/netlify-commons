@@ -17,12 +17,6 @@ type LoggingConfig struct {
 	UseNewLogger     bool                   `mapstructure:"use_new_logger" split_words:"true" json:"use_new_logger" yaml:"use_new_logger"`
 }
 
-func DefaultLoggingConfig() LoggingConfig {
-	return LoggingConfig{
-		QuoteEmptyFields: true,
-	}
-}
-
 func ConfigureLogging(config LoggingConfig) (*logrus.Entry, error) {
 	logger := logrus.New()
 

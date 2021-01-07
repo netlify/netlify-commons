@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/netlify/netlify-commons/featureflag"
+	"github.com/netlify/netlify-commons/metriks"
+	"github.com/netlify/netlify-commons/tracing"
+
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
@@ -22,6 +26,30 @@ type ErrUnknownConfigFormat struct {
 
 func (e *ErrUnknownConfigFormat) Error() string {
 	return fmt.Sprintf("Unknown config format: %s", e.ext)
+}
+
+type RootConfig struct {
+	Log         LoggingConfig
+	BugSnag     *BugSnagConfig
+	Metrics     metriks.Config
+	Tracing     tracing.Config
+	FeatureFlag featureflag.Config
+}
+
+func DefaultConfig() RootConfig {
+	return RootConfig{
+		Log: LoggingConfig{
+			QuoteEmptyFields: true,
+		},
+		Tracing: tracing.Config{
+			Host: "localhost",
+			Port: "8126",
+		},
+		Metrics: metriks.Config{
+			Host: "localhost",
+			Port: 8125,
+		},
+	}
 }
 
 /*

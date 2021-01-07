@@ -18,14 +18,6 @@ type RootArgs struct {
 	ConfigFile string
 }
 
-type RootConfig struct {
-	Log         LoggingConfig
-	BugSnag     *BugSnagConfig
-	Metrics     metriks.Config
-	Tracing     tracing.Config
-	FeatureFlag featureflag.Config
-}
-
 func (args *RootArgs) Setup(config interface{}, serviceName, version string) (logrus.FieldLogger, error) {
 	rootConfig, err := args.loadDefaultConfig()
 	if err != nil {
@@ -96,14 +88,13 @@ func (args *RootArgs) MustSetup(config interface{}, serviceName, version string)
 }
 
 func (args *RootArgs) loadDefaultConfig() (*RootConfig, error) {
-	c := &RootConfig{
-		Log: DefaultLoggingConfig(),
-	}
+	c := DefaultConfig()
 
-	if err := args.load(c); err != nil {
+	if err := args.load(&c); err != nil {
 		return nil, errors.Wrap(err, "Failed to load the default configuration")
 	}
-	return c, nil
+
+	return &c, nil
 }
 
 func (args *RootArgs) AddFlags(cmd *cobra.Command) *cobra.Command {

@@ -93,7 +93,7 @@ func TestArgsLoadDefault(t *testing.T) {
 		},
 		"tracing": map[string]interface{}{
 			"enabled":      true,
-			"port":         "8125",
+			"port":         "9125",
 			"enable_debug": true,
 		},
 		"featureflag": map[string]interface{}{
@@ -146,14 +146,14 @@ func TestArgsLoadDefault(t *testing.T) {
 
 			// metrics
 			assert.Equal(t, true, cfg.Metrics.Enabled)
-			assert.Equal(t, "", cfg.Metrics.Host)
+			assert.Equal(t, "localhost", cfg.Metrics.Host)
 			assert.Equal(t, 8125, cfg.Metrics.Port)
 			assert.Equal(t, map[string]string{"env": "prod"}, cfg.Metrics.Tags)
 
 			// tracing
 			assert.Equal(t, true, cfg.Tracing.Enabled)
-			assert.Equal(t, "", cfg.Tracing.Host)
-			assert.Equal(t, "8125", cfg.Tracing.Port)
+			assert.Equal(t, "localhost", cfg.Tracing.Host)
+			assert.Equal(t, "9125", cfg.Tracing.Port)
 			assert.Empty(t, cfg.Tracing.Tags)
 			assert.Equal(t, true, cfg.Tracing.EnableDebug)
 
@@ -165,46 +165,4 @@ func TestArgsLoadDefault(t *testing.T) {
 			assert.Equal(t, "", cfg.FeatureFlag.RelayHost)
 		})
 	}
-}
-
-func TestArgsLoadFromYAML(t *testing.T) {
-	f, err := ioutil.TempFile("", "test-config-*.yaml")
-	require.NoError(t, err)
-	defer os.Remove(f.Name())
-
-	args := RootArgs{
-		ConfigFile: f.Name(),
-	}
-
-	t.Run("empty-file", func(t *testing.T) {
-		cfg := RootConfig{
-			Log: DefaultLoggingConfig(),
-		}
-		require.NoError(t, args.load(&cfg))
-
-		assert.True(t, cfg.Log.QuoteEmptyFields)
-		assert.Equal(t, DefaultLoggingConfig(), cfg.Log)
-		assert.Nil(t, cfg.BugSnag)
-	})
-
-	_, err = f.WriteString(`
-log:
-  level: debug
-  fields:
-    string: value
-    int: 4
-`)
-	require.NoError(t, err)
-
-	t.Run("set log field", func(t *testing.T) {
-		cfg := RootConfig{Log: DefaultLoggingConfig()}
-		require.NoError(t, args.load(&cfg))
-
-		// retains original value
-		assert.True(t, cfg.Log.QuoteEmptyFields)
-		assert.Equal(t, "debug", cfg.Log.Level)
-		require.Len(t, cfg.Log.Fields, 2)
-		assert.Equal(t, "value", cfg.Log.Fields["string"])
-		assert.Equal(t, 4, cfg.Log.Fields["int"])
-	})
 }
