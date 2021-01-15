@@ -10,9 +10,9 @@ import (
 )
 
 type TLSConfig struct {
-	CAFiles  []string `mapstructure:"ca_files" envconfig:"ca_files"`
-	KeyFile  string   `mapstructure:"key_file" split_words:"true"`
-	CertFile string   `mapstructure:"cert_file" split_words:"true"`
+	CAFiles  []string `mapstructure:"ca_files" envconfig:"ca_files" json:"ca_files" yaml:"ca_files"`
+	KeyFile  string   `mapstructure:"key_file" split_words:"true" json:"key_file" yaml:"key_file"`
+	CertFile string   `mapstructure:"cert_file" split_words:"true" json:"cert_file" yaml:"cert_file"`
 
 	Cert string `mapstructure:"cert"`
 	Key  string `mapstructure:"key"`

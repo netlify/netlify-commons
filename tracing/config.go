@@ -19,7 +19,7 @@ type Config struct {
 	Host        string `default:"localhost"`
 	Port        string `default:"8126"`
 	Tags        map[string]string
-	EnableDebug bool `default:"false" split_words:"true" mapstructure:"enable_debug"`
+	EnableDebug bool `default:"false" split_words:"true" mapstructure:"enable_debug" json:"enable_debug" yaml:"enable_debug"`
 }
 
 func Configure(tc *Config, log logrus.FieldLogger, svcName string) {

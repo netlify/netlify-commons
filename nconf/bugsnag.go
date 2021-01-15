@@ -8,16 +8,16 @@ import (
 
 type BugSnagConfig struct {
 	Environment    string
-	APIKey         string `envconfig:"api_key"`
-	LogHook        bool   `envconfig:"log_hook"`
-	ProjectPackage string `envconfig:"project_package"`
+	APIKey         string `envconfig:"api_key" json:"api_key" yaml:"api_key"`
+	LogHook        bool   `envconfig:"log_hook" json:"log_hook" yaml:"log_hook"`
+	ProjectPackage string `envconfig:"project_package" json:"project_package" yaml:"project_package"`
 }
 
 func SetupBugSnag(config *BugSnagConfig, version string) error {
 	if config == nil || config.APIKey == "" {
 		return nil
 	}
-	
+
 	projectPackages := make([]string, 0, 2)
 	projectPackages = append(projectPackages, "main")
 	if config.ProjectPackage != "" {
@@ -25,11 +25,11 @@ func SetupBugSnag(config *BugSnagConfig, version string) error {
 	}
 
 	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:       config.APIKey,
-		ReleaseStage: config.Environment,
-		AppVersion:   version,
-		ProjectPackages: projectPackages, 
-		PanicHandler: func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
+		APIKey:          config.APIKey,
+		ReleaseStage:    config.Environment,
+		AppVersion:      version,
+		ProjectPackages: projectPackages,
+		PanicHandler:    func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
 	})
 
 	if config.LogHook {
