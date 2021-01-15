@@ -8,15 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/netlify/netlify-commons/featureflag"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
-
-	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // ErrUnknownConfigFormat indicates the extension of the config file is not supported as a config source

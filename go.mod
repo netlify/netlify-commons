@@ -52,7 +52,6 @@ require (
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
 	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01 // indirect
 	gopkg.in/launchdarkly/go-server-sdk.v4 v4.0.0-20200729232655-2a44fb361895
-	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 

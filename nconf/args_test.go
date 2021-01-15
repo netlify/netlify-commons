@@ -7,13 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
-
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestArgsLoad(t *testing.T) {

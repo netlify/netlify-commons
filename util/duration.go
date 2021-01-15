@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Duration is a serializable version version of a time.Duration
