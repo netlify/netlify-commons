@@ -43,6 +43,7 @@ type BuildConfig struct {
 	Publish     string            `toml:"publish" json:"publish" yaml:"publish"`
 	Ignore      string            `toml:"ignore" json:"ignore" yaml:"ignore"`
 	Environment map[string]string `toml:"environment" json:"environment" yaml:"environment"`
+	Functions   string            `toml:"functions" json:"functions" yaml:"functions"`
 }
 
 type Plugin struct {
