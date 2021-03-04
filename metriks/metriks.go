@@ -104,7 +104,9 @@ func createDatadogSink(url string, name string, tags map[string]string, extraTag
 	}
 
 	sink.SetTags(ddTags)
-
+	if err := initDistribution(url, name, ddTags); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize the datadog statsd client")
+	}
 	return sink, nil
 }
 
