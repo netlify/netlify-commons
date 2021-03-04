@@ -28,6 +28,7 @@ type Server struct {
 type Config struct {
 	HealthPath string `split_words:"true"`
 	Port       int
+	Host       string
 	TLS        nconf.TLSConfig
 }
 
@@ -72,7 +73,7 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 	s := Server{
 		log: log.WithField("component", "server"),
 		svr: &http.Server{
-			Addr:    fmt.Sprintf(":%d", config.Port),
+			Addr:    fmt.Sprintf("%s:%d", config.Host, config.Port),
 			Handler: r,
 		},
 		api:  api,

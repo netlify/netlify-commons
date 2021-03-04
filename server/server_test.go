@@ -145,3 +145,15 @@ func testConfig() Config {
 		Port:       9090,
 	}
 }
+
+func TestServerAddr(t *testing.T) {
+	apiDef := new(testAPICustomHealth)
+	cfg := testConfig()
+	svr, err := New(tl(t), cfg, apiDef)
+	require.NoError(t, err)
+	require.Equal(t, svr.svr.Addr, ":9090")
+	cfg.Host = "127.0.0.1"
+	svrWithHost, err := New(tl(t), cfg, apiDef)
+	require.NoError(t, err)
+	require.Equal(t, svrWithHost.svr.Addr, "127.0.0.1:9090")
+}
