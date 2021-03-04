@@ -17,8 +17,8 @@ func TestGauge(t *testing.T) {
 	require.NoError(t, err)
 	defer pc.Close()
 
-	g := newGauge("some_gauge", []metrics.Label{L("a", "b")}, time.Second)
-	defer g.stop()
+	g := NewGaugeWithDuration("some_gauge", []metrics.Label{L("a", "b")}, time.Second)
+	defer g.Stop()
 
 	var actualVals []string
 	done := make(chan struct{})
