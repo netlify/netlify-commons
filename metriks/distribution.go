@@ -13,7 +13,7 @@ var (
 	distributionErrorHandler = func(_ error) {}
 )
 
-func initDistribution(url string, name string, permTags []string) error {
+func initDistribution(url string, serviceName string, permTags []string) error {
 	statsd, err := statsd.New(url)
 	if err != nil {
 		return err
@@ -21,7 +21,7 @@ func initDistribution(url string, name string, permTags []string) error {
 
 	distributionFunc = func(name string, value float64, tags ...metrics.Label) {
 		ddtags := append(permTags, convertTags(tags)...)
-		name = fmt.Sprintf("%s.%s", name, strings.ReplaceAll(name, "-", "_"))
+		name = fmt.Sprintf("%s.%s", serviceName, strings.ReplaceAll(name, "-", "_"))
 
 		err := statsd.Distribution(name, float64(value), ddtags, 1)
 		if err != nil {

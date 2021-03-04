@@ -31,5 +31,5 @@ func TestDistribution(t *testing.T) {
 	Distribution("some_metric", 12.0, L("b", "c"))
 
 	buf := <-msgs
-	assert.Equal(t, "some_metric.some_metric:12|d|#a:1,b:c", string(bytes.Trim(buf, "\x00")))
+	assert.Equal(t, "testing.some_metric:12|d|#a:1,b:c", string(bytes.Trim(buf, "\x00")))
 }
