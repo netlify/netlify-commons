@@ -2,10 +2,12 @@ package metriks
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/netlify/netlify-commons/util"
 )
 
 const (
@@ -69,12 +71,13 @@ func (g *PersistentGauge) Stop() {
 	g.cancel()
 }
 
-// NewGauge will create and start a PersistentGauge that reports the current value every 10s
-func NewGauge(name string, tags ...metrics.Label) *PersistentGauge {
-	return NewGaugeWithDuration(name, tags, defaultGaugeDuration)
+// NewPersistentGauge will create and start a PersistentGauge that reports the current value every 10s
+func NewPersistentGauge(name string, tags ...metrics.Label) *PersistentGauge {
+	return NewPersistentGaugeWithDuration(name, defaultGaugeDuration, tags...)
 }
 
-func NewGaugeWithDuration(name string, tags []metrics.Label, dur time.Duration) *PersistentGauge {
+// NewPersistentGaugeWithDuration will create and start a PersistentGauge that reports the current value every period
+func NewPersistentGaugeWithDuration(name string, dur time.Duration, tags ...metrics.Label) *PersistentGauge {
 	ctx, cancel := context.WithCancel(context.Background())
 	g := PersistentGauge{
 		name:   name,
@@ -85,4 +88,28 @@ func NewGaugeWithDuration(name string, tags []metrics.Label, dur time.Duration) 
 	}
 	go g.start(ctx)
 	return &g
+}
+
+// ScheduledGauge will call the provided method after a duration
+// it will then report that value to the metrics system
+type ScheduledGauge struct {
+	util.ScheduledExecutor
+}
+
+// NewScheduledGauge will create an start a ScheduledGauge that reports the value every 10s
+func NewScheduledGauge(name string, cb func() int32, tags ...metrics.Label) ScheduledGauge {
+	return NewScheduledGaugeWithDuration(name, defaultGaugeDuration, cb, tags...)
+}
+
+// NewScheduledGaugeWithDuration will create an start a ScheduledGauge that reports the value every period
+func NewScheduledGaugeWithDuration(name string, dur time.Duration, cb func() int32, tags ...metrics.Label) ScheduledGauge {
+	g := ScheduledGauge{
+		ScheduledExecutor: util.NewScheduledExecutor(dur, func() {
+			v := cb()
+			Gauge(name, float32(v), tags...)
+			fmt.Println("sent the value?")
+		}),
+	}
+	g.Start()
+	return g
 }
