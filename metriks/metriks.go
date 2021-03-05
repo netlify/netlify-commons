@@ -24,7 +24,7 @@ func InitTags(serviceName string, conf Config, extraTags []string) error {
 		return nil
 	}
 
-	sink, err := createDatadogSink(conf.StatsdAddr(), "", conf.Tags, extraTags)
+	sink, err := createDatadogSink(conf.StatsdAddr(), "", serviceName, conf.Tags, extraTags)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func InitWithURL(serviceName string, endpoint string) (metrics.MetricSink, error
 	var sink metrics.MetricSink
 	switch u.Scheme {
 	case "datadog":
-		sink, err = createDatadogSink(u.Host, hostname, map[string]string{}, u.Query()["tag"])
+		sink, err = createDatadogSink(u.Host, hostname, serviceName, map[string]string{}, u.Query()["tag"])
 	case "discard", "":
 		sink = &metrics.BlackholeSink{}
 	default:
@@ -86,8 +86,8 @@ func InitWithSink(serviceName string, sink metrics.MetricSink) error {
 	return nil
 }
 
-func createDatadogSink(url string, name string, tags map[string]string, extraTags []string) (metrics.MetricSink, error) {
-	sink, err := datadog.NewDogStatsdSink(url, name)
+func createDatadogSink(url, hostname, serviceName string, tags map[string]string, extraTags []string) (metrics.MetricSink, error) {
+	sink, err := datadog.NewDogStatsdSink(url, hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func createDatadogSink(url string, name string, tags map[string]string, extraTag
 	}
 
 	sink.SetTags(ddTags)
-	if err := initDistribution(url, name, ddTags); err != nil {
+	if err := initDistribution(url, serviceName, ddTags); err != nil {
 		return nil, errors.Wrap(err, "failed to initialize the datadog statsd client")
 	}
 	return sink, nil
