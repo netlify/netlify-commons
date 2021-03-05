@@ -44,7 +44,6 @@ func TestPersistentGauge(t *testing.T) {
 func TestScheduledGauge(t *testing.T) {
 	var callCount int32
 	cb := func() int32 {
-		t.Log("here")
 		callCount++
 		return callCount
 	}
@@ -61,7 +60,6 @@ func TestScheduledGauge(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		select {
 		case msg := <-res:
-			t.Log("got", msg)
 			assert.Equal(t, expectedValues[i], msg)
 		case <-time.After(time.Second * 20):
 			require.Fail(t, "failed to get a metric in time")
@@ -98,7 +96,6 @@ func readValues(t *testing.T, pc net.PacketConn) <-chan string {
 				return
 			}
 			for _, p := range strings.Split(string(bytes.Trim(buf, "\x00")), "\n") {
-				t.Log("got msg off socket", p)
 				if p != "" {
 					res <- p
 				}

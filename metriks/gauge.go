@@ -2,7 +2,6 @@ package metriks
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -107,7 +106,6 @@ func NewScheduledGaugeWithDuration(name string, dur time.Duration, cb func() int
 		ScheduledExecutor: util.NewScheduledExecutor(dur, func() {
 			v := cb()
 			Gauge(name, float32(v), tags...)
-			fmt.Println("sent the value?")
 		}),
 	}
 	g.Start()
