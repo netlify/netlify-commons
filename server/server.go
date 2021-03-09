@@ -52,7 +52,8 @@ type HealthChecker interface {
 	Healthy(w http.ResponseWriter, r *http.Request) error
 }
 
-func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, error) {
+// New will build a server with the defaults in place
+func New(log logrus.FieldLogger, config Config, api APIDefinition, opts ...Opt) (*Server, error) {
 	var healthHandler router.APIHandler
 	if checker, ok := api.(HealthChecker); ok {
 		healthHandler = checker.Healthy
@@ -70,25 +71,29 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 		return nil, errors.Wrap(err, "Failed to start API")
 	}
 
-	s := Server{
-		log: log.WithField("component", "server"),
-		svr: &http.Server{
-			Addr:    fmt.Sprintf("%s:%d", config.Host, config.Port),
-			Handler: r,
-		},
-		api:  api,
-		done: make(chan bool),
+	svr := new(http.Server)
+	for _, o := range opts {
+		o(svr)
 	}
 
+	// TLS, addr and handler are not overridable by the options
+	svr.Addr = fmt.Sprintf("%s:%d", config.Host, config.Port)
+	svr.Handler = r
 	if config.TLS.Enabled {
 		tcfg, err := config.TLS.TLSConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build TLS config")
 		}
-		s.svr.TLSConfig = tcfg
+		svr.TLSConfig = tcfg
 		log.Info("TLS enabled")
 	}
 
+	s := Server{
+		log:  log.WithField("component", "server"),
+		svr:  svr,
+		api:  api,
+		done: make(chan bool),
+	}
 	return &s, nil
 }
 
