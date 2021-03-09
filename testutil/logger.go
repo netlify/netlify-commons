@@ -11,6 +11,12 @@ import (
 // Opt is a function that will modify the logger used
 type Opt func(l *logrus.Logger)
 
+// TL will build and return a test logger
+func TL(t *testing.T, opts ...Opt) *logrus.Entry {
+	l, _ := TestLogger(t, opts...)
+	return l
+}
+
 // TestLogger will build a logger that is useful for debugging
 // it respects levels configured by the 'LOG_LEVEL' env var.
 // It takes opt functions to modify the logger used
