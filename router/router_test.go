@@ -92,7 +92,7 @@ func TestTracing(t *testing.T) {
 	r.Post("/def/ghi", noop)
 	r.Put("/asdf/", noop)
 	r.Route("/sub", func(r Router) {
-		r.Get("/path", noop) // func(w http.ResponseWriter, r *http.Request) error { fmt.Println("!!!!!"); return nil })
+		r.Get("/path", noop)
 	})
 
 	scenes := map[string]struct {
