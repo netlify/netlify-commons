@@ -1,7 +1,6 @@
 package tracing
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -31,7 +30,6 @@ func TestTracerLogging(t *testing.T) {
 	assert.Empty(t, e.Data["referrer"])
 	assert.NotEmpty(t, e.Data["method"])
 	assert.Equal(t, "http://whatever.com/something", e.Data["url"])
-	fmt.Println(e.Data)
 
 	_ = SetLogField(r, "first", "second")
 	SetFinalField(r, "final", "line").Info("should have the final here")
@@ -40,14 +38,12 @@ func TestTracerLogging(t *testing.T) {
 	assert.NotEmpty(t, e.Data["request_id"])
 	assert.Equal(t, "line", e.Data["final"])
 	assert.Equal(t, "second", e.Data["first"])
-	fmt.Println(e.Data)
 
 	rt.Info("Shouldn't have the final line")
 	e = hook.LastEntry()
 	assert.Equal(t, 2, len(e.Data))
 	assert.NotEmpty(t, e.Data["request_id"])
 	assert.Equal(t, "second", e.Data["first"])
-	fmt.Println(e.Data)
 
 	rt.WriteHeader(http.StatusOK)
 	rt.Write([]byte{0, 1, 2, 3})
