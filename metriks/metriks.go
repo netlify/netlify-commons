@@ -97,10 +97,8 @@ func createDatadogSink(url, hostname, serviceName string, tags map[string]string
 		ddTags = append(ddTags, fmt.Sprintf("%s:%s", k, v))
 	}
 
-	if extraTags != nil {
-		for _, t := range extraTags {
-			ddTags = append(ddTags, t)
-		}
+	for _, t := range extraTags {
+		ddTags = append(ddTags, t)
 	}
 
 	sink.SetTags(ddTags)
