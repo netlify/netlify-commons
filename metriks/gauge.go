@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultGaugeDuration = time.Second * 10
+	defaultGaugeDuration = time.Second * 5
 )
 
 // PersistentGauge will report on an interval the value to the metrics collector.
@@ -31,6 +31,7 @@ type PersistentGauge struct {
 func (g *PersistentGauge) Set(value int32) int32 {
 	v := atomic.SwapInt32(&g.value, value)
 	g.report(value)
+
 	return v
 }
 
