@@ -40,5 +40,5 @@ func WithAddress(addr string) Opt {
 
 // WithHostAndPort will use them in the form host:port as the address field on the server
 func WithHostAndPort(host string, port int) Opt {
-	return WithAddress(fmt.Sprintf("%s:%d"))
+	return WithAddress(fmt.Sprintf("%s:%d", host, port))
 }
