@@ -40,6 +40,10 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	return d.setValue(v)
 }
 
+func (d *Duration) UnmarshalText(text []byte) error {
+	return d.setValue(string(text))
+}
+
 func (d *Duration) setValue(v interface{}) error {
 	switch value := v.(type) {
 	case float64:
