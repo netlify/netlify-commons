@@ -56,6 +56,9 @@ type HealthChecker interface {
 	Healthy(w http.ResponseWriter, r *http.Request) error
 }
 
+// NewOpts will create the server with many defaults. You can use the opts to override them.
+// the one major default you can't change by this is the health path. This is set to /health
+// and be enabled.
 func NewOpts(log logrus.FieldLogger, api APIDefinition, opts ...Opt) (*Server, error) {
 	defaultOpts := []Opt{
 		WithHostAndPort("", defaultPort),
