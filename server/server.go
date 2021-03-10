@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,6 +13,11 @@ import (
 	"github.com/netlify/netlify-commons/router"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	defaultPort       = 9090
+	defaultHealthPath = "/health"
 )
 
 // Server handles the setup and shutdown of the http server
@@ -52,49 +56,30 @@ type HealthChecker interface {
 	Healthy(w http.ResponseWriter, r *http.Request) error
 }
 
+func NewOpts(log logrus.FieldLogger, api APIDefinition, opts ...Opt) (*Server, error) {
+	defaultOpts := []Opt{
+		WithHostAndPort("", defaultPort),
+	}
+
+	return buildServer(log, api, append(defaultOpts, opts...), defaultHealthPath)
+}
+
 // New will build a server with the defaults in place
-func New(log logrus.FieldLogger, config Config, api APIDefinition, opts ...Opt) (*Server, error) {
-	var healthHandler router.APIHandler
-	if checker, ok := api.(HealthChecker); ok {
-		healthHandler = checker.Healthy
+func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, error) {
+	opts := []Opt{
+		WithHostAndPort(config.Host, config.Port),
 	}
 
-	r := router.New(
-		log,
-		router.OptHealthCheck(config.HealthPath, healthHandler),
-		router.OptEnableTracing(api.Info().Name),
-		router.OptVersionHeader(api.Info().Name, api.Info().Version),
-		router.OptRecoverer(),
-	)
-
-	if err := api.Start(r); err != nil {
-		return nil, errors.Wrap(err, "Failed to start API")
-	}
-
-	svr := new(http.Server)
-	for _, o := range opts {
-		o(svr)
-	}
-
-	// TLS, addr and handler are not overridable by the options
-	svr.Addr = fmt.Sprintf("%s:%d", config.Host, config.Port)
-	svr.Handler = r
 	if config.TLS.Enabled {
 		tcfg, err := config.TLS.TLSConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build TLS config")
 		}
-		svr.TLSConfig = tcfg
 		log.Info("TLS enabled")
+		opts = append(opts, WithTLS(tcfg))
 	}
 
-	s := Server{
-		log:  log.WithField("component", "server"),
-		svr:  svr,
-		api:  api,
-		done: make(chan bool),
-	}
-	return &s, nil
+	return buildServer(log, api, opts, config.HealthPath)
 }
 
 func (s *Server) Shutdown(to time.Duration) error {
@@ -176,4 +161,42 @@ func APIFunc(start func(router.Router) error, stop func(), info APIInfo) APIDefi
 		stop:  stop,
 		info:  info,
 	}
+}
+
+func buildRouter(log logrus.FieldLogger, api APIDefinition, healthPath string) router.Router {
+	var healthHandler router.APIHandler
+	if checker, ok := api.(HealthChecker); ok {
+		healthHandler = checker.Healthy
+	}
+
+	r := router.New(
+		log,
+		router.OptHealthCheck(healthPath, healthHandler),
+		router.OptEnableTracing(api.Info().Name),
+		router.OptVersionHeader(api.Info().Name, api.Info().Version),
+		router.OptRecoverer(),
+	)
+
+	return r
+}
+
+func buildServer(log logrus.FieldLogger, api APIDefinition, opts []Opt, healthPath string) (*Server, error) {
+	r := buildRouter(log, api, healthPath)
+
+	if err := api.Start(r); err != nil {
+		return nil, errors.Wrap(err, "Failed to start API")
+	}
+
+	svr := new(http.Server)
+	for _, o := range opts {
+		o(svr)
+	}
+	svr.Handler = r
+	s := Server{
+		log:  log.WithField("component", "server"),
+		svr:  svr,
+		api:  api,
+		done: make(chan bool),
+	}
+	return &s, nil
 }

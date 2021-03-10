@@ -1,6 +1,8 @@
 package server
 
 import (
+	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -20,4 +22,23 @@ func WithReadTimeout(dur time.Duration) Opt {
 	return func(s *http.Server) {
 		s.ReadTimeout = dur
 	}
+}
+
+// WithTLS will use the provided TLS configuration
+func WithTLS(cfg *tls.Config) Opt {
+	return func(s *http.Server) {
+		s.TLSConfig = cfg
+	}
+}
+
+// WithAddress will set the address field on the server
+func WithAddress(addr string) Opt {
+	return func(s *http.Server) {
+		s.Addr = addr
+	}
+}
+
+// WithHostAndPort will use them in the form host:port as the address field on the server
+func WithHostAndPort(host string, port int) Opt {
+	return WithAddress(fmt.Sprintf("%s:%d"))
 }
