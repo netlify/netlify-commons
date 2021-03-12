@@ -33,12 +33,13 @@ func KafkaPipe(log logrus.FieldLogger) (*FakeKafkaConsumer, *FakeKafkaProducer) 
 }
 
 type FakeKafkaConsumer struct {
-	messages []*kafkalib.Message
-	msgMu    sync.Mutex
-	offset   int64
-	notify   chan struct{}
-	commits  chan *kafkalib.Message
-	log      logrus.FieldLogger
+	messages         []*kafkalib.Message
+	msgMu            sync.Mutex
+	offset           int64
+	uncommitedOffset int64
+	notify           chan struct{}
+	commits          chan *kafkalib.Message
+	log              logrus.FieldLogger
 }
 
 type FakeKafkaProducer struct {
@@ -63,11 +64,12 @@ func (f *FakeKafkaProducer) Close() error {
 
 func NewFakeKafkaConsumer(log logrus.FieldLogger, distri <-chan *kafkalib.Message) *FakeKafkaConsumer {
 	r := &FakeKafkaConsumer{
-		messages: make([]*kafkalib.Message, 0),
-		offset:   0,
-		notify:   make(chan struct{}),
-		log:      log,
-		commits:  make(chan *kafkalib.Message, 1000),
+		messages:         make([]*kafkalib.Message, 0),
+		offset:           0,
+		uncommitedOffset: 0,
+		notify:           make(chan struct{}),
+		log:              log,
+		commits:          make(chan *kafkalib.Message, 1000),
 	}
 
 	go func() {
@@ -86,11 +88,12 @@ func NewFakeKafkaConsumer(log logrus.FieldLogger, distri <-chan *kafkalib.Messag
 func (f *FakeKafkaConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message, error) {
 	for {
 		f.msgMu.Lock()
-		if int64(len(f.messages)) > f.offset {
-			f.log.WithField("offset", f.offset).Trace("offering message")
-			msg := f.messages[f.offset]
+		if int64(len(f.messages)) > f.uncommitedOffset {
+			f.log.WithField("offset", f.uncommitedOffset).Trace("offering message")
+			msg := f.messages[f.uncommitedOffset]
 			f.msgMu.Unlock()
 
+			f.uncommitedOffset = f.uncommitedOffset + 1
 			return msg, nil
 		}
 		f.msgMu.Unlock()
@@ -108,6 +111,7 @@ func (f *FakeKafkaConsumer) CommitMessage(msg *kafkalib.Message) error {
 	f.log.WithField("offset", msg.TopicPartition.Offset).Trace("commiting message...")
 	if int64(msg.TopicPartition.Offset) > f.offset {
 		f.offset = int64(msg.TopicPartition.Offset)
+		f.uncommitedOffset = f.offset
 		f.log.WithField("offset", f.offset).Trace("set new offset")
 	}
 	select {

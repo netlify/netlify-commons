@@ -15,17 +15,27 @@ func TestFakeKafkaProducer_WaitForKey(t *testing.T) {
 	defer p.Close()
 	defer c.Close()
 
-	key := []byte(`key`)
-	val := []byte(`foobar`)
-	err := p.Produce(context.Background(), &kafkalib.Message{
-		Value: val,
-		Key:   key,
+	ctx := context.Background()
+
+	err := p.Produce(ctx, &kafkalib.Message{
+		Key:   []byte(`key1`),
+		Value: []byte(`val1`),
 	})
-	msg, err := c.FetchMessage(context.Background())
+	err = p.Produce(ctx, &kafkalib.Message{
+		Key:   []byte(`key2`),
+		Value: []byte(`val2`),
+	})
+
+	msg, err := c.FetchMessage(ctx)
 	require.NoError(t, err)
-	require.Equal(t, key, msg.Key)
-	require.Equal(t, val, msg.Value)
+	require.Equal(t, "key1", string(msg.Key))
+	require.Equal(t, "val1", string(msg.Value))
+
+	msg, err = c.FetchMessage(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "key2", string(msg.Key))
+	require.Equal(t, "val2", string(msg.Value))
 
 	require.NoError(t, c.CommitMessage(msg))
-	require.True(t, p.WaitForKey(key))
+	require.True(t, p.WaitForKey([]byte(`key2`)))
 }
