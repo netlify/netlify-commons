@@ -125,6 +125,7 @@ func (f *FakeKafkaConsumer) CommitMessage(msg *kafkalib.Message) error {
 func (f *FakeKafkaConsumer) SetInitialOffset(offset int64) error {
 	f.msgMu.Lock()
 	f.offset = offset
+	f.uncommitedOffset = offset
 	f.msgMu.Unlock()
 	return nil
 }
@@ -132,6 +133,7 @@ func (f *FakeKafkaConsumer) SetInitialOffset(offset int64) error {
 func (f *FakeKafkaConsumer) Seek(offset int64) error {
 	f.msgMu.Lock()
 	f.offset = offset
+	f.uncommitedOffset = offset
 	f.msgMu.Unlock()
 	return nil
 }
