@@ -21,10 +21,13 @@ func TestFakeKafkaProducer_WaitForKey(t *testing.T) {
 		Key:   []byte(`key1`),
 		Value: []byte(`val1`),
 	})
+	require.NoError(t, err)
+
 	err = p.Produce(ctx, &kafkalib.Message{
 		Key:   []byte(`key2`),
 		Value: []byte(`val2`),
 	})
+	require.NoError(t, err)
 
 	msg, err := c.FetchMessage(ctx)
 	require.NoError(t, err)
