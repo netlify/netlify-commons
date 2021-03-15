@@ -33,12 +33,13 @@ func KafkaPipe(log logrus.FieldLogger) (*FakeKafkaConsumer, *FakeKafkaProducer) 
 }
 
 type FakeKafkaConsumer struct {
-	messages []*kafkalib.Message
-	msgMu    sync.Mutex
-	offset   int64
-	notify   chan struct{}
-	commits  chan *kafkalib.Message
-	log      logrus.FieldLogger
+	messages   []*kafkalib.Message
+	msgMu      sync.Mutex
+	offset     int64
+	readOffset int64
+	notify     chan struct{}
+	commits    chan *kafkalib.Message
+	log        logrus.FieldLogger
 }
 
 type FakeKafkaProducer struct {
@@ -63,11 +64,12 @@ func (f *FakeKafkaProducer) Close() error {
 
 func NewFakeKafkaConsumer(log logrus.FieldLogger, distri <-chan *kafkalib.Message) *FakeKafkaConsumer {
 	r := &FakeKafkaConsumer{
-		messages: make([]*kafkalib.Message, 0),
-		offset:   0,
-		notify:   make(chan struct{}),
-		log:      log,
-		commits:  make(chan *kafkalib.Message, 1000),
+		messages:   make([]*kafkalib.Message, 0),
+		offset:     0,
+		readOffset: 0,
+		notify:     make(chan struct{}),
+		log:        log,
+		commits:    make(chan *kafkalib.Message, 1000),
 	}
 
 	go func() {
@@ -86,11 +88,12 @@ func NewFakeKafkaConsumer(log logrus.FieldLogger, distri <-chan *kafkalib.Messag
 func (f *FakeKafkaConsumer) FetchMessage(ctx context.Context) (*kafkalib.Message, error) {
 	for {
 		f.msgMu.Lock()
-		if int64(len(f.messages)) > f.offset {
-			f.log.WithField("offset", f.offset).Trace("offering message")
-			msg := f.messages[f.offset]
+		if int64(len(f.messages)) > f.readOffset {
+			f.log.WithField("offset", f.readOffset).Trace("offering message")
+			msg := f.messages[f.readOffset]
 			f.msgMu.Unlock()
 
+			f.readOffset = f.readOffset + 1
 			return msg, nil
 		}
 		f.msgMu.Unlock()
@@ -121,13 +124,14 @@ func (f *FakeKafkaConsumer) CommitMessage(msg *kafkalib.Message) error {
 func (f *FakeKafkaConsumer) SetInitialOffset(offset int64) error {
 	f.msgMu.Lock()
 	f.offset = offset
+	f.readOffset = offset
 	f.msgMu.Unlock()
 	return nil
 }
 
 func (f *FakeKafkaConsumer) Seek(offset int64) error {
 	f.msgMu.Lock()
-	f.offset = offset
+	f.readOffset = offset
 	f.msgMu.Unlock()
 	return nil
 }
