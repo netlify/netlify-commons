@@ -11,12 +11,13 @@ type ScheduledExecutor interface {
 }
 
 type scheduledExecutor struct {
-	period    time.Duration
-	cb        func()
-	isRunning AtomicBool
-	ticker    *time.Ticker
-	done      chan bool
-	wg        sync.WaitGroup
+	period             time.Duration
+	cb                 func()
+	isRunning          AtomicBool
+	ticker             *time.Ticker
+	done               chan bool
+	wg                 sync.WaitGroup
+	enableInstantStart bool
 }
 
 func NewScheduledExecutor(period time.Duration, cb func()) ScheduledExecutor {
@@ -25,6 +26,16 @@ func NewScheduledExecutor(period time.Duration, cb func()) ScheduledExecutor {
 		cb:        cb,
 		isRunning: NewAtomicBool(false),
 		wg:        sync.WaitGroup{},
+	}
+}
+
+func NewExecutorWithInstantStart(period time.Duration, cb func()) ScheduledExecutor {
+	return &scheduledExecutor{
+		period:             period,
+		cb:                 cb,
+		isRunning:          NewAtomicBool(false),
+		wg:                 sync.WaitGroup{},
+		enableInstantStart: true,
 	}
 }
 
@@ -55,13 +66,23 @@ func (s *scheduledExecutor) Stop() {
 
 func (s *scheduledExecutor) poll() {
 	defer s.wg.Done()
-
-	for {
-		select {
-		case <-s.done:
-			return
-		case <-s.ticker.C:
+	if s.enableInstantStart {
+		for ; true; <-s.ticker.C {
+			select {
+			case <-s.done:
+				return
+			default:
+			}
 			s.cb()
+		}
+	} else {
+		for {
+			select {
+			case <-s.done:
+				return
+			case <-s.ticker.C:
+				s.cb()
+			}
 		}
 	}
 }
