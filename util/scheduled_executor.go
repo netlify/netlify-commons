@@ -90,7 +90,9 @@ func (s *scheduledExecutor) Stop() {
 		return
 	}
 
-	s.ticker.Stop()
+	if s.ticker != nil {
+		s.ticker.Stop()
+	}
 	s.done <- true
 	s.wg.Wait()
 
@@ -100,7 +102,20 @@ func (s *scheduledExecutor) Stop() {
 
 func (s *scheduledExecutor) poll() {
 	defer s.wg.Done()
-	time.Sleep(s.initialDelay)
+
+	// pause for initial delay
+	begin := make(chan struct{})
+	go func() {
+		time.Sleep(s.initialDelay)
+		begin <- struct{}{}
+	}()
+	select {
+	case <-s.done:
+		return
+	case <-begin:
+	}
+
+	// infinite loop for scheduled execution
 	for ; true; <-s.ticker.C() {
 		select {
 		case <-s.done:
