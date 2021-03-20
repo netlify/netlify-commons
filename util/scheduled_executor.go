@@ -79,7 +79,7 @@ func (s *scheduledExecutor) Start() {
 	}
 
 	s.ticker = CustomTicker(&defaultTicker{time.NewTicker(s.period)})
-	s.done = make(chan bool)
+	s.done = make(chan bool, 1)
 	s.wg.Add(1)
 
 	go s.poll()
@@ -90,12 +90,11 @@ func (s *scheduledExecutor) Stop() {
 		return
 	}
 
+	s.done <- true
+	s.wg.Wait()
 	if s.ticker != nil {
 		s.ticker.Stop()
 	}
-	s.done <- true
-	s.wg.Wait()
-
 	s.ticker = nil
 	s.done = nil
 }
@@ -104,15 +103,13 @@ func (s *scheduledExecutor) poll() {
 	defer s.wg.Done()
 
 	// pause for initial delay
-	begin := make(chan struct{})
-	go func() {
-		time.Sleep(s.initialDelay)
-		begin <- struct{}{}
-	}()
+	delay := time.NewTicker(s.initialDelay)
 	select {
 	case <-s.done:
+		delay.Stop()
 		return
-	case <-begin:
+	case <-delay.C:
+		delay.Stop()
 	}
 
 	// infinite loop for scheduled execution
