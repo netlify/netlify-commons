@@ -5,18 +5,11 @@ import (
 	"time"
 )
 
-type ScheduledExecutor interface {
-	Start()
-	Stop()
-}
-
 type CustomTicker interface {
 	Stop()
 	Start()
 	C() <-chan time.Time
 }
-
-type Option func(*scheduledExecutor)
 
 type defaultTicker struct {
 	*time.Ticker
@@ -31,6 +24,11 @@ func (d *defaultTicker) Start() {
 	d.Ticker = time.NewTicker(d.period)
 }
 
+type ScheduledExecutor interface {
+	Start()
+	Stop()
+}
+
 type scheduledExecutor struct {
 	cb           func()
 	isRunning    AtomicBool
@@ -39,6 +37,8 @@ type scheduledExecutor struct {
 	wg           sync.WaitGroup
 	initialDelay time.Duration
 }
+
+type Option func(*scheduledExecutor)
 
 func NewScheduledExecutor(period time.Duration, cb func()) ScheduledExecutor {
 	return &scheduledExecutor{
@@ -62,7 +62,6 @@ func NewScheduledExecutorWithOpts(period time.Duration, cb func(), options ...Op
 	for _, opt := range options {
 		opt(s)
 	}
-
 	return s
 }
 
@@ -107,17 +106,15 @@ func (s *scheduledExecutor) poll() {
 	defer s.wg.Done()
 
 	// pause for initial delay
-	if s.initialDelay > 0 {
-		delay := time.NewTicker(s.initialDelay)
-		select {
-		case <-s.done:
-			delay.Stop()
-			delay = nil
-			return
-		case <-delay.C:
-			delay.Stop()
-			delay = nil
-		}
+	begin := make(chan struct{})
+	go func() {
+		time.Sleep(s.initialDelay)
+		begin <- struct{}{}
+	}()
+	select {
+	case <-s.done:
+		return
+	case <-begin:
 	}
 
 	// infinite loop for scheduled execution
