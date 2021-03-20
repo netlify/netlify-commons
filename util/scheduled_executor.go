@@ -112,9 +112,11 @@ func (s *scheduledExecutor) poll() {
 		select {
 		case <-s.done:
 			delay.Stop()
+			delay = nil
 			return
 		case <-delay.C:
 			delay.Stop()
+			delay = nil
 		}
 	}
 
