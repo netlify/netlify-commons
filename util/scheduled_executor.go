@@ -12,6 +12,7 @@ type ScheduledExecutor interface {
 
 type CustomTicker interface {
 	Stop()
+	Start()
 	C() <-chan time.Time
 }
 
@@ -19,14 +20,18 @@ type Option func(*scheduledExecutor)
 
 type defaultTicker struct {
 	*time.Ticker
+	period time.Duration
 }
 
 func (d *defaultTicker) C() <-chan time.Time {
 	return d.Ticker.C
 }
 
+func (d *defaultTicker) Start() {
+	d.Ticker = time.NewTicker(d.period)
+}
+
 type scheduledExecutor struct {
-	period       time.Duration
 	cb           func()
 	isRunning    AtomicBool
 	ticker       CustomTicker
@@ -37,21 +42,21 @@ type scheduledExecutor struct {
 
 func NewScheduledExecutor(period time.Duration, cb func()) ScheduledExecutor {
 	return &scheduledExecutor{
-		period:       period,
 		cb:           cb,
 		isRunning:    NewAtomicBool(false),
 		wg:           sync.WaitGroup{},
 		initialDelay: period,
+		ticker:       CustomTicker(&defaultTicker{period: period}),
 	}
 }
 
 func NewScheduledExecutorWithOpts(period time.Duration, cb func(), options ...Option) ScheduledExecutor {
 	s := &scheduledExecutor{
-		period:       period,
 		cb:           cb,
 		isRunning:    NewAtomicBool(false),
 		wg:           sync.WaitGroup{},
 		initialDelay: period,
+		ticker:       CustomTicker(&defaultTicker{period: period}),
 	}
 
 	for _, opt := range options {
@@ -78,8 +83,7 @@ func (s *scheduledExecutor) Start() {
 		return
 	}
 
-	s.ticker = CustomTicker(&defaultTicker{time.NewTicker(s.period)})
-	s.done = make(chan bool, 1)
+	s.done = make(chan bool)
 	s.wg.Add(1)
 
 	go s.poll()
@@ -103,22 +107,25 @@ func (s *scheduledExecutor) poll() {
 	defer s.wg.Done()
 
 	// pause for initial delay
-	delay := time.NewTicker(s.initialDelay)
-	select {
-	case <-s.done:
-		delay.Stop()
-		return
-	case <-delay.C:
-		delay.Stop()
+	if s.initialDelay > 0 {
+		delay := time.NewTicker(s.initialDelay)
+		select {
+		case <-s.done:
+			delay.Stop()
+			return
+		case <-delay.C:
+			delay.Stop()
+		}
 	}
 
 	// infinite loop for scheduled execution
-	for ; true; <-s.ticker.C() {
+	s.ticker.Start()
+	for {
+		s.cb()
 		select {
 		case <-s.done:
 			return
-		default:
+		case <-s.ticker.C():
 		}
-		s.cb()
 	}
 }
