@@ -99,6 +99,10 @@ func TestArgsLoadDefault(t *testing.T) {
 			"request_timeout": "10s",
 			"enabled":         true,
 		},
+		"instrument": map[string]interface{}{
+			"key":     "greatkey",
+			"enabled": true,
+		},
 	}
 
 	scenes := []struct {
@@ -161,6 +165,10 @@ func TestArgsLoadDefault(t *testing.T) {
 			assert.Equal(t, true, cfg.FeatureFlag.Enabled)
 			assert.Equal(t, false, cfg.FeatureFlag.DisableEvents)
 			assert.Equal(t, "", cfg.FeatureFlag.RelayHost)
+
+			// instrument
+			assert.Equal(t, "greatkey", cfg.Instrument.Key)
+			assert.Equal(t, true, cfg.Instrument.Enabled)
 		})
 	}
 }

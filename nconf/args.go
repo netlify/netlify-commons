@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/netlify/netlify-commons/featureflag"
+	"github.com/netlify/netlify-commons/instrument"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/pkg/errors"
@@ -46,6 +47,10 @@ func (args *RootArgs) Setup(config interface{}, serviceName, version string) (lo
 
 	if err := featureflag.Init(rootConfig.FeatureFlag, log); err != nil {
 		return nil, errors.Wrap(err, "Failed to configure featureflags")
+	}
+
+	if err := instrument.Init(rootConfig.Instrument, log); err != nil {
+		return nil, errors.Wrap(err, "Failed to configure instrument")
 	}
 
 	if err := sendDatadogEvents(rootConfig.Metrics, serviceName, version); err != nil {
