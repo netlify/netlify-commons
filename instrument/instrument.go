@@ -7,7 +7,7 @@ import (
 	"gopkg.in/segmentio/analytics-go.v3"
 )
 
-type Client interface {
+type client interface {
 	Identify(userID string, traits analytics.Traits) error
 	Track(userID string, event string, properties analytics.Properties) error
 	Page(userID string, name string, properties analytics.Properties) error
@@ -20,9 +20,9 @@ type segmentClient struct {
 	log logrus.FieldLogger
 }
 
-var _ Client = &segmentClient{}
+var _ client = &segmentClient{}
 
-func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
+func NewClient(cfg *Config, logger logrus.FieldLogger) (client, error) {
 	config := analytics.Config{}
 
 	if !cfg.Enabled {

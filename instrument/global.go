@@ -4,12 +4,13 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/segmentio/analytics-go.v3"
 )
 
 var globalLock sync.Mutex
-var globalClient Client = MockClient{}
+var globalClient client = MockClient{}
 
-func SetGlobalClient(client Client) {
+func setGlobalClient(client client) {
 	if client == nil {
 		return
 	}
@@ -18,7 +19,7 @@ func SetGlobalClient(client Client) {
 	globalLock.Unlock()
 }
 
-func GetGlobalClient() Client {
+func getGlobalClient() client {
 	globalLock.Lock()
 	defer globalLock.Unlock()
 	return globalClient
@@ -30,6 +31,26 @@ func Init(conf Config, log logrus.FieldLogger) error {
 	if err != nil {
 		return err
 	}
-	SetGlobalClient(segmentClient)
+	setGlobalClient(segmentClient)
 	return nil
+}
+
+func Identify(userID string, traits analytics.Traits) error {
+	return getGlobalClient().Identify(userID, traits)
+}
+
+func Track(userID string, event string, properties analytics.Properties) error {
+	return getGlobalClient().Track(userID, event, properties)
+}
+
+func Page(userID string, name string, properties analytics.Properties) error {
+	return getGlobalClient().Page(userID, name, properties)
+}
+
+func Group(userID string, groupID string, traits analytics.Traits) error {
+	return getGlobalClient().Group(userID, groupID, traits)
+}
+
+func Alias(previousID string, userID string) error {
+	return getGlobalClient().Alias(previousID, userID)
 }
