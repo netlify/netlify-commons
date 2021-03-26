@@ -9,7 +9,7 @@ type MockClient struct {
 	Logger logrus.FieldLogger
 }
 
-var _ client = MockClient{}
+var _ Client = MockClient{}
 
 func (c MockClient) identify(userID string, traits analytics.Traits) error {
 	c.Logger.WithFields(logrus.Fields{
