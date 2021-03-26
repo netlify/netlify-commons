@@ -36,21 +36,21 @@ func Init(conf Config, log logrus.FieldLogger) error {
 }
 
 func Identify(userID string, traits analytics.Traits) error {
-	return getGlobalClient().Identify(userID, traits)
+	return getGlobalClient().identify(userID, traits)
 }
 
 func Track(userID string, event string, properties analytics.Properties) error {
-	return getGlobalClient().Track(userID, event, properties)
+	return getGlobalClient().track(userID, event, properties)
 }
 
 func Page(userID string, name string, properties analytics.Properties) error {
-	return getGlobalClient().Page(userID, name, properties)
+	return getGlobalClient().page(userID, name, properties)
 }
 
 func Group(userID string, groupID string, traits analytics.Traits) error {
-	return getGlobalClient().Group(userID, groupID, traits)
+	return getGlobalClient().group(userID, groupID, traits)
 }
 
 func Alias(previousID string, userID string) error {
-	return getGlobalClient().Alias(previousID, userID)
+	return getGlobalClient().alias(previousID, userID)
 }

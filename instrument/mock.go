@@ -11,7 +11,7 @@ type MockClient struct {
 
 var _ client = MockClient{}
 
-func (c MockClient) Identify(userID string, traits analytics.Traits) error {
+func (c MockClient) identify(userID string, traits analytics.Traits) error {
 	c.Logger.WithFields(logrus.Fields{
 		"user_id": userID,
 		"traits":  traits,
@@ -19,7 +19,7 @@ func (c MockClient) Identify(userID string, traits analytics.Traits) error {
 	return nil
 }
 
-func (c MockClient) Track(userID string, event string, properties analytics.Properties) error {
+func (c MockClient) track(userID string, event string, properties analytics.Properties) error {
 	c.Logger.WithFields(logrus.Fields{
 		"user_id":    userID,
 		"event":      event,
@@ -28,7 +28,7 @@ func (c MockClient) Track(userID string, event string, properties analytics.Prop
 	return nil
 }
 
-func (c MockClient) Page(userID string, name string, properties analytics.Properties) error {
+func (c MockClient) page(userID string, name string, properties analytics.Properties) error {
 	c.Logger.WithFields(logrus.Fields{
 		"user_id":    userID,
 		"name":       name,
@@ -37,7 +37,7 @@ func (c MockClient) Page(userID string, name string, properties analytics.Proper
 	return nil
 }
 
-func (c MockClient) Group(userID string, groupID string, traits analytics.Traits) error {
+func (c MockClient) group(userID string, groupID string, traits analytics.Traits) error {
 	c.Logger.WithFields(logrus.Fields{
 		"user_id":  userID,
 		"group_id": groupID,
@@ -46,7 +46,7 @@ func (c MockClient) Group(userID string, groupID string, traits analytics.Traits
 	return nil
 }
 
-func (c MockClient) Alias(previousID string, userID string) error {
+func (c MockClient) alias(previousID string, userID string) error {
 	c.Logger.WithFields(logrus.Fields{
 		"previous_id": previousID,
 		"user_id":     userID,
