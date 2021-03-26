@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/netlify/netlify-commons/featureflag"
+	"github.com/netlify/netlify-commons/instrument"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/pkg/errors"
@@ -33,6 +34,7 @@ type RootConfig struct {
 	Metrics     metriks.Config
 	Tracing     tracing.Config
 	FeatureFlag featureflag.Config
+	Instrument  instrument.Config
 }
 
 func DefaultConfig() RootConfig {
