@@ -22,7 +22,7 @@ type segmentClient struct {
 
 var _ client = &segmentClient{}
 
-func NewClient(cfg *Config, logger logrus.FieldLogger) (client, error) {
+func newClient(cfg *Config, logger logrus.FieldLogger) (client, error) {
 	config := analytics.Config{}
 
 	if !cfg.Enabled {
@@ -92,10 +92,12 @@ type wrapLog struct {
 	errorf func(format string, args ...interface{})
 }
 
+// Logf implements analytics.Logger interface
 func (l *wrapLog) Logf(format string, args ...interface{}) {
 	l.printf(format, args...)
 }
 
+// Errorf implements analytics.Logger interface
 func (l *wrapLog) Errorf(format string, args ...interface{}) {
 	l.errorf(format, args...)
 }

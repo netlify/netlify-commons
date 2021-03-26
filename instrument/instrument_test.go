@@ -15,7 +15,7 @@ func TestLogOnlyClient(t *testing.T) {
 		Key:     "ABCD",
 		Enabled: false,
 	}
-	client, err := NewClient(&cfg, nil)
+	client, err := newClient(&cfg, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, reflect.TypeOf(&MockClient{}).Kind(), reflect.TypeOf(client).Kind())
@@ -35,7 +35,7 @@ func TestLogging(t *testing.T) {
 
 	log, hook := testutil.TestLogger(t)
 
-	client, err := NewClient(&cfg, log.WithField("component", "segment"))
+	client, err := newClient(&cfg, log.WithField("component", "segment"))
 	require.NoError(t, err)
 	require.NoError(t, client.identify("myuser", analytics.NewTraits().SetName("My User")))
 	assert.NotEmpty(t, hook.LastEntry())
