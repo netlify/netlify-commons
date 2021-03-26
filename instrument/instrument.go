@@ -8,11 +8,11 @@ import (
 )
 
 type Client interface {
-	identify(userID string, traits analytics.Traits) error
-	track(userID string, event string, properties analytics.Properties) error
-	page(userID string, name string, properties analytics.Properties) error
-	group(userID string, groupID string, traits analytics.Traits) error
-	alias(previousID string, userID string) error
+	Identify(userID string, traits analytics.Traits) error
+	Track(userID string, event string, properties analytics.Properties) error
+	Page(userID string, name string, properties analytics.Properties) error
+	Group(userID string, groupID string, traits analytics.Traits) error
+	Alias(previousID string, userID string) error
 }
 
 type segmentClient struct {
@@ -22,7 +22,7 @@ type segmentClient struct {
 
 var _ Client = &segmentClient{}
 
-func newClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
+func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	config := analytics.Config{}
 
 	if !cfg.Enabled {
@@ -39,14 +39,14 @@ func newClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	return &segmentClient{inner, logger}, err
 }
 
-func (c segmentClient) identify(userID string, traits analytics.Traits) error {
+func (c segmentClient) Identify(userID string, traits analytics.Traits) error {
 	return c.Client.Enqueue(analytics.Identify{
 		UserId: userID,
 		Traits: traits,
 	})
 }
 
-func (c segmentClient) track(userID string, event string, properties analytics.Properties) error {
+func (c segmentClient) Track(userID string, event string, properties analytics.Properties) error {
 	return c.Client.Enqueue(analytics.Track{
 		UserId:     userID,
 		Event:      event,
@@ -54,7 +54,7 @@ func (c segmentClient) track(userID string, event string, properties analytics.P
 	})
 }
 
-func (c segmentClient) page(userID string, name string, properties analytics.Properties) error {
+func (c segmentClient) Page(userID string, name string, properties analytics.Properties) error {
 	return c.Client.Enqueue(analytics.Page{
 		UserId:     userID,
 		Name:       name,
@@ -62,7 +62,7 @@ func (c segmentClient) page(userID string, name string, properties analytics.Pro
 	})
 }
 
-func (c segmentClient) group(userID string, groupID string, traits analytics.Traits) error {
+func (c segmentClient) Group(userID string, groupID string, traits analytics.Traits) error {
 	return c.Client.Enqueue(analytics.Group{
 		UserId:  userID,
 		GroupId: groupID,
@@ -70,7 +70,7 @@ func (c segmentClient) group(userID string, groupID string, traits analytics.Tra
 	})
 }
 
-func (c segmentClient) alias(previousID string, userID string) error {
+func (c segmentClient) Alias(previousID string, userID string) error {
 	return c.Client.Enqueue(analytics.Alias{
 		PreviousId: previousID,
 		UserId:     userID,

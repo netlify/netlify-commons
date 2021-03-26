@@ -2,6 +2,8 @@
 Package instrument provides the tool to emit the events to the instrumentation
 destination. Currently it supports Segment or logger as a destination.
 
+When enabling, make sure to follow the guideline specified in https://github.com/netlify/segment-events
+
 In the config file, you can define the API key, as well as if it's enabled (use
 Segment) or not (use logger).
 	INSTRUMENT_ENABLED=true
@@ -17,6 +19,11 @@ create new traits and properties.
 Then call the functions:
 	instrument.Track("userid", "service:my_event", analytics.NewProperties().Set("color", "green"))
 
-When enabling, make sure to follow the guideline specified in https://github.com/netlify/segment-events
+For testing, you can create your own mock instrument and use it:
+	func TestSomething (t *testing.T) {
+		old := instrument.GetGlobalClient()
+		t.Cleanup(func(){ instrument.SetGlobalClient(old) })
+		instrument.SetGlobalClient(myMockClient)
+	}
 */
 package instrument
