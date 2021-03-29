@@ -21,9 +21,10 @@ Then call the functions:
 
 For testing, you can create your own mock instrument and use it:
 	func TestSomething (t *testing.T) {
+		log := testutil.TL(t)
 		old := instrument.GetGlobalClient()
 		t.Cleanup(func(){ instrument.SetGlobalClient(old) })
-		instrument.SetGlobalClient(myMockClient)
+		instrument.SetGlobalClient(instrument.MockClient{Logger: log})
 	}
 */
 package instrument
