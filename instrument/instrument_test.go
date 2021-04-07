@@ -22,10 +22,12 @@ func TestLogOnlyClient(t *testing.T) {
 }
 
 func TestMockClient(t *testing.T) {
-	log := testutil.TL(t)
+	log, hook := testutil.TestLogger(t)
 	mock := MockClient{log}
 
-	require.NoError(t, mock.Identify("myuser", analytics.NewTraits().SetName("My User")))
+	mock.Identify("myuser", analytics.NewTraits().SetName("My User"))
+	assert.NotEmpty(t, hook.LastEntry())
+	assert.Contains(t, hook.LastEntry().Message, "Received Identify event")
 }
 
 func TestLogging(t *testing.T) {
@@ -37,6 +39,6 @@ func TestLogging(t *testing.T) {
 
 	client, err := NewClient(&cfg, log.WithField("component", "segment"))
 	require.NoError(t, err)
-	require.NoError(t, client.Identify("myuser", analytics.NewTraits().SetName("My User")))
+	client.Identify("myuser", analytics.NewTraits().SetName("My User"))
 	assert.NotEmpty(t, hook.LastEntry())
 }

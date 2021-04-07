@@ -8,11 +8,11 @@ import (
 )
 
 type Client interface {
-	Identify(userID string, traits analytics.Traits) error
-	Track(userID string, event string, properties analytics.Properties) error
-	Page(userID string, name string, properties analytics.Properties) error
-	Group(userID string, groupID string, traits analytics.Traits) error
-	Alias(previousID string, userID string) error
+	Identify(userID string, traits analytics.Traits)
+	Track(userID string, event string, properties analytics.Properties)
+	Page(userID string, name string, properties analytics.Properties)
+	Group(userID string, groupID string, traits analytics.Traits)
+	Alias(previousID string, userID string)
 }
 
 type segmentClient struct {
@@ -39,42 +39,57 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	return &segmentClient{inner, logger}, err
 }
 
-func (c segmentClient) Identify(userID string, traits analytics.Traits) error {
-	return c.Client.Enqueue(analytics.Identify{
+func (c segmentClient) Identify(userID string, traits analytics.Traits) {
+	err := c.Client.Enqueue(analytics.Identify{
 		UserId: userID,
 		Traits: traits,
 	})
+	if err != nil {
+		c.log.WithError(err).Info("Failed to send instrument Identify metrics")
+	}
 }
 
-func (c segmentClient) Track(userID string, event string, properties analytics.Properties) error {
-	return c.Client.Enqueue(analytics.Track{
+func (c segmentClient) Track(userID string, event string, properties analytics.Properties) {
+	err := c.Client.Enqueue(analytics.Track{
 		UserId:     userID,
 		Event:      event,
 		Properties: properties,
 	})
+	if err != nil {
+		c.log.WithError(err).Info("Failed to send instrument Track metrics")
+	}
 }
 
-func (c segmentClient) Page(userID string, name string, properties analytics.Properties) error {
-	return c.Client.Enqueue(analytics.Page{
+func (c segmentClient) Page(userID string, name string, properties analytics.Properties) {
+	err := c.Client.Enqueue(analytics.Page{
 		UserId:     userID,
 		Name:       name,
 		Properties: properties,
 	})
+	if err != nil {
+		c.log.WithError(err).Info("Failed to send instrument Page metrics")
+	}
 }
 
-func (c segmentClient) Group(userID string, groupID string, traits analytics.Traits) error {
-	return c.Client.Enqueue(analytics.Group{
+func (c segmentClient) Group(userID string, groupID string, traits analytics.Traits) {
+	err := c.Client.Enqueue(analytics.Group{
 		UserId:  userID,
 		GroupId: groupID,
 		Traits:  traits,
 	})
+	if err != nil {
+		c.log.WithError(err).Info("Failed to send instrument Group metrics")
+	}
 }
 
-func (c segmentClient) Alias(previousID string, userID string) error {
-	return c.Client.Enqueue(analytics.Alias{
+func (c segmentClient) Alias(previousID string, userID string) {
+	err := c.Client.Enqueue(analytics.Alias{
 		PreviousId: previousID,
 		UserId:     userID,
 	})
+	if err != nil {
+		c.log.WithError(err).Info("Failed to send instrument Alias metrics")
+	}
 }
 
 func configureLogger(conf *analytics.Config, log logrus.FieldLogger) {

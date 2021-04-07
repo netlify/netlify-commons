@@ -36,26 +36,26 @@ func Init(conf Config, log logrus.FieldLogger) error {
 }
 
 // Identify sends an identify type message to a queue to be sent to Segment.
-func Identify(userID string, traits analytics.Traits) error {
-	return GetGlobalClient().Identify(userID, traits)
+func Identify(userID string, traits analytics.Traits) {
+	GetGlobalClient().Identify(userID, traits)
 }
 
 // Track sends a track type message to a queue to be sent to Segment.
-func Track(userID string, event string, properties analytics.Properties) error {
-	return GetGlobalClient().Track(userID, event, properties)
+func Track(userID string, event string, properties analytics.Properties) {
+	GetGlobalClient().Track(userID, event, properties)
 }
 
 // Page sends a page type message to a queue to be sent to Segment.
-func Page(userID string, name string, properties analytics.Properties) error {
-	return GetGlobalClient().Page(userID, name, properties)
+func Page(userID string, name string, properties analytics.Properties) {
+	GetGlobalClient().Page(userID, name, properties)
 }
 
 // Group sends a group type message to a queue to be sent to Segment.
-func Group(userID string, groupID string, traits analytics.Traits) error {
-	return GetGlobalClient().Group(userID, groupID, traits)
+func Group(userID string, groupID string, traits analytics.Traits) {
+	GetGlobalClient().Group(userID, groupID, traits)
 }
 
 // Alias sends an alias type message to a queue to be sent to Segment.
-func Alias(previousID string, userID string) error {
-	return GetGlobalClient().Alias(previousID, userID)
+func Alias(previousID string, userID string) {
+	GetGlobalClient().Alias(previousID, userID)
 }
