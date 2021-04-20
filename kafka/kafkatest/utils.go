@@ -156,6 +156,14 @@ func (f *FakeKafkaConsumer) SeekToTime(t time.Time) error {
 	return nil // noop
 }
 
+func (f *FakeKafkaConsumer) Pause(p []kafkalib.TopicPartition) error {
+	return nil // noop
+}
+
+func (f *FakeKafkaConsumer) Resume(p []kafkalib.TopicPartition) error {
+	return nil // noop
+}
+
 func (f *FakeKafkaConsumer) Close() error {
 	close(f.commits)
 	return nil
