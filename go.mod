@@ -3,7 +3,7 @@ module github.com/netlify/netlify-commons
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/DataDog/datadog-go v3.2.0+incompatible
-	github.com/armon/go-metrics v0.3.3
+	github.com/armon/go-metrics v0.3.7
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
