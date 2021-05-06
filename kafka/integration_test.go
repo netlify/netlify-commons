@@ -92,6 +92,9 @@ func TestIntegration(t *testing.T) {
 			assert.Equal([]byte(k), m.Key, "Partition to read from: %d, Msg: %+v", p, m)
 			assert.Equal([]byte(v), m.Value, "Partition to read from: %d, Msg: %+v", p, m)
 
+			assert.NoError(c.Pause([]kafkalib.TopicPartition{m.TopicPartition}))
+			assert.NoError(c.Resume([]kafkalib.TopicPartition{m.TopicPartition}))
+
 			assert.NoError(c.CommitMessage(m))
 		}
 
