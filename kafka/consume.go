@@ -47,6 +47,12 @@ type Consumer interface {
 
 	// SeekToTime seeks to the specified time.
 	SeekToTime(t time.Time) error
+
+	// Pause pauses consumption of the provided partitions
+	Pause(p []kafkalib.TopicPartition) error
+
+	// Resume resumes consumption of the provided partitions
+	Resume(p []kafkalib.TopicPartition) error
 }
 
 // ConfluentConsumer implements Consumer interface.
@@ -329,6 +335,18 @@ func (cc *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Messag
 func (cc *ConfluentConsumer) CommitMessage(msg *kafkalib.Message) error {
 	_, err := cc.c.CommitMessage(msg)
 	return errors.Wrap(err, "failed committing Kafka message")
+}
+
+// Pause pauses consumption of the provided partitions
+func (cc *ConfluentConsumer) Pause(p []kafkalib.TopicPartition) error {
+	err := cc.c.Pause(p)
+	return errors.Wrap(err, "failed to pause Kafka topic")
+}
+
+// Resume resumes consumption of the provided partitions
+func (cc *ConfluentConsumer) Resume(p []kafkalib.TopicPartition) error {
+	err := cc.c.Resume(p)
+	return errors.Wrap(err, "failed to resume Kafka topic")
 }
 
 // Close closes the consumer.
