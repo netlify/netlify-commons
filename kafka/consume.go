@@ -1,6 +1,5 @@
 package kafka
 
-import "C"
 import (
 	"context"
 	"fmt"
