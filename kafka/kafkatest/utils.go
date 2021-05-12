@@ -121,6 +121,10 @@ func (f *FakeKafkaConsumer) CommitMessage(msg *kafkalib.Message) error {
 	return nil
 }
 
+func (f *FakeKafkaConsumer) StoreOffset(msg *kafkalib.Message) error {
+	return f.CommitMessage(msg)
+}
+
 func (f *FakeKafkaConsumer) SetInitialOffset(offset int64) error {
 	f.msgMu.Lock()
 	f.offset = offset

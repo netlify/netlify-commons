@@ -36,6 +36,11 @@ type Consumer interface {
 	// CommitMessage commits the offset of a given message.
 	CommitMessage(msg *kafkalib.Message) error
 
+	// StoreOffset stores the offset of a given message. The offset will be asynchronously flushed to kafka every
+	// `auto.commit.interval.ms`. This method is non-blocking and will be faster than `CommitMessage`, however it has
+	// weaker delivery guarantees.
+	StoreOffset(msg *kafkalib.Message) error
+
 	// GetMetadata gets the metadata for a consumer.
 	GetMetadata(allTopics bool) (*kafkalib.Metadata, error)
 
@@ -335,6 +340,20 @@ func (cc *ConfluentConsumer) FetchMessage(ctx context.Context) (*kafkalib.Messag
 func (cc *ConfluentConsumer) CommitMessage(msg *kafkalib.Message) error {
 	_, err := cc.c.CommitMessage(msg)
 	return errors.Wrap(err, "failed committing Kafka message")
+}
+
+// StoreOffset stores the offset of a given message. The offset will be asynchronously flushed to kafka every
+// `auto.commit.interval.ms`. This method is non-blocking and will be faster than `CommitMessage`, however it has
+// weaker delivery guarantees.
+func (cc *ConfluentConsumer) StoreOffset(msg *kafkalib.Message) error {
+	if msg.TopicPartition.Error != nil {
+		return errors.New("can't commit errored message")
+	}
+
+	offsets := []kafkalib.TopicPartition{msg.TopicPartition}
+	offsets[0].Offset++
+	_, err := cc.c.StoreOffsets(offsets)
+	return err
 }
 
 // Pause pauses consumption of the provided partitions
