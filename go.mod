@@ -25,8 +25,8 @@ require (
 	github.com/launchdarkly/eventsource v1.6.1 // indirect
 	github.com/launchdarkly/go-test-helpers v1.2.0 // indirect
 	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
-	github.com/nats-io/nats.go v1.8.1
-	github.com/nats-io/stan.go v0.5.0
+	github.com/nats-io/nats.go v1.11.0
+	github.com/nats-io/stan.go v0.9.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/philhofer/fwd v1.0.0 // indirect
@@ -46,7 +46,8 @@ require (
 	github.com/tidwall/pretty v1.0.1 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.mongodb.org/mongo-driver v1.5.1
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
+	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/DataDog/dd-trace-go.v1 v1.26.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
