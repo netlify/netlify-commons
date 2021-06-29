@@ -82,7 +82,11 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 }
 
 func (c *ldClient) AllEnabledFlags(key string) []string {
-	res := c.AllFlagsState(ld.NewUser(key), ld.DetailsOnlyForTrackedFlags)
+	return c.AllEnabledFlagsUser(key, ld.NewUser(key))
+}
+
+func (c *ldClient) AllEnabledFlagsUser(key string, user ld.User) []string {
+	res := c.AllFlagsState(user, ld.DetailsOnlyForTrackedFlags)
 	flagMap := res.ToValuesMap()
 
 	var flags []string
