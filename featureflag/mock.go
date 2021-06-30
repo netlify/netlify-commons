@@ -31,7 +31,11 @@ func (c MockClient) VariationUser(key string, defaultVal string, _ ld.User) stri
 	return res
 }
 
-func (c MockClient) AllEnabledFlags(string) []string {
+func (c MockClient) AllEnabledFlags(key string) []string {
+	return c.AllEnabledFlagsUser(key, ld.NewUser(key))
+}
+
+func (c MockClient) AllEnabledFlagsUser(key string, _ ld.User) []string {
 	var res []string
 	for key, value := range c.BoolVars {
 		if value {
