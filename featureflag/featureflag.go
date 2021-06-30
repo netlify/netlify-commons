@@ -17,6 +17,7 @@ type Client interface {
 	VariationUser(key string, defaultVal string, user ld.User) string
 
 	AllEnabledFlags(key string) []string
+	AllEnabledFlagsUser(key string, user ld.User) []string
 }
 
 type ldClient struct {
