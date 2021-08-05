@@ -20,6 +20,7 @@ type Config struct {
 	Port        string `default:"8126"`
 	Tags        map[string]string
 	EnableDebug bool `default:"false" split_words:"true" mapstructure:"enable_debug" json:"enable_debug" yaml:"enable_debug"`
+	UseDatadog  bool `default:"false" split_words:"true" mapstructure:"use_datadog" json:"use_datadog" yaml:"use_datadog"`
 }
 
 func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
@@ -37,7 +38,11 @@ func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
 			tracerOps = append(tracerOps, tracer.WithGlobalTag(k, v))
 		}
 
-		t = opentracer.New(tracerOps...)
+		if tc.UseDatadog {
+			tracer.Start(tracerOps...)
+		} else {
+			t = opentracer.New(tracerOps...)
+		}
 	}
 	opentracing.SetGlobalTracer(t)
 }
