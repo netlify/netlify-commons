@@ -44,6 +44,7 @@ type BuildConfig struct {
 	Ignore       string            `toml:"ignore" json:"ignore" yaml:"ignore"`
 	Environment  map[string]string `toml:"environment" json:"environment" yaml:"environment"`
 	Functions    string            `toml:"functions" json:"functions" yaml:"functions"`
+	Builders     string            `toml:"builders" json:"builders" yaml:"builders"`
 	EdgeHandlers string            `toml:"edge_handlers" json:"edge_handlers" yaml:"edge_handlers"`
 }
 
