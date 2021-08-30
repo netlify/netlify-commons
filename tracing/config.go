@@ -28,10 +28,16 @@ func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
 	if tc.Enabled {
 		tracerAddr := fmt.Sprintf("%s:%s", tc.Host, tc.Port)
 		tracerOps := []tracer.StartOption{
-			tracer.WithServiceName(svcName),
+			tracer.WithService(svcName),
 			tracer.WithAgentAddr(tracerAddr),
 			tracer.WithDebugMode(tc.EnableDebug),
 			tracer.WithLogger(debugLogger{log.WithField("component", "opentracing")}),
+		}
+
+		if tc.UseDatadog {
+			tracerOps = append(tracerOps, tracer.WithLogger(debugLogger{log.WithField("component", "datadog")}))
+		} else {
+			tracerOps = append(tracerOps, tracer.WithLogger(debugLogger{log.WithField("component", "opentracing")}))
 		}
 
 		for k, v := range tc.Tags {
