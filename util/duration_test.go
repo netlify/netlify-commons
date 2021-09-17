@@ -10,44 +10,57 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestDurationParsing(t *testing.T) {
-	scenes := []struct {
-		name string
-		dur  interface{}
+func TestDuration_Unmarshal(t *testing.T) {
+	testCases := []struct {
+		name      string
+		url       string
+		expected  time.Duration
+		errCheck  require.ErrorAssertionFunc
+		unmarshal func([]byte, interface{}) error
 	}{
-		{"float", 1e9},
-		{"int", int(1e9)},
-		{"str", "1s"},
+		{"empty-json", `{"d": ""}`, 0, require.Error, json.Unmarshal},
+		{"invalid-json", `{"d": "no duration here"}`, 0, require.Error, json.Unmarshal},
+		{"valid-json-string", `{"d": "1s"}`, time.Second, require.NoError, json.Unmarshal},
+		{"valid-json-int", `{"d": 1000000000}`, time.Second, require.NoError, json.Unmarshal},
+		{"valid-json-float", `{"d": 1000000000.0}`, time.Second, require.NoError, json.Unmarshal},
+
+		{"empty-yaml", `u: ""}`, 0, require.Error, yaml.Unmarshal},
+		{"invalid-yaml", `u: "no duration here"}`, 0, require.Error, yaml.Unmarshal},
+		{"valid-yaml-string", `{"d": "1s"}`, time.Second, require.NoError, yaml.Unmarshal},
+		{"valid-yaml-int", `{"d": 1000000000}`, time.Second, require.NoError, yaml.Unmarshal},
+		{"valid-yaml-float", `{"d": 1000000000.0}`, time.Second, require.NoError, yaml.Unmarshal},
 	}
 
-	for _, s := range scenes {
-		t.Run(s.name, func(t *testing.T) {
-			cfg := struct {
-				Dur interface{}
-			}{
-				Dur: s.dur,
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var s struct {
+				D Duration `json:"d"`
 			}
-			t.Run("yaml", func(t *testing.T) {
-				bs, err := yaml.Marshal(&cfg)
-				require.NoError(t, err)
+			tc.errCheck(t, tc.unmarshal([]byte(tc.url), &s))
+			assert.Equal(t, tc.expected, s.D.Duration)
+		})
+	}
+}
 
-				res := struct {
-					Dur Duration
-				}{}
-				require.NoError(t, yaml.Unmarshal(bs, &res))
-				assert.Equal(t, time.Second, res.Dur.Duration)
-			})
+func TestDuration_Marshal(t *testing.T) {
+	testCases := []struct {
+		name     string
+		marshal  func(interface{}) ([]byte, error)
+		expected string
+	}{
+		{"json", json.Marshal, `{"d":"1s"}`},
+		{"yaml", yaml.Marshal, "d: 1s\n"},
+	}
 
-			t.Run("json", func(t *testing.T) {
-				bs, err := json.Marshal(&cfg)
-				require.NoError(t, err)
-				res := struct {
-					Dur Duration
-				}{}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			u := struct {
+				D Duration `json:"d" yaml:"d"`
+			}{D: Duration{time.Second}}
 
-				require.NoError(t, json.Unmarshal(bs, &res))
-				assert.Equal(t, time.Second, res.Dur.Duration)
-			})
+			serialized, err := tc.marshal(u)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, string(serialized))
 		})
 	}
 }
