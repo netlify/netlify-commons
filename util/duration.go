@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Duration is a serializable version version of a time.Duration
@@ -16,8 +14,8 @@ type Duration struct {
 	time.Duration
 }
 
-func (d Duration) MarshalYAML() ([]byte, error) {
-	return yaml.Marshal(d.String())
+func (d Duration) MarshalYAML() (interface{}, error) {
+	return d.String(), nil
 }
 
 func (d Duration) MarshalJSON() ([]byte, error) {
