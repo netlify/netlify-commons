@@ -10,7 +10,7 @@ deps:
 	go mod tidy
 
 test:
-	go test ./...
+	go test -race ./...
 
 integration-test:
 	docker-compose -f Dockercompose.test.yml up --build --abort-on-container-exit --always-recreate-deps
