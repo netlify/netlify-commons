@@ -20,7 +20,12 @@ func initDistribution(url string, serviceName string, permTags []string) error {
 	}
 
 	distributionFunc = func(name string, value float64, tags ...metrics.Label) {
-		ddtags := append(permTags, convertTags(tags)...)
+		ddtags := make([]string, 0, len(permTags)+len(tags))
+		ddtags = append(ddtags, permTags...)
+		for _, v := range tags {
+			ddtags = append(ddtags, fmt.Sprintf("%s:%s", v.Name, v.Value))
+		}
+
 		name = fmt.Sprintf("%s.%s", serviceName, strings.ReplaceAll(name, "-", "_"))
 
 		err := statsd.Distribution(name, float64(value), ddtags, 1)
@@ -42,13 +47,4 @@ func SetDistributionErrorHandler(f func(error)) {
 // it only makes sense when you're using the datadog sink
 func Distribution(name string, value float64, tags ...metrics.Label) {
 	distributionFunc(name, value, tags...)
-}
-
-func convertTags(incoming []metrics.Label) []string {
-	tags := []string{}
-	for _, v := range incoming {
-		tags = append(tags, fmt.Sprintf("%s:%s", v.Name, v.Value))
-	}
-	return tags
-
 }
