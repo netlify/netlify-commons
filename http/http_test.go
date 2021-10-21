@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsPrivateIP(t *testing.T) {
@@ -44,15 +45,16 @@ func TestSafeHTTPClient(t *testing.T) {
 
 	// It blocks the local IP.
 	_, err = client.Get(ts.URL)
-	assert.NotNil(t, err)
+	require.NotNil(t, err)
 
 	// It blocks localhost.
 	_, err = client.Get("http://localhost:" + tsURL.Port())
-	assert.NotNil(t, err)
+	require.NotNil(t, err)
 
 	// It works when reusing pooled connections.
 	for i := 0; i < 50; i++ {
-		_, err = client.Get("http://localhost:" + tsURL.Port())
+		res, err := client.Get("http://localhost:" + tsURL.Port())
+		assert.Nil(t, res)
 		assert.NotNil(t, err)
 	}
 

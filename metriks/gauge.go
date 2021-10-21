@@ -2,6 +2,7 @@ package metriks
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -25,6 +26,7 @@ type PersistentGauge struct {
 	ticker *time.Ticker
 	cancel context.CancelFunc
 	dur    time.Duration
+	wg     sync.WaitGroup
 }
 
 // Set will replace the value with a new one, it returns the old value
@@ -55,9 +57,11 @@ func (g *PersistentGauge) report(v int32) {
 }
 
 func (g *PersistentGauge) start(ctx context.Context) {
+	g.wg.Add(1)
 	for {
 		select {
 		case <-ctx.Done():
+			g.wg.Done()
 			return
 		case <-g.ticker.C:
 			g.report(g.value)
@@ -69,6 +73,7 @@ func (g *PersistentGauge) start(ctx context.Context) {
 // to the metrics collector
 func (g *PersistentGauge) Stop() {
 	g.cancel()
+	g.wg.Wait()
 }
 
 // NewPersistentGauge will create and start a PersistentGauge that reports the current value every 10s

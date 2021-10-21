@@ -52,9 +52,8 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	ctx, cancel := context.WithCancel(req.Context())
 
 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
-		GotConn: func(info httptrace.GotConnInfo) {
-			addr := info.Conn.RemoteAddr().String()
-			host, _, err := net.SplitHostPort(addr)
+		GetConn: func(hostPort string) {
+			host, _, err := net.SplitHostPort(hostPort)
 			if err != nil {
 				cancel()
 				no.errlog.WithError(err).Error("Cancelled request due to error in address parsing")
