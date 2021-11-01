@@ -64,7 +64,7 @@ func (g *PersistentGauge) start(ctx context.Context) {
 			g.wg.Done()
 			return
 		case <-g.ticker.C:
-			g.report(g.value)
+			g.report(atomic.LoadInt32(&g.value))
 		}
 	}
 }
