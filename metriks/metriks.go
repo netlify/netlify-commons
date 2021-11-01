@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/armon/go-metrics"
@@ -92,13 +93,28 @@ func createDatadogSink(url, hostname, serviceName string, tags map[string]string
 		return nil, err
 	}
 
+	// Don't override a setting from the user
+	var serviceTagSet bool
 	var ddTags []string
 	for k, v := range tags {
+		if strings.ToLower(k) == "service" {
+			serviceTagSet = true
+		}
+
 		ddTags = append(ddTags, fmt.Sprintf("%s:%s", k, v))
 	}
 
 	for _, t := range extraTags {
+		sp := strings.Split(t, ":")
+		if len(sp) > 0 && strings.ToLower(sp[0]) == "service" {
+			serviceTagSet = true
+		}
+
 		ddTags = append(ddTags, t)
+	}
+
+	if !serviceTagSet {
+		ddTags = append(ddTags, fmt.Sprintf("service:%s", serviceName))
 	}
 
 	sink.SetTags(ddTags)

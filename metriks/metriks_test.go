@@ -38,11 +38,15 @@ func TestDatadogSink(t *testing.T) {
 
 	Inc("test_counter", 1)
 
-	expectedMsg := "test.test_counter:1|c|#app:edge-state,env:test"
-	buf := make([]byte, len(expectedMsg))
-	_, _, err = l.ReadFrom(buf)
+	expectedMsg := "test.test_counter:1|c|#app:edge-state,env:test,service:test"
+
+	var readBytes int
+	buf := make([]byte, 512)
+	readBytes, _, err = l.ReadFrom(buf)
 	require.NoError(t, err)
-	bytes.Contains(buf, []byte(expectedMsg))
+	require.True(t, readBytes > 0)
+
+	require.True(t, bytes.Equal(buf[0:readBytes], []byte(expectedMsg)))
 }
 
 func TestDiscardSink(t *testing.T) {
