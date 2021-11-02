@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
@@ -40,8 +41,17 @@ func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
 			tracerOps = append(tracerOps, tracer.WithLogger(debugLogger{log.WithField("component", "opentracing")}))
 		}
 
+		var serviceTagSet bool
 		for k, v := range tc.Tags {
+			if strings.ToLower(k) == "service" {
+				serviceTagSet = true
+			}
+
 			tracerOps = append(tracerOps, tracer.WithGlobalTag(k, v))
+		}
+
+		if !serviceTagSet {
+			tracerOps = append(tracerOps, tracer.WithGlobalTag("service", svcName))
 		}
 
 		if tc.UseDatadog {
