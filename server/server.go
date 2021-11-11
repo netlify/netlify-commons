@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -23,10 +24,11 @@ const (
 // Server handles the setup and shutdown of the http server
 // for an API
 type Server struct {
-	log  logrus.FieldLogger
-	svr  *http.Server
-	api  APIDefinition
-	done chan (bool)
+	log      logrus.FieldLogger
+	svr      *http.Server
+	api      APIDefinition
+	done     chan (bool)
+	doneOnce sync.Once
 }
 
 type Config struct {
@@ -86,9 +88,12 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 }
 
 func (s *Server) Shutdown(to time.Duration) error {
+	s.doneOnce.Do(func() {
+		defer close(s.done)
+	})
+
 	ctx, cancel := context.WithTimeout(context.Background(), to)
 	defer cancel()
-	defer close(s.done)
 
 	if err := s.svr.Shutdown(ctx); err != nil && err != http.ErrServerClosed {
 		return err
