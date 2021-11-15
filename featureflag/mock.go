@@ -11,7 +11,7 @@ type MockClient struct {
 
 var _ Client = MockClient{}
 
-func (c MockClient) Enabled(key, userID string) bool {
+func (c MockClient) Enabled(key, userID string, _ ...Attr) bool {
 	return c.EnabledUser(key, ld.NewUser(userID))
 }
 
@@ -19,7 +19,7 @@ func (c MockClient) EnabledUser(key string, _ ld.User) bool {
 	return c.BoolVars[key]
 }
 
-func (c MockClient) Variation(key string, defaultVal string, userID string) string {
+func (c MockClient) Variation(key string, defaultVal string, userID string, _ ...Attr) string {
 	return c.VariationUser(key, defaultVal, ld.NewUser(userID))
 }
 
