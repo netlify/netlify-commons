@@ -25,8 +25,8 @@ func GetGlobalClient() Client {
 }
 
 // Init will initialize global client with a launch darkly client
-func Init(conf Config, log logrus.FieldLogger, defaultAttrs ...Attr) error {
-	ldClient, err := NewClient(&conf, log, defaultAttrs...)
+func Init(conf Config, log logrus.FieldLogger) error {
+	ldClient, err := NewClient(&conf, log)
 	if err != nil {
 		return err
 	}

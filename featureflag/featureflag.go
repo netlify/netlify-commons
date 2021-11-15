@@ -29,7 +29,7 @@ type ldClient struct {
 
 var _ Client = &ldClient{}
 
-func NewClient(cfg *Config, logger logrus.FieldLogger, defaultAttrs ...Attr) (Client, error) {
+func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	config := ld.DefaultConfig
 
 	if !cfg.Enabled {
@@ -56,6 +56,11 @@ func NewClient(cfg *Config, logger logrus.FieldLogger, defaultAttrs ...Attr) (Cl
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout.Duration)
 	if err != nil {
 		logger.WithError(err).Error("Unable to construct LD client")
+	}
+
+	var defaultAttrs []Attr
+	for k, v := range cfg.DefaultAttrs {
+		defaultAttrs = append(defaultAttrs, StringAttr(k, v))
 	}
 	return &ldClient{inner, logger, defaultAttrs}, err
 }

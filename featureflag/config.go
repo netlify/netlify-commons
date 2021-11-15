@@ -17,4 +17,6 @@ type Config struct {
 
 	// Set when using the Launch Darkly Relay proxy
 	RelayHost string `json:"relay_host" yaml:"relay_host" mapstructure:"relay_host" split_words:"true"`
+
+	DefaultAttrs map[string]string `json:"default_attrs" yaml:"default_attrs"`
 }
