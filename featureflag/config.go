@@ -17,4 +17,8 @@ type Config struct {
 
 	// Set when using the Launch Darkly Relay proxy
 	RelayHost string `json:"relay_host" yaml:"relay_host" mapstructure:"relay_host" split_words:"true"`
+
+	// DefaultUserAttrs are custom LaunchDarkly user attributes that are added to every
+	// feature flag check
+	DefaultUserAttrs map[string]string `json:"default_user_attrs" yaml:"default_user_attrs"`
 }

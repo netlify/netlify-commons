@@ -34,10 +34,10 @@ func Init(conf Config, log logrus.FieldLogger) error {
 	return nil
 }
 
-func Enabled(key, userID string) bool {
-	return GetGlobalClient().Enabled(key, userID)
+func Enabled(key, userID string, attrs ...Attr) bool {
+	return GetGlobalClient().Enabled(key, userID, attrs...)
 }
 
-func Variation(key, defaultVal, userID string) string {
-	return GetGlobalClient().Variation(key, defaultVal, userID)
+func Variation(key, defaultVal, userID string, attrs ...Attr) string {
+	return GetGlobalClient().Variation(key, defaultVal, userID, attrs...)
 }

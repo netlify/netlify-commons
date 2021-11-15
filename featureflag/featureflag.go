@@ -5,15 +5,16 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"gopkg.in/launchdarkly/go-sdk-common.v1/ldvalue"
 	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
 	"gopkg.in/launchdarkly/go-server-sdk.v4/ldlog"
 )
 
 type Client interface {
-	Enabled(key, userID string) bool
+	Enabled(key, userID string, attrs ...Attr) bool
 	EnabledUser(key string, user ld.User) bool
 
-	Variation(key, defaultVal, userID string) string
+	Variation(key, defaultVal, userID string, attrs ...Attr) string
 	VariationUser(key string, defaultVal string, user ld.User) string
 
 	AllEnabledFlags(key string) []string
@@ -22,7 +23,8 @@ type Client interface {
 
 type ldClient struct {
 	*ld.LDClient
-	log logrus.FieldLogger
+	log          logrus.FieldLogger
+	defaultAttrs []Attr
 }
 
 var _ Client = &ldClient{}
@@ -55,11 +57,16 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	if err != nil {
 		logger.WithError(err).Error("Unable to construct LD client")
 	}
-	return &ldClient{inner, logger}, err
+
+	var defaultAttrs []Attr
+	for k, v := range cfg.DefaultUserAttrs {
+		defaultAttrs = append(defaultAttrs, StringAttr(k, v))
+	}
+	return &ldClient{inner, logger, defaultAttrs}, err
 }
 
-func (c *ldClient) Enabled(key string, userID string) bool {
-	return c.EnabledUser(key, ld.NewUser(userID))
+func (c *ldClient) Enabled(key string, userID string, attrs ...Attr) bool {
+	return c.EnabledUser(key, c.userWithAttrs(userID, attrs))
 }
 
 func (c *ldClient) EnabledUser(key string, user ld.User) bool {
@@ -70,8 +77,8 @@ func (c *ldClient) EnabledUser(key string, user ld.User) bool {
 	return res
 }
 
-func (c *ldClient) Variation(key, defaultVal, userID string) string {
-	return c.VariationUser(key, defaultVal, ld.NewUser(userID))
+func (c *ldClient) Variation(key, defaultVal, userID string, attrs ...Attr) string {
+	return c.VariationUser(key, defaultVal, c.userWithAttrs(userID, attrs))
 }
 
 func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) string {
@@ -101,6 +108,26 @@ func (c *ldClient) AllEnabledFlagsUser(key string, user ld.User) []string {
 	}
 
 	return flags
+}
+
+func (c *ldClient) userWithAttrs(id string, attrs []Attr) ld.User {
+	b := ld.NewUserBuilder(id)
+	for _, attr := range c.defaultAttrs {
+		b.Custom(attr.Name, attr.Value)
+	}
+	for _, attr := range attrs {
+		b.Custom(attr.Name, attr.Value)
+	}
+	return b.Build()
+}
+
+type Attr struct {
+	Name  string
+	Value ldvalue.Value
+}
+
+func StringAttr(name, value string) Attr {
+	return Attr{Name: name, Value: ldvalue.String(value)}
 }
 
 func configureLogger(ldLogger *ldlog.Loggers, log logrus.FieldLogger) {
