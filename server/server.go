@@ -88,12 +88,13 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 }
 
 func (s *Server) Shutdown(to time.Duration) error {
-	s.doneOnce.Do(func() {
-		defer close(s.done)
-	})
-
 	ctx, cancel := context.WithTimeout(context.Background(), to)
 	defer cancel()
+	defer func() {
+		s.doneOnce.Do(func() {
+			close(s.done)
+		})
+	}()
 
 	if err := s.svr.Shutdown(ctx); err != nil && err != http.ErrServerClosed {
 		return err
