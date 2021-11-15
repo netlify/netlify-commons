@@ -59,7 +59,7 @@ func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
 	}
 
 	var defaultAttrs []Attr
-	for k, v := range cfg.DefaultAttrs {
+	for k, v := range cfg.DefaultUserAttrs {
 		defaultAttrs = append(defaultAttrs, StringAttr(k, v))
 	}
 	return &ldClient{inner, logger, defaultAttrs}, err
