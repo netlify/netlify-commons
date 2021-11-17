@@ -43,6 +43,10 @@ func TestSafeHTTPClient(t *testing.T) {
 
 	client := SafeHTTPClient(&http.Client{}, logrus.New())
 
+	// It allows accessing non-local addresses
+	_, err = client.Get("https://google.com")
+	require.Nil(t, err)
+
 	// It blocks the local IP.
 	_, err = client.Get(ts.URL)
 	require.NotNil(t, err)
