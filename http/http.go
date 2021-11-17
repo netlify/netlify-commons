@@ -51,9 +51,13 @@ type noLocalTransport struct {
 func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithCancel(req.Context())
 
+	no.errlog.Error("CB: starting roundtrip")
+	no.errlog.Errorf("CB: allowed blocks - %v", no.allowedBlocks)
 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
 		GetConn: func(hostPort string) {
+			no.errlog.Errorf("CB: hostPort - %s", hostPort)
 			host, _, err := net.SplitHostPort(hostPort)
+			no.errlog.Errorf("CB: host - %s", host)
 			if err != nil {
 				cancel()
 				no.errlog.WithError(err).Error("Cancelled request due to error in address parsing")
