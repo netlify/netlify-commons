@@ -27,7 +27,10 @@ func TestIsPrivateIP(t *testing.T) {
 
 	for _, tt := range tests {
 		ip := net.ParseIP(tt.ip)
-		assert.Equal(t, tt.expected, isPrivateIP(ip))
+		if ip == nil {
+			require.Fail(t, "failed to parse IP")
+		}
+		assert.Equal(t, tt.expected, containsPrivateIP([]net.IP{ip}))
 	}
 }
 

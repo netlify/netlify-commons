@@ -29,17 +29,19 @@ func init() {
 	}
 }
 
-func blocksContain(blocks []*net.IPNet, ip net.IP) bool {
+func blocksContainsAny(blocks []*net.IPNet, ips []net.IP) bool {
 	for _, block := range blocks {
-		if block.Contains(ip) {
-			return true
+		for _, ip := range ips {
+			if block.Contains(ip) {
+				return true
+			}
 		}
 	}
 	return false
 }
 
-func isPrivateIP(ip net.IP) bool {
-	return blocksContain(privateIPBlocks, ip)
+func containsPrivateIP(ips []net.IP) bool {
+	return blocksContainsAny(privateIPBlocks, ips)
 }
 
 type noLocalTransport struct {
@@ -51,30 +53,27 @@ type noLocalTransport struct {
 func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithCancel(req.Context())
 
-	no.errlog.Error("CB: starting roundtrip")
-	no.errlog.Errorf("CB: allowed blocks - %v", no.allowedBlocks)
 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
 		GetConn: func(hostPort string) {
-			no.errlog.Errorf("CB: hostPort - %s", hostPort)
 			host, _, err := net.SplitHostPort(hostPort)
-			no.errlog.Errorf("CB: host - %s", host)
 			if err != nil {
 				cancel()
 				no.errlog.WithError(err).Error("Cancelled request due to error in address parsing")
 				return
 			}
-			ip := net.ParseIP(host)
-			if ip == nil {
+
+			ips, err := net.LookupIP(host)
+			if err != nil || len(ips) == 0 {
 				cancel()
-				no.errlog.WithError(err).Error("Cancelled request due to error in ip parsing")
+				no.errlog.WithError(err).Error("Cancelled request due to error in host lookup")
 				return
 			}
 
-			if blocksContain(no.allowedBlocks, ip) {
+			if blocksContainsAny(no.allowedBlocks, ips) {
 				return
 			}
 
-			if isPrivateIP(ip) {
+			if containsPrivateIP(ips) {
 				cancel()
 				no.errlog.Error("Cancelled attempted request to ip in private range")
 				return
