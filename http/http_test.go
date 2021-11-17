@@ -27,7 +27,10 @@ func TestIsPrivateIP(t *testing.T) {
 
 	for _, tt := range tests {
 		ip := net.ParseIP(tt.ip)
-		assert.Equal(t, tt.expected, isPrivateIP(ip))
+		if ip == nil {
+			require.Fail(t, "failed to parse IP")
+		}
+		assert.Equal(t, tt.expected, containsPrivateIP([]net.IP{ip}))
 	}
 }
 
@@ -42,6 +45,10 @@ func TestSafeHTTPClient(t *testing.T) {
 	}
 
 	client := SafeHTTPClient(&http.Client{}, logrus.New())
+
+	// It allows accessing non-local addresses
+	_, err = client.Get("https://google.com")
+	require.Nil(t, err)
 
 	// It blocks the local IP.
 	_, err = client.Get(ts.URL)
