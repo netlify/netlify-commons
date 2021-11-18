@@ -169,6 +169,8 @@ func (f *FakeKafkaConsumer) Resume(p []kafkalib.TopicPartition) error {
 }
 
 func (f *FakeKafkaConsumer) Close() error {
+	f.msgMu.Lock()
+	defer f.msgMu.Unlock()
 	close(f.commits)
 	return nil
 }
