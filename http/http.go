@@ -88,7 +88,7 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 // SafeRoundtripper blocks requests to private ip ranges
-// Deprecated: use SafeDial instead
+// Deprecated: use SafeTransport instead
 func SafeRoundtripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) http.RoundTripper {
 	if trans == nil {
 		trans = http.DefaultTransport
@@ -104,11 +104,18 @@ func SafeRoundtripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBl
 }
 
 // SafeHTTPClient blocks requests to private ip ranges
-// Deprecated: use SafeDial instead
+// Deprecated: use SafeTransport instead
 func SafeHTTPClient(client *http.Client, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) *http.Client {
 	client.Transport = SafeRoundtripper(client.Transport, log, allowedBlocks...)
 
 	return client
+}
+
+// SafeTransport blocks requests to private ip ranges
+func SafeTransport(allowedBlocks ...*net.IPNet) *http.Transport {
+	return &http.Transport{
+		DialContext: SafeDial(&net.Dialer{}, allowedBlocks...),
+	}
 }
 
 type DialFunc func(ctx context.Context, network, address string) (net.Conn, error)

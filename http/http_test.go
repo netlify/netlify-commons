@@ -40,10 +40,7 @@ func TestBlockList(t *testing.T) {
 		testBlockList(t, client)
 	})
 	t.Run("safe dial", func(t *testing.T) {
-		tr := http.Transport{
-			DialContext: SafeDial(&net.Dialer{}),
-		}
-		client := &http.Client{Transport: &tr}
+		client := &http.Client{Transport: SafeTransport()}
 		testBlockList(t, client)
 	})
 }
@@ -57,10 +54,7 @@ func TestAllowList(t *testing.T) {
 		testAllowList(t, client)
 	})
 	t.Run("safe dial", func(t *testing.T) {
-		tr := http.Transport{
-			DialContext: SafeDial(&net.Dialer{}, local),
-		}
-		client := &http.Client{Transport: &tr}
+		client := &http.Client{Transport: SafeTransport(local)}
 		testAllowList(t, client)
 	})
 }
