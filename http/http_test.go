@@ -34,7 +34,32 @@ func TestIsPrivateIP(t *testing.T) {
 	}
 }
 
-func TestSafeHTTPClient(t *testing.T) {
+func TestBlockList(t *testing.T) {
+	t.Run("safe http client", func(t *testing.T) {
+		client := SafeHTTPClient(&http.Client{}, logrus.New())
+		testBlockList(t, client)
+	})
+	t.Run("safe dial", func(t *testing.T) {
+		client := &http.Client{Transport: SafeTransport()}
+		testBlockList(t, client)
+	})
+}
+
+func TestAllowList(t *testing.T) {
+	_, local, err := net.ParseCIDR("127.0.0.1/8")
+	require.NoError(t, err)
+
+	t.Run("safe http client", func(t *testing.T) {
+		client := SafeHTTPClient(&http.Client{}, logrus.New(), local)
+		testAllowList(t, client)
+	})
+	t.Run("safe dial", func(t *testing.T) {
+		client := &http.Client{Transport: SafeTransport(local)}
+		testAllowList(t, client)
+	})
+}
+
+func testBlockList(t *testing.T, client *http.Client) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Done"))
 	}))
@@ -43,8 +68,6 @@ func TestSafeHTTPClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	client := SafeHTTPClient(&http.Client{}, logrus.New())
 
 	// It allows accessing non-local addresses
 	_, err = client.Get("https://google.com")
@@ -64,26 +87,13 @@ func TestSafeHTTPClient(t *testing.T) {
 		assert.Nil(t, res)
 		assert.NotNil(t, err)
 	}
-
-	// It succeeds when the local IP range used by the testserver is removed from
-	// the blacklist.
-	ipNet := popMatchingBlock(net.ParseIP(tsURL.Hostname()))
-	_, err = client.Get(ts.URL)
-	assert.Nil(t, err)
-	privateIPBlocks = append(privateIPBlocks, ipNet)
-
-	// It allows whitelisting for local development.
-	client = SafeHTTPClient(&http.Client{}, logrus.New(), ipNet)
-	_, err = client.Get(ts.URL)
-	assert.Nil(t, err)
 }
 
-func popMatchingBlock(ip net.IP) *net.IPNet {
-	for i, ipNet := range privateIPBlocks {
-		if ipNet.Contains(ip) {
-			privateIPBlocks = append(privateIPBlocks[:i], privateIPBlocks[i+1:]...)
-			return ipNet
-		}
-	}
-	return nil
+func testAllowList(t *testing.T, client *http.Client) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Done"))
+	}))
+	defer ts.Close()
+	_, err := client.Get(ts.URL)
+	assert.NoError(t, err)
 }

@@ -2,6 +2,8 @@ package http
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptrace"
@@ -85,6 +87,8 @@ func (no noLocalTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return no.inner.RoundTrip(req)
 }
 
+// SafeRoundtripper blocks requests to private ip ranges
+// Deprecated: use SafeTransport instead
 func SafeRoundtripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) http.RoundTripper {
 	if trans == nil {
 		trans = http.DefaultTransport
@@ -99,8 +103,65 @@ func SafeRoundtripper(trans http.RoundTripper, log logrus.FieldLogger, allowedBl
 	return ret
 }
 
+// SafeHTTPClient blocks requests to private ip ranges
+// Deprecated: use SafeTransport instead
 func SafeHTTPClient(client *http.Client, log logrus.FieldLogger, allowedBlocks ...*net.IPNet) *http.Client {
 	client.Transport = SafeRoundtripper(client.Transport, log, allowedBlocks...)
 
 	return client
+}
+
+// SafeTransport blocks requests to private ip ranges
+func SafeTransport(allowedBlocks ...*net.IPNet) *http.Transport {
+	return &http.Transport{
+		DialContext: SafeDial(&net.Dialer{}, allowedBlocks...),
+	}
+}
+
+type DialFunc func(ctx context.Context, network, address string) (net.Conn, error)
+
+// SafeDial wraps a *net.Dialer and restricts connections to private ip ranges.
+func SafeDial(dialer *net.Dialer, allowedBlocks ...*net.IPNet) DialFunc {
+	d := &safeDialer{dialer: dialer, allowedBlocks: allowedBlocks}
+	return d.dialContext
+}
+
+type safeDialer struct {
+	allowedBlocks []*net.IPNet
+	dialer        *net.Dialer
+}
+
+func (d *safeDialer) dialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	conn, err := d.dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	addr := conn.RemoteAddr().String()
+
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("safe dialer: invalid address: %w", err)
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("safe dialer: invalid ip: %v", host)
+	}
+
+	for _, block := range d.allowedBlocks {
+		if block.Contains(ip) {
+			return conn, nil
+		}
+	}
+
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			_ = conn.Close()
+			return nil, errors.New("safe dialer: private ip not allowed")
+		}
+	}
+
+	return conn, nil
 }
