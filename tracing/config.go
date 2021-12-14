@@ -21,7 +21,6 @@ type Config struct {
 	Port        string `default:"8126"`
 	Tags        map[string]string
 	EnableDebug bool `default:"false" split_words:"true" mapstructure:"enable_debug" json:"enable_debug" yaml:"enable_debug"`
-	UseDatadog  bool `default:"false" split_words:"true" mapstructure:"use_datadog" json:"use_datadog" yaml:"use_datadog"`
 }
 
 func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
@@ -33,12 +32,6 @@ func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
 			tracer.WithAgentAddr(tracerAddr),
 			tracer.WithDebugMode(tc.EnableDebug),
 			tracer.WithLogger(debugLogger{log.WithField("component", "opentracing")}),
-		}
-
-		if tc.UseDatadog {
-			tracerOps = append(tracerOps, tracer.WithLogger(debugLogger{log.WithField("component", "datadog")}))
-		} else {
-			tracerOps = append(tracerOps, tracer.WithLogger(debugLogger{log.WithField("component", "opentracing")}))
 		}
 
 		var serviceTagSet bool
@@ -54,11 +47,7 @@ func Configure(tc *Config, log logrus.FieldLogger, svcName string) {
 			tracerOps = append(tracerOps, tracer.WithGlobalTag("service", svcName))
 		}
 
-		if tc.UseDatadog {
-			tracer.Start(tracerOps...)
-		} else {
-			t = opentracer.New(tracerOps...)
-		}
+		t = opentracer.New(tracerOps...)
 	}
 	opentracing.SetGlobalTracer(t)
 }
