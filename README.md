@@ -11,7 +11,7 @@ Mostly this deals with configuring logging, messaging (rabbit && nats), and load
 ## Testing
 ### Prerequisites
 
-If running on Applie silicon, the librdkafka library will need to be linked dynamically. We may want to keep an eye on [issues](https://github.com/confluentinc/confluent-kafka-go/issues/696) in the confluent-kakfa-go repository for alternative approaches that we could use in the future.
+If running on Apple silicon, the `librdkafka` library will need to be linked dynamically. We may want to keep an eye on [issues](https://github.com/confluentinc/confluent-kafka-go/issues/696) in the `confluent-kakfa-go` repository for alternative approaches that we could use in the future.
 
 ```
 brew install openssl
