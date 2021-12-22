@@ -23,15 +23,11 @@ func TestPersistentGauge(t *testing.T) {
 	assert.EqualValues(t, 0, g.Set(10))
 
 	expectedValues := []string{
-		// these values should be reported everytime we make a call
-		"test.some_gauge.b:1.000000|g",
-		"test.some_gauge.b:0.000000|g",
-		"test.some_gauge.b:10.000000|g",
 		// this value should be reported after an interval
 		"test.some_gauge.b:10.000000|g",
 	}
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < len(expectedValues); i++ {
 		select {
 		case msg := <-res:
 			assert.Equal(t, expectedValues[i], msg)
