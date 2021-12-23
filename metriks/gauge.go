@@ -15,9 +15,7 @@ const (
 )
 
 // PersistentGauge will report on an interval the value to the metrics collector.
-// Every call to the methods to modify the value immediately report, but if we
-// don't have a change inside the window (default 10s) after the last report
-// we will report the current value.
+//
 type PersistentGauge struct {
 	name  string
 	value int32
@@ -31,24 +29,17 @@ type PersistentGauge struct {
 
 // Set will replace the value with a new one, it returns the old value
 func (g *PersistentGauge) Set(value int32) int32 {
-	v := atomic.SwapInt32(&g.value, value)
-	g.report(value)
-
-	return v
+	return atomic.SwapInt32(&g.value, value)
 }
 
 // Inc will +1 to the current value and return the new value
 func (g *PersistentGauge) Inc() int32 {
-	v := atomic.AddInt32(&g.value, 1)
-	g.report(v)
-	return v
+	return atomic.AddInt32(&g.value, 1)
 }
 
 // Dec will -1 to the current value and return the new value
 func (g *PersistentGauge) Dec() int32 {
-	v := atomic.AddInt32(&g.value, -1)
-	g.report(v)
-	return v
+	return atomic.AddInt32(&g.value, -1)
 }
 
 func (g *PersistentGauge) report(v int32) {
