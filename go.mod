@@ -10,7 +10,6 @@ require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
-	github.com/confluentinc/confluent-kafka-go v1.4.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
@@ -51,7 +50,7 @@ require (
 	gopkg.in/DataDog/dd-trace-go.v1 v1.31.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
-	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01 // indirect
+	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01
 	gopkg.in/launchdarkly/go-server-sdk.v4 v4.0.0-20200729232655-2a44fb361895
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
