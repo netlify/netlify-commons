@@ -10,7 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/bugsnag/bugsnag-go"
+	"github.com/bugsnag/bugsnag-go/v2"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
