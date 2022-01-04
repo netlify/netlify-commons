@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/bugsnag/bugsnag-go"
+	"github.com/bugsnag/bugsnag-go/v2"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/sirupsen/logrus/hooks/test"

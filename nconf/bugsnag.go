@@ -1,15 +1,12 @@
 package nconf
 
 import (
-	"github.com/bugsnag/bugsnag-go"
-	logrus_bugsnag "github.com/shopify/logrus-bugsnag"
-	"github.com/sirupsen/logrus"
+	"github.com/bugsnag/bugsnag-go/v2"
 )
 
 type BugSnagConfig struct {
 	Environment    string
 	APIKey         string `envconfig:"api_key" json:"api_key" yaml:"api_key"`
-	LogHook        bool   `envconfig:"log_hook" json:"log_hook" yaml:"log_hook"`
 	ProjectPackage string `envconfig:"project_package" json:"project_package" yaml:"project_package"`
 }
 
@@ -31,15 +28,6 @@ func SetupBugSnag(config *BugSnagConfig, version string) error {
 		ProjectPackages: projectPackages,
 		PanicHandler:    func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
 	})
-
-	if config.LogHook {
-		hook, err := logrus_bugsnag.NewBugsnagHook()
-		if err != nil {
-			return err
-		}
-		logrus.AddHook(hook)
-		logrus.Debug("Added bugsnag log hook")
-	}
 
 	return nil
 }
