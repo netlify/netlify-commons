@@ -12,3 +12,5 @@ jobs:
         with:
           release-type: go
           package-name: netlify-commons
+          bump-minor-pre-major: true
+          token: ${{ secrets.PKG_RELEASE_TOKEN }}
