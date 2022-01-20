@@ -5,20 +5,24 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gopkg.in/launchdarkly/go-sdk-common.v1/ldvalue"
-	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
-	"gopkg.in/launchdarkly/go-server-sdk.v4/ldlog"
+	"gopkg.in/launchdarkly/go-sdk-common.v2/ldlog"
+	"gopkg.in/launchdarkly/go-sdk-common.v2/lduser"
+	"gopkg.in/launchdarkly/go-sdk-common.v2/ldvalue"
+	ld "gopkg.in/launchdarkly/go-server-sdk.v5"
+	"gopkg.in/launchdarkly/go-server-sdk.v5/interfaces"
+	"gopkg.in/launchdarkly/go-server-sdk.v5/interfaces/flagstate"
+	"gopkg.in/launchdarkly/go-server-sdk.v5/ldcomponents"
 )
 
 type Client interface {
 	Enabled(key, userID string, attrs ...Attr) bool
-	EnabledUser(key string, user ld.User) bool
+	EnabledUser(key string, user lduser.User) bool
 
 	Variation(key, defaultVal, userID string, attrs ...Attr) string
-	VariationUser(key string, defaultVal string, user ld.User) string
+	VariationUser(key string, defaultVal string, user lduser.User) string
 
 	AllEnabledFlags(key string) []string
-	AllEnabledFlagsUser(key string, user ld.User) []string
+	AllEnabledFlagsUser(key string, user lduser.User) []string
 }
 
 type ldClient struct {
@@ -30,27 +34,25 @@ type ldClient struct {
 var _ Client = &ldClient{}
 
 func NewClient(cfg *Config, logger logrus.FieldLogger) (Client, error) {
-	config := ld.DefaultConfig
+	config := ld.Config{}
 
 	if !cfg.Enabled {
 		config.Offline = true
 	}
 
 	if cfg.updateProcessorFactory != nil {
-		config.UpdateProcessorFactory = cfg.updateProcessorFactory
-		config.SendEvents = false
+		config.DataSource = cfg.updateProcessorFactory
+		config.Events = ldcomponents.NoEvents()
 	}
 
-	configureLogger(&config.Loggers, logger)
+	config.Logging = configureLogger(logger)
 
 	if cfg.RelayHost != "" {
-		config.BaseUri = cfg.RelayHost
-		config.StreamUri = cfg.RelayHost
-		config.EventsUri = cfg.RelayHost
+		config.ServiceEndpoints = ldcomponents.RelayProxyEndpoints(cfg.RelayHost)
 	}
 
 	if cfg.DisableEvents {
-		config.SendEvents = false
+		config.Events = ldcomponents.NoEvents()
 	}
 
 	inner, err := ld.MakeCustomClient(cfg.Key, config, cfg.RequestTimeout.Duration)
@@ -69,7 +71,7 @@ func (c *ldClient) Enabled(key string, userID string, attrs ...Attr) bool {
 	return c.EnabledUser(key, c.userWithAttrs(userID, attrs))
 }
 
-func (c *ldClient) EnabledUser(key string, user ld.User) bool {
+func (c *ldClient) EnabledUser(key string, user lduser.User) bool {
 	res, err := c.BoolVariation(key, user, false)
 	if err != nil {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
@@ -81,7 +83,7 @@ func (c *ldClient) Variation(key, defaultVal, userID string, attrs ...Attr) stri
 	return c.VariationUser(key, defaultVal, c.userWithAttrs(userID, attrs))
 }
 
-func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) string {
+func (c *ldClient) VariationUser(key string, defaultVal string, user lduser.User) string {
 	res, err := c.StringVariation(key, user, defaultVal)
 	if err != nil {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
@@ -90,28 +92,25 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user ld.User) st
 }
 
 func (c *ldClient) AllEnabledFlags(key string) []string {
-	return c.AllEnabledFlagsUser(key, ld.NewUser(key))
+	return c.AllEnabledFlagsUser(key, lduser.NewUser(key))
 }
 
-func (c *ldClient) AllEnabledFlagsUser(key string, user ld.User) []string {
-	res := c.AllFlagsState(user, ld.DetailsOnlyForTrackedFlags)
+func (c *ldClient) AllEnabledFlagsUser(key string, user lduser.User) []string {
+	res := c.AllFlagsState(user, flagstate.OptionDetailsOnlyForTrackedFlags())
 	flagMap := res.ToValuesMap()
 
 	var flags []string
 	for flag, value := range flagMap {
-		switch value.(type) {
-		case bool:
-			if value == true {
-				flags = append(flags, flag)
-			}
+		if value.BoolValue() {
+			flags = append(flags, flag)
 		}
 	}
 
 	return flags
 }
 
-func (c *ldClient) userWithAttrs(id string, attrs []Attr) ld.User {
-	b := ld.NewUserBuilder(id)
+func (c *ldClient) userWithAttrs(id string, attrs []Attr) lduser.User {
+	b := lduser.NewUserBuilder(id)
 	for _, attr := range c.defaultAttrs {
 		b.Custom(attr.Name, attr.Value)
 	}
@@ -130,7 +129,7 @@ func StringAttr(name, value string) Attr {
 	return Attr{Name: name, Value: ldvalue.String(value)}
 }
 
-func configureLogger(ldLogger *ldlog.Loggers, log logrus.FieldLogger) {
+func configureLogger(log logrus.FieldLogger) interfaces.LoggingConfigurationFactory {
 	if log == nil {
 		l := logrus.New()
 		l.SetOutput(ioutil.Discard)
@@ -138,10 +137,20 @@ func configureLogger(ldLogger *ldlog.Loggers, log logrus.FieldLogger) {
 	}
 	log = log.WithField("component", "launch_darkly")
 
-	ldLogger.SetBaseLoggerForLevel(ldlog.Debug, &wrapLog{log.Debugln, log.Debugf})
-	ldLogger.SetBaseLoggerForLevel(ldlog.Info, &wrapLog{log.Infoln, log.Infof})
-	ldLogger.SetBaseLoggerForLevel(ldlog.Warn, &wrapLog{log.Warnln, log.Warnf})
-	ldLogger.SetBaseLoggerForLevel(ldlog.Error, &wrapLog{log.Errorln, log.Errorf})
+	return &logCreator{log: log}
+}
+
+type logCreator struct {
+	log logrus.FieldLogger
+}
+
+func (c *logCreator) CreateLoggingConfiguration(b interfaces.BasicConfiguration) (interfaces.LoggingConfiguration, error) {
+	logger := ldlog.NewDefaultLoggers()
+	logger.SetBaseLoggerForLevel(ldlog.Debug, &wrapLog{c.log.Debugln, c.log.Debugf})
+	logger.SetBaseLoggerForLevel(ldlog.Info, &wrapLog{c.log.Infoln, c.log.Infof})
+	logger.SetBaseLoggerForLevel(ldlog.Warn, &wrapLog{c.log.Warnln, c.log.Warnf})
+	logger.SetBaseLoggerForLevel(ldlog.Error, &wrapLog{c.log.Errorln, c.log.Errorf})
+	return ldcomponents.Logging().Loggers(logger).CreateLoggingConfiguration(b)
 }
 
 type wrapLog struct {
