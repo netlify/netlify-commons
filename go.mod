@@ -43,7 +43,8 @@ require (
 	gopkg.in/DataDog/dd-trace-go.v1 v1.34.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ghodss/yaml.v1 v1.0.0 // indirect
-	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200401173443-991b2f427a01
+	gopkg.in/launchdarkly/go-sdk-common.v1 v1.0.0-20200204015611-d48d1b4f4e70
+	gopkg.in/launchdarkly/go-sdk-common.v2 v2.5.0
 	gopkg.in/launchdarkly/go-server-sdk.v4 v4.0.0-20200729232655-2a44fb361895
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
