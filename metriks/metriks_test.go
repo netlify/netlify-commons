@@ -38,7 +38,7 @@ func TestDatadogSink(t *testing.T) {
 
 	Inc("test_counter", 1)
 
-	expectedMsg := "test.test_counter:1|c|#app:edge-state,env:test,service:test"
+	expectedMsg := "test.test_counter:1|c|#app:edge-state,env:test,service:test\n"
 
 	var readBytes int
 	buf := make([]byte, 512)
