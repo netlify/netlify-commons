@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.60.0](https://github.com/netlify/netlify-commons/compare/v0.59.1...v0.60.0) (2022-01-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** update module gopkg.in/launchdarkly/go-sdk-common.v1 to v2 (#310)
+
+### Bug Fixes
+
+* **deps:** update module github.com/datadog/datadog-go to v4.8.3 ([#307](https://github.com/netlify/netlify-commons/issues/307)) ([2241418](https://github.com/netlify/netlify-commons/commit/22414185c890dc3bfceb9998a5fb6531a28c6357))
+* **deps:** update module github.com/joho/godotenv to v1.4.0 ([#308](https://github.com/netlify/netlify-commons/issues/308)) ([85bf974](https://github.com/netlify/netlify-commons/commit/85bf974ebd8b3f466e136368e33c4d59e8c7063a))
+* **deps:** update module github.com/spf13/cobra to v0.0.7 ([#303](https://github.com/netlify/netlify-commons/issues/303)) ([29cae7a](https://github.com/netlify/netlify-commons/commit/29cae7afc618dad3b8fb1ab70377c51fcf862615))
+* **deps:** update module go.mongodb.org/mongo-driver to v1.8.2 ([#294](https://github.com/netlify/netlify-commons/issues/294)) ([ee4907f](https://github.com/netlify/netlify-commons/commit/ee4907f0a71a2239075ce93701f8818942f9d751))
+* **deps:** update module gopkg.in/launchdarkly/go-sdk-common.v1 to v2 ([#310](https://github.com/netlify/netlify-commons/issues/310)) ([5dd1f98](https://github.com/netlify/netlify-commons/commit/5dd1f98d43c23ab3a02641da5664352d1ea43111))
+
 ### [0.59.1](https://github.com/netlify/netlify-commons/compare/v0.59.0...v0.59.1) (2022-01-11)
 
 
