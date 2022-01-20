@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/launchdarkly/go-server-sdk.v4/ldfiledata"
+	"gopkg.in/launchdarkly/go-server-sdk.v5/ldfiledata"
 )
 
 func TestOfflineClient(t *testing.T) {
@@ -46,7 +46,7 @@ func TestMockClient(t *testing.T) {
 }
 
 func TestAllEnabledFlags(t *testing.T) {
-	fileSource := ldfiledata.NewFileDataSourceFactory(ldfiledata.FilePaths("./fixtures/flags.yml"))
+	fileSource := ldfiledata.DataSource().FilePaths("./fixtures/flags.yml")
 	cfg := Config{
 		Key:                    "ABCD",
 		RequestTimeout:         util.Duration{time.Second},

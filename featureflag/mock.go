@@ -1,7 +1,7 @@
 package featureflag
 
 import (
-	ld "gopkg.in/launchdarkly/go-server-sdk.v4"
+	"gopkg.in/launchdarkly/go-sdk-common.v2/lduser"
 )
 
 type MockClient struct {
@@ -12,18 +12,18 @@ type MockClient struct {
 var _ Client = MockClient{}
 
 func (c MockClient) Enabled(key, userID string, _ ...Attr) bool {
-	return c.EnabledUser(key, ld.NewUser(userID))
+	return c.EnabledUser(key, lduser.NewUser(userID))
 }
 
-func (c MockClient) EnabledUser(key string, _ ld.User) bool {
+func (c MockClient) EnabledUser(key string, _ lduser.User) bool {
 	return c.BoolVars[key]
 }
 
 func (c MockClient) Variation(key string, defaultVal string, userID string, _ ...Attr) string {
-	return c.VariationUser(key, defaultVal, ld.NewUser(userID))
+	return c.VariationUser(key, defaultVal, lduser.NewUser(userID))
 }
 
-func (c MockClient) VariationUser(key string, defaultVal string, _ ld.User) string {
+func (c MockClient) VariationUser(key string, defaultVal string, _ lduser.User) string {
 	res, ok := c.StringVars[key]
 	if !ok {
 		return defaultVal
@@ -32,10 +32,10 @@ func (c MockClient) VariationUser(key string, defaultVal string, _ ld.User) stri
 }
 
 func (c MockClient) AllEnabledFlags(key string) []string {
-	return c.AllEnabledFlagsUser(key, ld.NewUser(key))
+	return c.AllEnabledFlagsUser(key, lduser.NewUser(key))
 }
 
-func (c MockClient) AllEnabledFlagsUser(key string, _ ld.User) []string {
+func (c MockClient) AllEnabledFlagsUser(key string, _ lduser.User) []string {
 	var res []string
 	for key, value := range c.BoolVars {
 		if value {
