@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/netlify/netlify-commons/testutil"
+	"github.com/netlify/netlify-commons/tracing"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/sirupsen/logrus"
@@ -80,6 +81,7 @@ func TestTracing(t *testing.T) {
 	}()
 
 	noop := func(w http.ResponseWriter, r *http.Request) error {
+		assert.NotNil(t, tracing.GetTracer(r))
 		w.WriteHeader(http.StatusOK)
 		return nil
 	}
