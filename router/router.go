@@ -65,13 +65,25 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 	xffmw, _ := xff.Default()
 	r.Use(xffmw.Handler)
 	for _, opt := range options {
-		opt(r)
+		opt.f(r)
 	}
 
 	if r.enableRecover {
 		r.Use(Recoverer(log))
 	}
 	r.Use(VersionHeader(r.svcName, r.version))
+
+	// we don't want to track health requests, they're noise
+	if r.healthEndpoint != "" {
+		r.Use(HealthCheck(r.healthEndpoint, r.healthHandler))
+	}
+
+	// this needs to be in this order so that we can make sure
+	// that the tracing middleware is at the root of the stack
+	// other than version and recovery
+	if r.enableTracing {
+		r.Use(r.tracingMiddleware())
+	}
 	if r.enableCORS {
 		corsMiddleware := cors.New(cors.Options{
 			AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE"},
@@ -80,10 +92,6 @@ func New(log logrus.FieldLogger, options ...Option) Router {
 			AllowCredentials: true,
 		})
 		r.Use(corsMiddleware.Handler)
-	}
-
-	if r.healthEndpoint != "" {
-		r.Use(HealthCheck(r.healthEndpoint, r.healthHandler))
 	}
 
 	return r
@@ -107,7 +115,12 @@ func (r *chiWrapper) Method(method, pattern string, h APIHandler) {
 
 // Get adds a GET route
 func (r *chiWrapper) Get(pattern string, fn APIHandler) {
-	r.chi.Get(pattern, r.traceRequest(http.MethodGet, pattern, fn))
+
+	wrapper := new(chiWrapper)
+	*wrapper = *r
+	wrapper.tracingPrefix = sanitizePattern(pattern)
+
+	wrapper.chi.Get(pattern, wrapper.traceRequest(http.MethodGet, pattern, fn))
 }
 
 // Post adds a POST route
@@ -167,21 +180,24 @@ func HandlerFunc(fn APIHandler) http.HandlerFunc {
 
 func (r *chiWrapper) traceRequest(method, pattern string, fn APIHandler) http.HandlerFunc {
 	f := HandlerFunc(fn)
-	if r.enableTracing {
-		pattern = sanitizePattern(pattern)
-		if r.tracingPrefix != "" {
-			pattern = r.tracingPrefix + "." + pattern
-		}
+	// if r.tracingMiddleware != nil {
+	// 	r.tracingMiddleware.registerHandler(sanitizePattern(pattern), f)
+	// pattern =
+	// if r.tracingPrefix != "" {
+	// 	pattern = r.tracingPrefix + "." + pattern
+	// }
+	// resourceName := strings.ToUpper(method)
+	// if pattern != "" {
+	// 	resourceName += "::" + pattern
+	// }
 
-		resourceName := strings.ToUpper(method)
-		if pattern != "" {
-			resourceName += "::" + pattern
-		}
+	// child := &chiWrapper{}
+	// *child = *r
 
-		return func(w http.ResponseWriter, req *http.Request) {
-			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, f)
-		}
-	}
+	// return func(w http.ResponseWriter, req *http.Request) {
+	// 	tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, f)
+	// }
+	// }
 	return f
 }
 
@@ -192,4 +208,14 @@ func sanitizePattern(pattern string) string {
 	pattern = strings.ReplaceAll(pattern, "/", ".")
 	pattern = strings.TrimSuffix(pattern, ".")
 	return pattern
+}
+
+func (r *chiWrapper) tracingMiddleware() Middleware {
+	return MiddlewareFunc(func(w http.ResponseWriter, req *http.Request, next http.Handler) {
+		resourceName := strings.ToUpper(req.Method)
+		// if pattern != "" {
+		// 	resourceName += "::" + pattern
+		// }
+		tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, next)
+	})
 }

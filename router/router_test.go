@@ -23,7 +23,7 @@ func TestCORS(t *testing.T) {
 	req.Header.Set("Access-Control-Request-Method", "GET")
 	req.Header.Set("Access-Control-Request-Headers", "Content-Type")
 	t.Run("enabled", func(t *testing.T) {
-		rsp := do(t, []Option{OptEnableCORS}, "", "/", nil, req)
+		rsp := do(t, []Option{OptEnableCORS()}, "", "/", nil, req)
 		assert.Equal(t, http.StatusOK, rsp.Code)
 	})
 	t.Run("disabled", func(t *testing.T) {
@@ -98,17 +98,28 @@ func TestTracing(t *testing.T) {
 	r.Route("/sub", func(r Router) {
 		r.Get("/path", noop)
 	})
+	r.Route("/not-allowed", func(r Router) {
+		r.Use(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+				rw.WriteHeader(http.StatusUnauthorized)
+			})
+		})
+		r.Get("/", noop)
+	})
 
 	scenes := map[string]struct {
 		method, path, resourceName string
+		code                       int
 	}{
-		"get":          {http.MethodGet, "/abc/def", "GET::abc.def"},
-		"delete":       {http.MethodDelete, "/abc/hfj", "DELETE::abc.def"},
-		"post":         {http.MethodPost, "/def/ghi", "POST::def.ghi"},
-		"put":          {http.MethodPut, "/asdf/", "PUT::asdf"},
-		"patch":        {http.MethodPatch, "/patch", "PATCH::patch"},
-		"subroute":     {http.MethodGet, "/sub/path", "GET::sub.path"},
-		"single_slash": {http.MethodGet, "/", "GET"},
+		"get": {http.MethodGet, "/abc/def", "GET::abc.def", http.StatusOK},
+		// "delete":       {http.MethodDelete, "/abc/hfj", "DELETE::abc.def", http.StatusOK},
+		// "post":         {http.MethodPost, "/def/ghi", "POST::def.ghi", http.StatusOK},
+		// "put":          {http.MethodPut, "/asdf/", "PUT::asdf", http.StatusOK},
+		// "patch":        {http.MethodPatch, "/patch", "PATCH::patch", http.StatusOK},
+		// "subroute":     {http.MethodGet, "/sub/path", "GET::sub.path", http.StatusOK},
+		// "single_slash": {http.MethodGet, "/", "GET", http.StatusOK},
+		// "missing":      {http.MethodGet, "/not-here", "GET", http.StatusNotFound},
+		// "unauth":       {http.MethodGet, "/not-allowed", "GET::not-allowed", http.StatusUnauthorized},
 	}
 
 	for name, scene := range scenes {
@@ -118,13 +129,13 @@ func TestTracing(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			r.ServeHTTP(rec, httptest.NewRequest(scene.method, scene.path, nil))
-			assert.Equal(t, http.StatusOK, rec.Code)
+			assert.Equal(t, scene.code, rec.Code)
 
 			spans := mt.FinishedSpans()
 			if assert.Equal(t, 1, len(spans)) {
 				assert.Equal(t, "some-service", spans[0].Tag(ext.ServiceName))
 				assert.Equal(t, scene.resourceName, spans[0].Tag(ext.ResourceName))
-				assert.Equal(t, strconv.Itoa(http.StatusOK), spans[0].Tag(ext.HTTPCode))
+				assert.Equal(t, strconv.Itoa(scene.code), spans[0].Tag(ext.HTTPCode))
 			}
 			// should be a starting and finished request for each request
 			assert.Len(t, logHook.AllEntries(), 2)
