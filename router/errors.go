@@ -13,13 +13,13 @@ import (
 
 // HTTPError is an error with a message and an HTTP status code.
 type HTTPError struct {
-	Code            int         `json:"code"`
-	Message         string      `json:"msg"`
-	JSON            interface{} `json:"json,omitempty"`
-	InternalError   error       `json:"-"`
-	InternalMessage string      `json:"-"`
-	ErrorID         string      `json:"error_id,omitempty"`
-	Fields          []logrus.Fields
+	Code            int             `json:"code"`
+	Message         string          `json:"msg"`
+	JSON            interface{}     `json:"json,omitempty"`
+	InternalError   error           `json:"-"`
+	InternalMessage string          `json:"-"`
+	ErrorID         string          `json:"error_id,omitempty"`
+	Fields          []logrus.Fields `json:"-"`
 }
 
 // BadRequestError creates a 400 HTTP error
