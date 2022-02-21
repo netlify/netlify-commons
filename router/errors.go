@@ -8,6 +8,7 @@ import (
 	"github.com/bugsnag/bugsnag-go/v2"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
+	"github.com/sirupsen/logrus"
 )
 
 // HTTPError is an error with a message and an HTTP status code.
@@ -18,6 +19,7 @@ type HTTPError struct {
 	InternalError   error       `json:"-"`
 	InternalMessage string      `json:"-"`
 	ErrorID         string      `json:"error_id,omitempty"`
+	Fields          []logrus.Fields
 }
 
 // BadRequestError creates a 400 HTTP error
@@ -79,6 +81,19 @@ func (e *HTTPError) WithInternalMessage(fmtString string, args ...interface{}) *
 	return e
 }
 
+// WithFields will add fields to an error message
+func (e *HTTPError) WithFields(fields logrus.Fields) *HTTPError {
+	e.Fields = append(e.Fields, fields)
+	return e
+}
+
+// WithFields will add fields to an error message
+func (e *HTTPError) WithField(key string, value interface{}) *HTTPError {
+	return e.WithFields(logrus.Fields{
+		key: value,
+	})
+}
+
 func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 	return &HTTPError{
 		Code:    code,
@@ -102,6 +117,10 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 
 	switch e := err.(type) {
 	case *HTTPError:
+		for _, fields := range e.Fields {
+			log = log.WithFields(fields)
+		}
+
 		e.ErrorID = errorID
 		if e.Code >= http.StatusInternalServerError {
 			notifyBugsnag = true
