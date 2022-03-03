@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.61.0](https://github.com/netlify/netlify-commons/compare/v0.60.1...v0.61.0) (2022-03-03)
+
+
+### Features
+
+* HTTPError.WithFields ([#326](https://github.com/netlify/netlify-commons/issues/326)) ([35dff55](https://github.com/netlify/netlify-commons/commit/35dff55f61dc72b8486f77ebe860c563cce46e87))
+
 ## [0.60.0](https://github.com/netlify/netlify-commons/compare/v0.59.1...v0.60.0) (2022-01-20)
 
 
