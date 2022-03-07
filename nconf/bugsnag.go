@@ -8,7 +8,7 @@ type BugSnagConfig struct {
 	Environment    string
 	APIKey         string `envconfig:"api_key" json:"api_key" yaml:"api_key"`
 	ProjectPackage string `envconfig:"project_package" json:"project_package" yaml:"project_package"`
-	CDNHostName    string
+	CDNHostName    string `envconfig:"node_name" json:"node_name" yaml:"node_name"`
 }
 
 func SetupBugSnag(config *BugSnagConfig, version string) error {
@@ -25,6 +25,7 @@ func SetupBugSnag(config *BugSnagConfig, version string) error {
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:          config.APIKey,
 		ReleaseStage:    config.Environment,
+		Hostname:        config.CDNHostName,
 		AppVersion:      version,
 		ProjectPackages: projectPackages,
 		PanicHandler:    func() {}, // this is to disable panic handling. The lib was forking and restarting the process (causing races)
