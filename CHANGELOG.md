@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.61.2](https://github.com/netlify/netlify-commons/compare/v0.61.1...v0.61.2) (2022-04-07)
+
+
+### Bug Fixes
+
+* **deps:** update module go.mongodb.org/mongo-driver to v1.9.0 ([#324](https://github.com/netlify/netlify-commons/issues/324)) ([42cde20](https://github.com/netlify/netlify-commons/commit/42cde20b8049a705ffb503bd1098e94e1977c6ae))
+
 ## [0.61.0](https://github.com/netlify/netlify-commons/compare/v0.60.1...v0.61.0) (2022-03-03)
 
 
