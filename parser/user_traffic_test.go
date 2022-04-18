@@ -11,7 +11,7 @@ import (
 )
 
 //raw record to test against as a fail-safe (incase the template drifts)
-var rawUTRecord = "request_id=c9948493-1ece-4d21-a2d1-f96a9feded3c @timestamp=1585844380.949 timing=1 result=TCP_MEM_HIT cid=- ccid=12345 status=200 request_size=1 response_size=66000 proto=http/2 method=GET url=http://localhost/something/1591294965428966000/something.jpg sid=18bb190b-6727-497a-af8b-f03287d14caf, aid=1591294965428966000 did=5e85df2043933dd053ebec6f cancel=- proxy_type=- stuff=things oneother=\"onething\" fid=- content_type=text/plain address=2605:6000:1714:56e:c98a:445c:febd:6baf country=US referrer=localhost cw=- ssl_version=TLSv1.2 ssl_cipher=ECDHE-RSA-AES256-GCM-SHA384 enc=- ua=Mozilla/5.0 (X11; CrOS x86_64 12239.92.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.136 Safari/537.36"
+var rawUTRecord = "request_id=c9948493-1ece-4d21-a2d1-f96a9feded3c @timestamp=1585844380.949 timing=1 result=TCP_MEM_HIT cid=- ccid=12345 status=200 request_size=1 response_size=66000 proto=http/2 method=GET url=http://localhost/something/1591294965428966000/something.jpg sid=18bb190b-6727-497a-af8b-f03287d14caf, aid=1591294965428966000 did=5e85df2043933dd053ebec6f cancel=- proxy_type=- stuff=things oneother=\"onething\" fid=- content_type=text/plain address=2605:6000:1714:56e:c98a:445c:febd:6baf country=US referrer=localhost cw=- ssl_version=TLSv1.2 ssl_cipher=ECDHE-RSA-AES256-GCM-SHA384 enc=- efs=1 ua=Mozilla/5.0 (X11; CrOS x86_64 12239.92.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.136 Safari/537.36"
 
 var utLineTemplateStr = "request_id={{.requestIDField}} " +
 	"@timestamp={{.atTimestampField}} " +
@@ -40,6 +40,7 @@ var utLineTemplateStr = "request_id={{.requestIDField}} " +
 	"ssl_version={{.sslVersionField}} " +
 	"ssl_cipher={{.sslCipherField}} " +
 	"enc={{.encField}} " +
+	"efs={{.efs}} " +
 	"ua={{.uaField}}"
 
 var utLineTemplate = template.Must(template.New("user_traffic").Parse(utLineTemplateStr))
@@ -73,6 +74,7 @@ var (
 	sslVersionField   = "TLSv1.2"
 	sslCipherField    = "ECDHE-RSA-AES256-GCM-SHA384"
 	encField          = "-"
+	efs               = "1"
 )
 
 func defaultValues() map[string]string {
@@ -105,6 +107,7 @@ func defaultValues() map[string]string {
 		"sslVersionField":   sslVersionField,
 		"sslCipherField":    sslCipherField,
 		"encField":          encField,
+		"efs":               efs,
 	}
 }
 
@@ -144,6 +147,7 @@ func TestParseUserTrafficPayload(t *testing.T) {
 		SSLVersion:   "TLSv1.2",
 		ENC:          "-",
 		CW:           "-",
+		EFS:          1,
 		UserAgent:    "Mozilla/5.0 (X11; CrOS x86_64 12239.92.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.136 Safari/537.36",
 		Unparsed:     []string{"stuff=things", "oneother=\"onething\""},
 	}
