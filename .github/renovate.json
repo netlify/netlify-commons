@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>netlify/renovate-config:go-default"],
+  "schedule": "before 3am on tuesday",
+  "dependencyDashboard": true,
+  "semanticCommitType": "fix",
+  "packageRules": [
+    {
+      "matchDatasources": ["go"],
+      "matchPackageNames": ["gopkg.in/yaml.v3", "golang.org/x/net"],
+      "schedule": "before 3am on the first day of the month"
+    }
+  ]
+}

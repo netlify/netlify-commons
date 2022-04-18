@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/bugsnag/bugsnag-go"
+	"github.com/bugsnag/bugsnag-go/v2"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -120,6 +120,36 @@ func TestHandleError_HTTPError(t *testing.T) {
 
 	require.Len(t, loggerOutput.AllEntries(), 1)
 	assert.Equal(t, "internal server error: "+httpErr.InternalMessage, loggerOutput.AllEntries()[0].Message)
+}
+
+func TestHandleError_HttpErrorWithFields(t *testing.T) {
+	logger, loggerOutput := test.NewNullLogger()
+	recorder := httptest.NewRecorder()
+	w, r, _ := tracing.NewTracer(
+		recorder,
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		logger,
+		"test",
+		"test",
+	)
+
+	httpErr := httpError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+
+	httpErr.WithFields(map[string]interface{}{
+		"a": "1",
+		"b": "2",
+	})
+
+	httpErr.WithField("c", "3")
+	httpErr.WithField("a", "0")
+
+	HandleError(httpErr, w, r)
+
+	require.Len(t, loggerOutput.AllEntries(), 1)
+	entry := loggerOutput.LastEntry()
+	assert.Equal(t, entry.Data["a"], "0")
+	assert.Equal(t, entry.Data["b"], "2")
+	assert.Equal(t, entry.Data["c"], "3")
 }
 
 func TestHandleError_NoLogForNormalErrors(t *testing.T) {

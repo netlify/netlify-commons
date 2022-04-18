@@ -5,19 +5,21 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/bugsnag/bugsnag-go"
+	"github.com/bugsnag/bugsnag-go/v2"
 	"github.com/netlify/netlify-commons/metriks"
 	"github.com/netlify/netlify-commons/tracing"
+	"github.com/sirupsen/logrus"
 )
 
 // HTTPError is an error with a message and an HTTP status code.
 type HTTPError struct {
-	Code            int         `json:"code"`
-	Message         string      `json:"msg"`
-	JSON            interface{} `json:"json,omitempty"`
-	InternalError   error       `json:"-"`
-	InternalMessage string      `json:"-"`
-	ErrorID         string      `json:"error_id,omitempty"`
+	Code            int           `json:"code"`
+	Message         string        `json:"msg"`
+	JSON            interface{}   `json:"json,omitempty"`
+	InternalError   error         `json:"-"`
+	InternalMessage string        `json:"-"`
+	ErrorID         string        `json:"error_id,omitempty"`
+	Fields          logrus.Fields `json:"-"`
 }
 
 // BadRequestError creates a 400 HTTP error
@@ -79,10 +81,25 @@ func (e *HTTPError) WithInternalMessage(fmtString string, args ...interface{}) *
 	return e
 }
 
+// WithFields will add fields to an error message
+func (e *HTTPError) WithFields(fields logrus.Fields) *HTTPError {
+	for key, value := range fields {
+		e.Fields[key] = value
+	}
+	return e
+}
+
+// WithFields will add fields to an error message
+func (e *HTTPError) WithField(key string, value interface{}) *HTTPError {
+	e.Fields[key] = value
+	return e
+}
+
 func httpError(code int, fmtString string, args ...interface{}) *HTTPError {
 	return &HTTPError{
 		Code:    code,
 		Message: fmt.Sprintf(fmtString, args...),
+		Fields:  make(logrus.Fields),
 	}
 }
 
@@ -102,6 +119,8 @@ func HandleError(err error, w http.ResponseWriter, r *http.Request) {
 
 	switch e := err.(type) {
 	case *HTTPError:
+		log = log.WithFields(e.Fields)
+
 		e.ErrorID = errorID
 		if e.Code >= http.StatusInternalServerError {
 			notifyBugsnag = true

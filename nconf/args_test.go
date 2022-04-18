@@ -143,7 +143,6 @@ func TestArgsLoadDefault(t *testing.T) {
 			// bugsnag
 			assert.Equal(t, "", cfg.BugSnag.Environment)
 			assert.Equal(t, "secrets", cfg.BugSnag.APIKey)
-			assert.Equal(t, false, cfg.BugSnag.LogHook)
 			assert.Equal(t, "package", cfg.BugSnag.ProjectPackage)
 
 			// metrics

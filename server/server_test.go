@@ -117,7 +117,7 @@ func (a *testAPICustomHealth) Healthy(w http.ResponseWriter, r *http.Request) er
 	return router.InternalServerError("healthcheck failed")
 }
 func (a *testAPICustomHealth) Info() APIInfo {
-	return APIInfo{"testing", ""}
+	return APIInfo{"testing", "", "testing"}
 }
 
 func TestServerCustomHealth(t *testing.T) {

@@ -49,6 +49,7 @@ type APIDefinition interface {
 type APIInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
+	Env     string `json:"env"`
 }
 
 // HealthChecker is used to run a custom health check
