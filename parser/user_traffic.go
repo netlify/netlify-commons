@@ -37,6 +37,7 @@ type UserTraffic struct {
 	SSLVersion   string    `json:"ssl_version"`
 	SSLCipher    string    `json:"ssl_cipher"`
 	ENC          string    `json:"enc"`
+	EFS          int       `json:"efs"`
 	UserAgent    string    `json:"ua"`
 	Unparsed     []string  `json:"unparsed"`
 }
@@ -137,6 +138,10 @@ func ParseUserTrafficRecord(raw string) (*UserTraffic, error) {
 			ut.SSLCipher = strings.TrimSuffix(parts[1], ",")
 		case "enc":
 			ut.ENC = strings.TrimSuffix(parts[1], ",")
+		case "efs":
+			if ut.EFS, err = strconv.Atoi(parts[1]); err != nil {
+				return nil, fmt.Errorf("malformed field (%s) value: %s", parts[0], parts[1])
+			}
 		default:
 			ut.Unparsed = append(ut.Unparsed, field)
 		}
