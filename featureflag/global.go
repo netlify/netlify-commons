@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var globalLock sync.Mutex
+var globalLock sync.RWMutex
 var globalClient Client = MockClient{}
 
 func SetGlobalClient(client Client) {
@@ -19,8 +19,8 @@ func SetGlobalClient(client Client) {
 }
 
 func GetGlobalClient() Client {
-	globalLock.Lock()
-	defer globalLock.Unlock()
+	globalLock.RLock()
+	defer globalLock.RUnlock()
 	return globalClient
 }
 
