@@ -7,6 +7,7 @@ import (
 type MockClient struct {
 	BoolVars   map[string]bool
 	StringVars map[string]string
+	IntVars    map[string]int
 }
 
 var _ Client = MockClient{}
@@ -25,6 +26,18 @@ func (c MockClient) Variation(key string, defaultVal string, userID string, _ ..
 
 func (c MockClient) VariationUser(key string, defaultVal string, _ lduser.User) string {
 	res, ok := c.StringVars[key]
+	if !ok {
+		return defaultVal
+	}
+	return res
+}
+
+func (c MockClient) Int(key string, defaultVal int, userID string, _ ...Attr) int {
+	return c.IntUser(key, defaultVal, lduser.NewUser(userID))
+}
+
+func (c MockClient) IntUser(key string, defaultVal int, _ lduser.User) int {
+	res, ok := c.IntVars[key]
 	if !ok {
 		return defaultVal
 	}
