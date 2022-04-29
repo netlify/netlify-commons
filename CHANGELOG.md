@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.62.0](https://github.com/netlify/netlify-commons/compare/v0.61.4...v0.62.0) (2022-04-29)
+
+
+### Features
+
+* at Int variation to global feature flag client ([#335](https://github.com/netlify/netlify-commons/issues/335)) ([5059af0](https://github.com/netlify/netlify-commons/commit/5059af090699de3ffeb60131d23cb5e345b5be0c))
+
 ### [0.61.2](https://github.com/netlify/netlify-commons/compare/v0.61.1...v0.61.2) (2022-04-07)
 
 
