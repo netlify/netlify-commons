@@ -21,6 +21,9 @@ type Client interface {
 	Variation(key, defaultVal, userID string, attrs ...Attr) string
 	VariationUser(key string, defaultVal string, user lduser.User) string
 
+	Int(key string, defaultVal int, userID string, attrs ...Attr) int
+	IntUser(key string, defaultVal int, user lduser.User) int
+
 	AllEnabledFlags(key string) []string
 	AllEnabledFlagsUser(key string, user lduser.User) []string
 }
@@ -88,6 +91,19 @@ func (c *ldClient) VariationUser(key string, defaultVal string, user lduser.User
 	if err != nil {
 		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
 	}
+	return res
+}
+
+func (c *ldClient) Int(key string, defaultValue int, userID string, attrs ...Attr) int {
+	return c.IntUser(key, defaultValue, c.userWithAttrs(userID, attrs))
+}
+
+func (c *ldClient) IntUser(key string, defaultVal int, user lduser.User) int {
+	res, err := c.IntVariation(key, user, defaultVal)
+	if err != nil {
+		c.log.WithError(err).WithField("key", key).Error("Failed to load feature flag")
+	}
+	// DefaultValue will be returned if IntVariation returns an error
 	return res
 }
 

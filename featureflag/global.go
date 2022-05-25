@@ -41,3 +41,7 @@ func Enabled(key, userID string, attrs ...Attr) bool {
 func Variation(key, defaultVal, userID string, attrs ...Attr) string {
 	return GetGlobalClient().Variation(key, defaultVal, userID, attrs...)
 }
+
+func Int(key string, defaultVal int, userID string, attrs ...Attr) int {
+	return GetGlobalClient().Int(key, defaultVal, userID, attrs...)
+}

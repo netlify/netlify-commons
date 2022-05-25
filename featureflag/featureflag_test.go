@@ -23,6 +23,7 @@ func TestOfflineClient(t *testing.T) {
 
 	require.False(t, client.Enabled("notset", "12345"))
 	require.Equal(t, "foobar", client.Variation("notset", "foobar", "12345"))
+	require.Equal(t, 3, client.Int("noset", 3, "12345"))
 }
 
 func TestMockClient(t *testing.T) {
@@ -35,6 +36,10 @@ func TestMockClient(t *testing.T) {
 			"FOO":  "BAR",
 			"BLAH": "FOOBAR",
 		},
+		IntVars: map[string]int{
+			"FOO":  4,
+			"BLAH": 7,
+		},
 	}
 
 	require.True(t, mock.Enabled("FOO", "12345"))
@@ -43,6 +48,9 @@ func TestMockClient(t *testing.T) {
 
 	require.Equal(t, "BAR", mock.Variation("FOO", "DFLT", "12345"))
 	require.Equal(t, "DFLT", mock.Variation("FOOBAR", "DFLT", "12345"))
+
+	require.Equal(t, 4, mock.Int("FOO", 2, "12345"))
+	require.Equal(t, 2, mock.Int("FOOBAR", 2, "12345"))
 }
 
 func TestAllEnabledFlags(t *testing.T) {
