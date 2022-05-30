@@ -1,27 +1,27 @@
 package featureflag
 
 import (
-	"sync"
-
 	"github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
+	"unsafe"
 )
 
-var globalLock sync.Mutex
-var globalClient Client = MockClient{}
+// See https://blog.dubbelboer.com/2015/08/23/rwmutex-vs-atomicvalue-vs-unsafepointer.html
+var (
+	defaultClient Client = MockClient{}
+	globalClient         = atomic.NewUnsafePointer(unsafe.Pointer(&defaultClient))
+)
 
 func SetGlobalClient(client Client) {
 	if client == nil {
 		return
 	}
-	globalLock.Lock()
-	globalClient = client
-	globalLock.Unlock()
+	globalClient.Store(unsafe.Pointer(&client))
 }
 
 func GetGlobalClient() Client {
-	globalLock.Lock()
-	defer globalLock.Unlock()
-	return globalClient
+	c := (*Client)(globalClient.Load())
+	return *c
 }
 
 // Init will initialize global client with a launch darkly client
