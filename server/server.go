@@ -32,7 +32,7 @@ type Server struct {
 }
 
 type RouterConfig struct {
-	EnableTracing bool
+	DisableTracing bool
 }
 
 type Config struct {
@@ -74,7 +74,6 @@ func NewOpts(log logrus.FieldLogger, api APIDefinition, opts ...Opt) (*Server, e
 
 	return buildServer(log, api, append(defaultOpts, opts...), Config{
 		HealthPath: defaultHealthPath,
-		Router:     RouterConfig{EnableTracing: true},
 	})
 }
 
@@ -193,7 +192,7 @@ func buildRouter(log logrus.FieldLogger, api APIDefinition, config Config) route
 		router.OptRecoverer(),
 	}
 
-	if config.Router.EnableTracing {
+	if !config.Router.DisableTracing {
 		opts = append(opts, router.OptEnableTracing(api.Info().Name))
 	}
 
