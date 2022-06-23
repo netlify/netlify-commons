@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.0](https://github.com/netlify/netlify-commons/compare/v0.62.0...v0.63.0) (2022-06-23)
+
+
+### Features
+
+* make Router.enableTracing configurable ([#338](https://github.com/netlify/netlify-commons/issues/338)) ([1b4df80](https://github.com/netlify/netlify-commons/commit/1b4df8001c2679f9885fc2eabdc2f74fa8fbfd0e))
+
 ### [0.61.2](https://github.com/netlify/netlify-commons/compare/v0.61.1...v0.61.2) (2022-04-07)
 
 
