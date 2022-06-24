@@ -31,11 +31,16 @@ type Server struct {
 	doneOnce sync.Once
 }
 
+type RouterConfig struct {
+	DisableTracing bool
+}
+
 type Config struct {
 	HealthPath string `split_words:"true"`
 	Port       int
 	Host       string
 	TLS        nconf.TLSConfig
+	Router     RouterConfig
 }
 
 // APIDefinition is used to control lifecycle of the API
@@ -67,7 +72,9 @@ func NewOpts(log logrus.FieldLogger, api APIDefinition, opts ...Opt) (*Server, e
 		WithHostAndPort("", defaultPort),
 	}
 
-	return buildServer(log, api, append(defaultOpts, opts...), defaultHealthPath)
+	return buildServer(log, api, append(defaultOpts, opts...), Config{
+		HealthPath: defaultHealthPath,
+	})
 }
 
 // New will build a server with the defaults in place
@@ -85,7 +92,7 @@ func New(log logrus.FieldLogger, config Config, api APIDefinition) (*Server, err
 		opts = append(opts, WithTLS(tcfg))
 	}
 
-	return buildServer(log, api, opts, config.HealthPath)
+	return buildServer(log, api, opts, config)
 }
 
 func (s *Server) Shutdown(to time.Duration) error {
@@ -173,25 +180,32 @@ func APIFunc(start func(router.Router) error, stop func(), info APIInfo) APIDefi
 	}
 }
 
-func buildRouter(log logrus.FieldLogger, api APIDefinition, healthPath string) router.Router {
+func buildRouter(log logrus.FieldLogger, api APIDefinition, config Config) router.Router {
 	var healthHandler router.APIHandler
 	if checker, ok := api.(HealthChecker); ok {
 		healthHandler = checker.Healthy
 	}
 
-	r := router.New(
-		log,
-		router.OptHealthCheck(healthPath, healthHandler),
-		router.OptEnableTracing(api.Info().Name),
+	opts := []router.Option{
+		router.OptHealthCheck(config.HealthPath, healthHandler),
 		router.OptVersionHeader(api.Info().Name, api.Info().Version),
 		router.OptRecoverer(),
+	}
+
+	if !config.Router.DisableTracing {
+		opts = append(opts, router.OptEnableTracing(api.Info().Name))
+	}
+
+	r := router.New(
+		log,
+		opts...,
 	)
 
 	return r
 }
 
-func buildServer(log logrus.FieldLogger, api APIDefinition, opts []Opt, healthPath string) (*Server, error) {
-	r := buildRouter(log, api, healthPath)
+func buildServer(log logrus.FieldLogger, api APIDefinition, opts []Opt, config Config) (*Server, error) {
+	r := buildRouter(log, api, config)
 
 	if err := api.Start(r); err != nil {
 		return nil, errors.Wrap(err, "Failed to start API")
