@@ -19,14 +19,17 @@ jobs:
             const { stdout: diff } = await exec.getExecOutput("git diff origin/${{ github.base_ref }} -U0 CHANGELOG.md")
             console.log({ diff })
 
-            const COMMIT_URL_REGEX = /\/commit\/(.*)\)/g
+            const COMMIT_URL_REGEX = /\/commit\/(\w+)\)/g
 
             const authors = ["@skn0tt"]
             for (const match of diff.matchAll(COMMIT_URL_REGEX)) {
               const ref = match[1]
               const [owner, repo] = "${{ github.repository }}".split("/")
               const commit = await github.rest.repos.getCommit({ owner, repo, ref })
-              authors.push(commit.data.author.login)
+              const { author } = commit.data
+              if (author) {
+                authors.push(author.login)
+              }
             }
 
             console.log({ authors })
