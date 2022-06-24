@@ -7,6 +7,8 @@
 
 * **deps:** update module go.mongodb.org/mongo-driver to v1.9.0 ([#324](https://github.com/netlify/netlify-commons/issues/324)) ([42cde20](https://github.com/netlify/netlify-commons/commit/42cde20b8049a705ffb503bd1098e94e1977c6ae))
 
+* **feat:** this is a test entry ([bf982f57](https://github.com/netlify/netlify-commons/commit/bf982f574dcf33b4227adfd985037ef551ffdc17))
+
 ## [0.61.0](https://github.com/netlify/netlify-commons/compare/v0.60.1...v0.61.0) (2022-03-03)
 
 

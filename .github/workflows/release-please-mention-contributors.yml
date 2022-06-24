@@ -1,0 +1,48 @@
+on:
+  pull_request:
+    paths:
+      - CHANGELOG.md
+
+name: "release-please: mention contributors"
+jobs:
+  mention-contributors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/github-script@v6
+        id: find-authors
+        with:
+          script: |
+            const diff = await exec.getExecOutput("git diff ${{ github.base_ref }} -U0 CHANGELOG.md")
+            console.log({ diff })
+
+            const COMMIT_URL_REGEX = /\/commit\/(.*)\)/g
+
+            const authors = ["@skn0tt"]
+            for (const match of diff.matchAll(COMMIT_URL_REGEX)) {
+              const ref = match[1]
+              const [owner, repo] = "${{ github.repository }}".split("/")
+              const commit = await github.rest.repos.getCommit({ owner, repo, ref })
+              authors.push(commit.data.author.login)
+            }
+
+            console.log({ authors })
+            core.setOutput('authors', authors)
+  
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v2
+        id: existing-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: "includes contributions by the following people:"
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.existing-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            includes contributions by the following people:
+            ${{ steps.find-authors.outputs.authors }}
+          edit-mode: replace
