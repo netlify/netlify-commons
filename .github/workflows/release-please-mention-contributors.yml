@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - uses: actions/github-script@v6
         id: find-authors
         with:
@@ -28,13 +31,13 @@ jobs:
 
             console.log({ authors })
             core.setOutput('authors', authors)
-  
+
       - name: Find existing comment
         uses: peter-evans/find-comment@v2
         id: existing-comment
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
+          comment-author: "github-actions[bot]"
           body-includes: "includes contributions by the following people:"
 
       - name: Create or update comment
