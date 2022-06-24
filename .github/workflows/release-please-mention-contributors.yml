@@ -49,5 +49,5 @@ jobs:
           comment-id: ${{ steps.existing-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            includes contributions by ${{ steps.find-authors.outputs.authors }} 🎉
+            includes contributions by ${{ steps.find-authors.outputs.authors }}.
           edit-mode: replace
