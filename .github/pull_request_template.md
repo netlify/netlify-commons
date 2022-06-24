@@ -4,4 +4,6 @@ Please include a summary of the changes in this PR, as if it were a changelog. I
 
 If there are any breaking changes list them below with an upgrade guide.
 
+After merging, `release-please` will open a PR to cut a new release. Don't cut releases manually.
+
 BREAKING CHANGES:
