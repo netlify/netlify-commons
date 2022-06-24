@@ -41,7 +41,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
-          body-includes: "includes contributions by "
+          body-includes: "This contains contributions by "
 
       - name: Create or update comment
         uses: peter-evans/create-or-update-comment@v2
@@ -49,5 +49,6 @@ jobs:
           comment-id: ${{ steps.existing-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            includes contributions by ${{ steps.find-authors.outputs.authors }}.
+            This contains contributions by ${{ steps.find-authors.outputs.authors }}.
+            Release by merging this PR.
           edit-mode: replace
