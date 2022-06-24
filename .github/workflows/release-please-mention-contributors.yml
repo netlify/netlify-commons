@@ -16,7 +16,7 @@ jobs:
         id: find-authors
         with:
           script: |
-            const diff = await exec.getExecOutput("git diff origin/${{ github.base_ref }} -U0 CHANGELOG.md")
+            const { stdout: diff } = await exec.getExecOutput("git diff origin/${{ github.base_ref }} -U0 CHANGELOG.md")
             console.log({ diff })
 
             const COMMIT_URL_REGEX = /\/commit\/(.*)\)/g
