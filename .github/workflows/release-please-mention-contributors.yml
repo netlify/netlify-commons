@@ -26,7 +26,7 @@ jobs:
               const ref = match[1]
               const [owner, repo] = "${{ github.repository }}".split("/")
               const commit = await github.rest.repos.getCommit({ owner, repo, ref })
-              return commit.data.author
+              return commit.data.author?.login
             }))).filter(Boolean)
 
             console.log({ authors })
