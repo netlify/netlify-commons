@@ -1,0 +1,51 @@
+on:
+  pull_request:
+    paths:
+      - CHANGELOG.md
+
+name: "release-please: mention contributors"
+jobs:
+  mention-contributors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/github-script@v6
+        id: find-authors
+        with:
+          script: |
+            const { stdout: diff } = await exec.getExecOutput("git diff origin/${{ github.base_ref }} -U0 CHANGELOG.md")
+            console.log({ diff })
+
+            const COMMIT_URL_REGEX = /\/commit\/(\w+)\)/g
+
+            const matches = [...diff.matchAll(COMMIT_URL_REGEX)]
+            const authors = (await Promise.all(matches.map(async match => {
+              const ref = match[1]
+              const [owner, repo] = "${{ github.repository }}".split("/")
+              const commit = await github.rest.repos.getCommit({ owner, repo, ref })
+              return commit.data.author?.login
+            }))).filter(Boolean)
+
+            console.log({ authors })
+            core.setOutput('authors', authors.map(login => "@" + login).join(", "))
+
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v2
+        id: existing-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "This contains contributions by "
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.existing-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            This contains contributions by ${{ steps.find-authors.outputs.authors }}.
+            Release by merging this PR.
+          edit-mode: replace
