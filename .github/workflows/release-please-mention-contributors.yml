@@ -21,16 +21,13 @@ jobs:
 
             const COMMIT_URL_REGEX = /\/commit\/(\w+)\)/g
 
-            const authors = []
-            for (const match of diff.matchAll(COMMIT_URL_REGEX)) {
+            const matches = [...diff.matchAll(COMMIT_URL_REGEX)]
+            const authors = (await Promise.all(matches.map(async match => {
               const ref = match[1]
               const [owner, repo] = "${{ github.repository }}".split("/")
               const commit = await github.rest.repos.getCommit({ owner, repo, ref })
-              const { author } = commit.data
-              if (author) {
-                authors.push(author.login)
-              }
-            }
+              return commit.data.author
+            }))).filter(Boolean)
 
             console.log({ authors })
             core.setOutput('authors', authors.map(login => "@" + login).join(", "))
