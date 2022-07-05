@@ -37,6 +37,13 @@ func TestPersistentGauge(t *testing.T) {
 	}
 }
 
+func TestPersistentGaugeRace(t *testing.T) {
+	for n := 0; n < 10; n++ {
+		g := NewPersistentGaugeWithDuration("some_gauge", time.Second, L("a", "b"))
+		g.Stop()
+	}
+}
+
 func TestScheduledGauge(t *testing.T) {
 	var callCount int32
 	cb := func() int32 {

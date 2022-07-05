@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.1](https://github.com/netlify/netlify-commons/compare/v0.63.0...v0.63.1) (2022-06-30)
+
+
+### Bug Fixes
+
+* prevent race condition in Stop method on gauge ([#342](https://github.com/netlify/netlify-commons/issues/342)) ([7cc551e](https://github.com/netlify/netlify-commons/commit/7cc551e05a40409579636bccc485fcb725e6acac))
+
 ## [0.63.0](https://github.com/netlify/netlify-commons/compare/v0.62.0...v0.63.0) (2022-06-23)
 
 
