@@ -2,7 +2,7 @@ module github.com/netlify/netlify-commons
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/DataDog/datadog-go v4.8.3+incompatible
+	github.com/DataDog/datadog-go/v5 v5.1.1
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/armon/go-metrics v0.3.10
 	github.com/bugsnag/bugsnag-go/v2 v2.1.2
