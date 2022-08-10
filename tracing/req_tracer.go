@@ -14,6 +14,8 @@ type RequestTracer struct {
 	*trackingWriter
 	logrus.FieldLogger
 
+	disableTraceLogging bool
+
 	RequestID   string
 	finalFields map[string]interface{}
 
@@ -54,34 +56,40 @@ func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, s
 
 func (rt *RequestTracer) Start() {
 	rt.start = time.Now()
-	rt.WithFields(logrus.Fields{
-		"method":      rt.method,
-		"remote_addr": rt.remoteAddr,
-		"referer":     rt.referrer,
-		"url":         rt.originalURL,
-	}).Info("Starting Request")
+
+	if !rt.disableTraceLogging {
+		rt.WithFields(logrus.Fields{
+			"method":      rt.method,
+			"remote_addr": rt.remoteAddr,
+			"referer":     rt.referrer,
+			"url":         rt.originalURL,
+		}).Info("Starting Request")
+	}
 }
 
 func (rt *RequestTracer) Finish() {
-	dur := time.Since(rt.start)
-
-	fields := logrus.Fields{}
-	for k, v := range rt.finalFields {
-		fields[k] = v
-	}
-
-	fields["status_code"] = rt.trackingWriter.status
-	fields["rsp_bytes"] = rt.trackingWriter.rspBytes
-	fields["url"] = rt.originalURL
-	fields["method"] = rt.method
-	fields["dur"] = dur.String()
-	fields["dur_ns"] = dur.Nanoseconds()
-
 	// Setting the status as an int doesn't propogate for use in datadog dashboards,
 	// so we convert to a string.
 	rt.span.SetTag(ext.HTTPCode, strconv.Itoa(rt.trackingWriter.status))
 	rt.span.Finish()
-	rt.WithFields(fields).Info("Completed Request")
+
+	if !rt.disableTraceLogging {
+		dur := time.Since(rt.start)
+
+		fields := logrus.Fields{}
+		for k, v := range rt.finalFields {
+			fields[k] = v
+		}
+
+		fields["status_code"] = rt.trackingWriter.status
+		fields["rsp_bytes"] = rt.trackingWriter.rspBytes
+		fields["url"] = rt.originalURL
+		fields["method"] = rt.method
+		fields["dur"] = dur.String()
+		fields["dur_ns"] = dur.Nanoseconds()
+
+		rt.WithFields(fields).Info("Completed Request")
+	}
 }
 
 func (rt *RequestTracer) SetLogField(key string, value interface{}) logrus.FieldLogger {
