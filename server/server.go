@@ -32,7 +32,8 @@ type Server struct {
 }
 
 type RouterConfig struct {
-	DisableTracing bool
+	DisableTracing      bool
+	DisableTraceLogging bool
 }
 
 type Config struct {
@@ -194,6 +195,10 @@ func buildRouter(log logrus.FieldLogger, api APIDefinition, config Config) route
 
 	if !config.Router.DisableTracing {
 		opts = append(opts, router.OptEnableTracing(api.Info().Name))
+	}
+
+	if config.Router.DisableTraceLogging {
+		opts = append(opts, router.OptDisableTraceLogging())
 	}
 
 	r := router.New(

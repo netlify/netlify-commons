@@ -27,6 +27,13 @@ func OptEnableTracing(svcName string) Option {
 	return func(r *chiWrapper) {
 		r.svcName = svcName
 		r.enableTracing = true
+		r.enableTraceLogging = true
+	}
+}
+
+func OptDisableTraceLogging() Option {
+	return func(r *chiWrapper) {
+		r.enableTraceLogging = false
 	}
 }
 

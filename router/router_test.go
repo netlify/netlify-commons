@@ -132,6 +132,50 @@ func TestTracing(t *testing.T) {
 	}
 }
 
+func TestDisableTraceLogging(t *testing.T) {
+	noop := func(w http.ResponseWriter, r *http.Request) error {
+		w.WriteHeader(http.StatusOK)
+		return nil
+	}
+
+	tl, logHook := testutil.TestLogger(t)
+	r := New(tl, OptEnableTracing("some-service"), OptDisableTraceLogging())
+
+	r.Method(http.MethodPatch, "/patch", noop)
+	r.Delete("/abc/{def}", noop)
+	r.Get("/abc/{def}", noop)
+	r.Get("/", noop)
+	r.Post("/def/ghi", noop)
+	r.Put("/asdf/", noop)
+	r.Route("/sub", func(r Router) {
+		r.Get("/path", noop)
+	})
+
+	scenes := map[string]struct {
+		method, path, resourceName string
+	}{
+		"get":          {http.MethodGet, "/abc/def", "GET::abc.def"},
+		"delete":       {http.MethodDelete, "/abc/hfj", "DELETE::abc.def"},
+		"post":         {http.MethodPost, "/def/ghi", "POST::def.ghi"},
+		"put":          {http.MethodPut, "/asdf/", "PUT::asdf"},
+		"patch":        {http.MethodPatch, "/patch", "PATCH::patch"},
+		"subroute":     {http.MethodGet, "/sub/path", "GET::sub.path"},
+		"single_slash": {http.MethodGet, "/", "GET"},
+	}
+
+	for name, scene := range scenes {
+		t.Run(name, func(t *testing.T) {
+			logHook.Reset()
+
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, httptest.NewRequest(scene.method, scene.path, nil))
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			assert.Len(t, logHook.AllEntries(), 0)
+		})
+	}
+}
+
 func TestVersionHeader(t *testing.T) {
 	scenes := map[string]struct {
 		version  string
