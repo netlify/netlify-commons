@@ -151,6 +151,6 @@ func TrackAllRequests(log logrus.FieldLogger, service string) Middleware {
 	return MiddlewareFunc(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		// This is to maintain some legacy span work. It will cause the APM requests
 		// to show up as the method on the top level
-		tracing.TrackRequest(w, r, log, service, r.Method, next)
+		tracing.TrackRequest(w, r, log, service, r.Method, true, next)
 	})
 }

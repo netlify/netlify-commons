@@ -23,9 +23,10 @@ type chiWrapper struct {
 	healthEndpoint string
 	healthHandler  APIHandler
 
-	enableTracing bool
-	enableCORS    bool
-	enableRecover bool
+	enableTracing      bool
+	enableTraceLogging bool
+	enableCORS         bool
+	enableRecover      bool
 }
 
 // Router wraps the chi router to make it slightly more accessible
@@ -145,7 +146,7 @@ func (r *chiWrapper) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *chiWrapper) Mount(pattern string, h http.Handler) {
 	if r.enableTracing {
 		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, h)
+			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, pattern, r.enableTraceLogging, h)
 		})
 	}
 	r.chi.Mount(pattern, h)
@@ -179,7 +180,7 @@ func (r *chiWrapper) traceRequest(method, pattern string, fn APIHandler) http.Ha
 		}
 
 		return func(w http.ResponseWriter, req *http.Request) {
-			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, f)
+			tracing.TrackRequest(w, req, r.rootLogger, r.svcName, resourceName, r.enableTraceLogging, f)
 		}
 	}
 	return f

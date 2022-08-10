@@ -11,8 +11,8 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
 )
 
-func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string, next http.Handler) {
-	w, r, rt := NewTracer(w, r, log, service, resource, true)
+func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string, enableTraceLogging bool, next http.Handler) {
+	w, r, rt := NewTracer(w, r, log, service, resource, enableTraceLogging)
 	rt.Start()
 	next.ServeHTTP(w, r)
 	rt.Finish()
