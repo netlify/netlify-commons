@@ -26,6 +26,7 @@ func TestHandleError_ErrorIsNil(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	HandleError(nil, w, r)
@@ -42,6 +43,7 @@ func TestHandleError_ErrorIsNilPointerToTypeHTTPError(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	h := func(_ http.ResponseWriter, _ *http.Request) *HTTPError {
@@ -62,6 +64,7 @@ func TestHandleError_ErrorIsNilInterface(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	h := func(_ http.ResponseWriter, _ *http.Request) error {
@@ -82,6 +85,7 @@ func TestHandleError_StandardError(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	HandleError(errors.New("random error"), w, r)
@@ -100,6 +104,7 @@ func TestHandleError_HTTPError(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	httpErr := &HTTPError{
@@ -131,6 +136,7 @@ func TestHandleError_HttpErrorWithFields(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	httpErr := httpError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -161,6 +167,7 @@ func TestHandleError_NoLogForNormalErrors(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	httpErr := BadRequestError("not found yo.")
@@ -194,6 +201,7 @@ func TestHandleError_ErrorIsNilPointerToTypeOtherError(t *testing.T) {
 		logger,
 		"test",
 		"test",
+		true,
 	)
 
 	var oe *OtherError

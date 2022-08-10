@@ -14,7 +14,7 @@ type RequestTracer struct {
 	*trackingWriter
 	logrus.FieldLogger
 
-	disableTraceLogging bool
+	enableTraceLogging bool
 
 	RequestID   string
 	finalFields map[string]interface{}
@@ -27,7 +27,7 @@ type RequestTracer struct {
 	start       time.Time
 }
 
-func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string) (http.ResponseWriter, *http.Request, *RequestTracer) {
+func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string, enableTraceLogging bool) (http.ResponseWriter, *http.Request, *RequestTracer) {
 	var reqID string
 	log, reqID = RequestLogger(r, log)
 
@@ -43,11 +43,12 @@ func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, s
 		referrer:    r.Referer(),
 		remoteAddr:  r.RemoteAddr,
 
-		RequestID:      reqID,
-		span:           span,
-		trackingWriter: trackWriter,
-		FieldLogger:    log,
-		finalFields:    make(map[string]interface{}),
+		RequestID:          reqID,
+		span:               span,
+		trackingWriter:     trackWriter,
+		FieldLogger:        log,
+		enableTraceLogging: enableTraceLogging,
+		finalFields:        make(map[string]interface{}),
 	}
 	r = WrapWithTracer(r, rt)
 
@@ -57,7 +58,7 @@ func NewTracer(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, s
 func (rt *RequestTracer) Start() {
 	rt.start = time.Now()
 
-	if !rt.disableTraceLogging {
+	if rt.enableTraceLogging {
 		rt.WithFields(logrus.Fields{
 			"method":      rt.method,
 			"remote_addr": rt.remoteAddr,
@@ -73,7 +74,7 @@ func (rt *RequestTracer) Finish() {
 	rt.span.SetTag(ext.HTTPCode, strconv.Itoa(rt.trackingWriter.status))
 	rt.span.Finish()
 
-	if !rt.disableTraceLogging {
+	if rt.enableTraceLogging {
 		dur := time.Since(rt.start)
 
 		fields := logrus.Fields{}

@@ -12,7 +12,7 @@ import (
 )
 
 func TrackRequest(w http.ResponseWriter, r *http.Request, log logrus.FieldLogger, service, resource string, next http.Handler) {
-	w, r, rt := NewTracer(w, r, log, service, resource)
+	w, r, rt := NewTracer(w, r, log, service, resource, true)
 	rt.Start()
 	next.ServeHTTP(w, r)
 	rt.Finish()

@@ -20,7 +20,7 @@ func TestTracerLogging(t *testing.T) {
 
 	log, hook := logtest.NewNullLogger()
 
-	_, r, rt := NewTracer(rec, req, log, t.Name(), "some_resource")
+	_, r, rt := NewTracer(rec, req, log, t.Name(), "some_resource", true)
 
 	rt.Start()
 	e := hook.LastEntry()
@@ -66,6 +66,19 @@ func TestTracerLogging(t *testing.T) {
 	assert.Equal(t, "line", e.Data["final"])
 }
 
+func TestTracerLoggingIfDisabled(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://whatever.com/something", nil)
+
+	log, hook := logtest.NewNullLogger()
+
+	_, _, rt := NewTracer(rec, req, log, t.Name(), "some_resource", false)
+
+	rt.Start()
+	rt.Finish()
+	assert.Len(t, hook.Entries, 0)
+}
+
 func TestTracerSpans(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "http://whatever.com/something", nil)
@@ -74,7 +87,7 @@ func TestTracerSpans(t *testing.T) {
 
 	mt := mocktracer.New()
 	opentracing.SetGlobalTracer(mt)
-	_, _, rt := NewTracer(rec, req, log, t.Name(), "some_resource")
+	_, _, rt := NewTracer(rec, req, log, t.Name(), "some_resource", true)
 	rt.Start()
 	rt.WriteHeader(http.StatusOK)
 	rt.Finish()
