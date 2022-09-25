@@ -37,7 +37,7 @@ require (
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.mongodb.org/mongo-driver v1.9.0
 	go.uber.org/atomic v1.9.0
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
+	golang.org/x/net v0.0.0-20220923203811-8be639271d50
 	gopkg.in/DataDog/dd-trace-go.v1 v1.34.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/launchdarkly/go-sdk-common.v2 v2.5.0
