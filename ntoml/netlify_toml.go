@@ -1,55 +1,47 @@
 package ntoml
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v3"
 )
 
 const DefaultFilename = "netlify.toml"
 
-// cf. https://github.com/netlify/build/blob/3c9cf4dda7a39994a3f0f1a544242d386b2bc2dd/packages/%40netlify-config/path.js#L16
-var netlifyConfigFileNames = []string{
-	"netlify.toml", "netlify.yml", "netlify.yaml", "netlify.json",
-}
-
 type NetlifyToml struct {
-	Settings Settings `toml:"settings" json:"settings" yaml:"settings"`
+	Settings Settings `toml:"settings"`
 
-	Redirects []Redirect `toml:"redirects,omitempty" json:"redirects,omitempty" yaml:"redirects,omitempty"`
+	Redirects []Redirect `toml:"redirects,omitempty"`
 
 	// this is the default context
-	Build   *BuildConfig             `toml:"build" json:"build" yaml:"build"`
-	Plugins []Plugin                 `toml:"plugins" json:"plugins" yaml:"plugins"`
-	Context map[string]DeployContext `toml:"context,omitempty" json:"context,omitempty" yaml:"context,omitempty"`
+	Build   *BuildConfig             `toml:"build"`
+	Plugins []Plugin                 `toml:"plugins"`
+	Context map[string]DeployContext `toml:"context,omitempty"`
 }
 
 type Settings struct {
-	ID   string `toml:"id" json:"id" yaml:"id"`
-	Path string `toml:"path" json:"path" yaml:"path"`
+	ID   string `toml:"id"`
+	Path string `toml:"path"`
 }
 
 type BuildConfig struct {
-	Command      string            `toml:"command" json:"command" yaml:"command"`
-	Base         string            `toml:"base" json:"base" yaml:"base"`
-	Publish      string            `toml:"publish" json:"publish" yaml:"publish"`
-	Ignore       string            `toml:"ignore" json:"ignore" yaml:"ignore"`
-	Environment  map[string]string `toml:"environment" json:"environment" yaml:"environment"`
-	Functions    string            `toml:"functions" json:"functions" yaml:"functions"`
-	EdgeHandlers string            `toml:"edge_handlers" json:"edge_handlers" yaml:"edge_handlers"`
+	Command      string            `toml:"command"`
+	Base         string            `toml:"base"`
+	Publish      string            `toml:"publish"`
+	Ignore       string            `toml:"ignore"`
+	Environment  map[string]string `toml:"environment"`
+	Functions    string            `toml:"functions"`
+	EdgeHandlers string            `toml:"edge_handlers"`
 }
 
 type Plugin struct {
-	Package       string `toml:"package" json:"package" yaml:"package"`
-	PinnedVersion string `toml:"pinned_version,omitempty" json:"pinned_version,omitempty" yaml:"pinned_version,omitempty"`
+	Package       string `toml:"package"`
+	PinnedVersion string `toml:"pinned_version,omitempty"`
 }
 
 type DeployContext struct {
@@ -57,63 +49,38 @@ type DeployContext struct {
 }
 
 type Redirect struct {
-	Origin      string             `toml:"origin" json:"origin" yaml:"origin"`
-	Destination string             `toml:"destination" json:"destination" yaml:"destination"`
-	Parmeters   map[string]string  `toml:"parameters" json:"parameters" yaml:"parameters"`
-	Status      int                `toml:"status" json:"status" yaml:"status"`
-	Force       bool               `toml:"force" json:"force" yaml:"force"`
-	Conditions  *RedirectCondition `toml:"conditions" json:"conditions" yaml:"conditions"`
-	Headers     map[string]string  `toml:"headers" json:"headers" yaml:"headers"`
+	Origin      string             `toml:"origin"`
+	Destination string             `toml:"destination"`
+	Parmeters   map[string]string  `toml:"parameters"`
+	Status      int                `toml:"status"`
+	Force       bool               `toml:"force"`
+	Conditions  *RedirectCondition `toml:"conditions"`
+	Headers     map[string]string  `toml:"headers"`
 }
 
 type RedirectCondition struct {
-	Language []string `toml:"language" json:"language" yaml:"language"`
-	Country  []string `toml:"country" json:"country" yaml:"country"`
-	Role     []string `toml:"role" json:"role" yaml:"role"`
+	Language []string `toml:"language"`
+	Country  []string `toml:"country"`
+	Role     []string `toml:"role"`
 }
 
 type FoundNoConfigPathError struct {
 	base    string
-	checked []string
+	checked string
 }
 
 func (f *FoundNoConfigPathError) Error() string {
 	return fmt.Sprintf("No Netlify configuration file found.")
 }
 
-type FoundMoreThanOneConfigPathError struct {
-	base    string
-	checked []string
-	found   []string
-}
-
-func (f *FoundMoreThanOneConfigPathError) Error() string {
-	return fmt.Sprintf("Multiple potential Netlify configuration files in \"%s\": %s", f.base, strings.Join(f.found, ", "))
-}
-
-func findOnlyOneExistingPath(base string, paths ...string) (path string, err error) {
-	foundPaths := make([]string, 0, len(paths))
-	for _, possiblePath := range paths {
-		p := filepath.Join(base, possiblePath)
-		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
-			foundPaths = append(foundPaths, p)
-		}
-	}
-	if len(foundPaths) == 0 {
-		return "", &FoundNoConfigPathError{base: base, checked: paths}
-	}
-	if len(foundPaths) > 1 {
-		foundFilenames := make([]string, 0, len(foundPaths))
-		for _, foundPath := range foundPaths {
-			foundFilenames = append(foundFilenames, filepath.Base(foundPath))
-		}
-		return "", &FoundMoreThanOneConfigPathError{base: base, checked: paths, found: foundFilenames}
-	}
-	return foundPaths[0], nil
-}
-
 func GetNetlifyConfigPath(base string) (path string, err error) {
-	return findOnlyOneExistingPath(base, netlifyConfigFileNames...)
+	filePath := filepath.Join(base, DefaultFilename)
+
+	if fi, err := os.Stat(filePath); err == nil && !fi.IsDir() {
+		return filePath, nil
+	} else {
+		return "", &FoundNoConfigPathError{base: base, checked: DefaultFilename}
+	}
 }
 
 func Load() (*NetlifyToml, error) {
@@ -136,29 +103,12 @@ func LoadFrom(paths ...string) (*NetlifyToml, error) {
 	out := new(NetlifyToml)
 
 	for _, p := range paths {
-		extension := filepath.Ext(p)
-
 		if data, ferr := ioutil.ReadFile(p); !os.IsNotExist(ferr) {
 			if ferr != nil {
 				return nil, errors.Wrapf(ferr, "Error while reading in file %s", p)
 			}
 
-			var derr error
-
-			switch extension {
-			case ".toml":
-				derr = toml.Unmarshal(data, out)
-			case ".json":
-				derr = json.Unmarshal(data, out)
-			case ".yaml":
-				fallthrough
-			case ".yml":
-				derr = yaml.Unmarshal(data, out)
-			default:
-				return nil, errors.New(fmt.Sprintf("Invalid config extension %s of path %s", extension, p))
-			}
-
-			if derr != nil {
+			if derr := toml.Unmarshal(data, out); derr != nil {
 				return nil, errors.Wrapf(derr, "Error while decoding file %s", p)
 			}
 
