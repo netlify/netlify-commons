@@ -22,7 +22,9 @@ func TestIsPrivateIP(t *testing.T) {
 		{"10.0.0.1", true},
 		{"192.168.0.1", true},
 		{"172.16.0.0", true},
-		{"169.254.169.254", true},
+		{"fd00:ec2::254", true},
+		{"::ffff:169.254.169.254", true},
+		{"0:0:0:0:0:ffff:169.254.169.254", true},
 	}
 
 	for _, tt := range tests {
