@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.2](https://github.com/netlify/netlify-commons/compare/v0.63.1...v0.63.2) (2022-10-07)
+
+
+### Bug Fixes
+
+* trigger new release ([#349](https://github.com/netlify/netlify-commons/issues/349)) ([0c6b3a2](https://github.com/netlify/netlify-commons/commit/0c6b3a26d208970df44fd8535a537f06d46e4882))
+
 ## [0.63.1](https://github.com/netlify/netlify-commons/compare/v0.63.0...v0.63.1) (2022-06-30)
 
 
