@@ -1,5 +1,0 @@
-flagValues:
-  my-string-flag-key: "value-1"
-  my-boolean-flag-key: true
-  my-boolean-off-flag-key: false
-  my-integer-flag-key: 3
