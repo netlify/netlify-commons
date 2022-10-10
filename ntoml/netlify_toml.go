@@ -40,8 +40,8 @@ type BuildConfig struct {
 }
 
 type Plugin struct {
-	Package       string `toml:"package"`
-	PinnedVersion string `toml:"pinned_version,omitempty"`
+	Package       string `toml:"package" json:"package"`
+	PinnedVersion string `toml:"pinned_version,omitempty" json:"pinned_version,omitempty"`
 }
 
 type DeployContext struct {
