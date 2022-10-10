@@ -52,6 +52,9 @@ type Router interface {
 	Mount(pattern string, h http.Handler)
 
 	ServeHTTP(http.ResponseWriter, *http.Request)
+
+	// Returns the value of a URL parameter
+	URLParam(*http.Request, string) string
 }
 
 // New creates a router with sensible defaults (xff, request id, cors)
@@ -149,6 +152,11 @@ func (r *chiWrapper) Mount(pattern string, h http.Handler) {
 		})
 	}
 	r.chi.Mount(pattern, h)
+}
+
+// Returns the value of a URL parameter
+func (r *chiWrapper) URLParam(req *http.Request, name string) string {
+	return chi.URLParam(req, name)
 }
 
 // =======================================

@@ -154,6 +154,21 @@ func TestVersionHeader(t *testing.T) {
 	}
 }
 
+func TestURLParam(t *testing.T) {
+	r := New(logrus.WithField("test", t.Name()), OptEnableTracing("some-service"))
+
+	r.Get("/objects/{objectId}", func(w http.ResponseWriter, req *http.Request) error {
+		w.Write([]byte(r.URLParam(req, "objectId")))
+		w.WriteHeader(http.StatusOK)
+		return nil
+	})
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest("GET", "/objects/some-object", nil))
+	assert.Equal(t, []byte("some-object"), rec.Body.Bytes())
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
 func do(t *testing.T, opts []Option, svcName, path string, handler APIHandler, req *http.Request) *httptest.ResponseRecorder {
 	if opts == nil {
 		opts = []Option{}
