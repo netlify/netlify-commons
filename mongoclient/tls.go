@@ -1,4 +1,4 @@
-package nconf
+package mongoclient
 
 import (
 	"crypto/tls"

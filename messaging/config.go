@@ -5,14 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/netlify/netlify-commons/nconf"
-
-	"github.com/pkg/errors"
-
 	"github.com/nats-io/stan.go"
 	"github.com/nats-io/stan.go/pb"
-
 	"github.com/netlify/netlify-commons/discovery"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,10 +26,10 @@ type NatsAuth struct {
 }
 
 type NatsConfig struct {
-	TLS           *nconf.TLSConfig `mapstructure:"tls_conf"`
-	DiscoveryName string           `mapstructure:"discovery_name" split_words:"true"`
-	Servers       []string         `mapstructure:"servers"`
-	Auth          NatsAuth         `mapstructure:"auth"`
+	TLS           *TLSConfig `mapstructure:"tls_conf"`
+	DiscoveryName string     `mapstructure:"discovery_name" split_words:"true"`
+	Servers       []string   `mapstructure:"servers"`
+	Auth          NatsAuth   `mapstructure:"auth"`
 
 	// for streaming
 	ClusterID string `mapstructure:"cluster_id" split_words:"true"`

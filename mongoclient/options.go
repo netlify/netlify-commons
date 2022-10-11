@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/netlify/netlify-commons/nconf"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -12,7 +11,7 @@ import (
 
 type Option func(opt *options.ClientOptions) error
 
-func TLSOption(log logrus.FieldLogger, config nconf.TLSConfig) Option {
+func TLSOption(log logrus.FieldLogger, config TLSConfig) Option {
 	return func(opts *options.ClientOptions) error {
 		if !config.Enabled {
 			log.Debug("Skipping TLS config")

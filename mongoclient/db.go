@@ -10,8 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/netlify/netlify-commons/nconf"
 )
 
 const (
@@ -30,7 +28,7 @@ type Auth struct {
 
 type Config struct {
 	AppName            string
-	TLS                *nconf.TLSConfig
+	TLS                *TLSConfig
 	Servers            []string
 	ReplSetName        string
 	ConnTimeout        time.Duration
