@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.64.0](https://github.com/netlify/netlify-commons/compare/v0.63.3...v0.64.0) (2022-10-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove packages that have been broken out (#354)
+
+### Features
+
+* remove packages that have been broken out ([#354](https://github.com/netlify/netlify-commons/issues/354)) ([e5f9fcd](https://github.com/netlify/netlify-commons/commit/e5f9fcd9fbb68d37963ea6799cb4d8e006903c53))
+
 ## [0.63.3](https://github.com/netlify/netlify-commons/compare/v0.63.2...v0.63.3) (2022-10-10)
 
 
