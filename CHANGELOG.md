@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.3](https://github.com/netlify/netlify-commons/compare/v0.63.2...v0.63.3) (2022-10-10)
+
+
+### Bug Fixes
+
+* add json annotations for ntoml.Plugin ([#353](https://github.com/netlify/netlify-commons/issues/353)) ([bc1ebfd](https://github.com/netlify/netlify-commons/commit/bc1ebfd946871f11c9f6812548497bf5fb7b2203))
+
 ## [0.63.2](https://github.com/netlify/netlify-commons/compare/v0.63.1...v0.63.2) (2022-10-07)
 
 
