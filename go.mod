@@ -24,7 +24,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
+	github.com/sebest/xff 671bd2870b3a
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.2.2 // indirect
