@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.64.1](https://github.com/netlify/netlify-commons/compare/v0.64.0...v0.64.1) (2025-12-27)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/sirupsen/logrus to v1.8.3 [security] ([#376](https://github.com/netlify/netlify-commons/issues/376)) ([6fb4c4b](https://github.com/netlify/netlify-commons/commit/6fb4c4b213f5068b90869186f19a83a8d12f48a2))
+* **deps:** update module github.com/sirupsen/logrus to v1.9.3 ([#390](https://github.com/netlify/netlify-commons/issues/390)) ([fcc8d1e](https://github.com/netlify/netlify-commons/commit/fcc8d1ee59ddd42934ed942aaed3e1a971300bc8))
+
 ## [0.64.0](https://github.com/netlify/netlify-commons/compare/v0.63.3...v0.64.0) (2022-10-11)
 
 
