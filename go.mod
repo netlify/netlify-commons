@@ -2,48 +2,48 @@ module github.com/netlify/netlify-commons
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/DataDog/datadog-go v4.8.3+incompatible
-	github.com/Microsoft/go-winio v0.5.0 // indirect
-	github.com/armon/go-metrics v0.3.10
-	github.com/bugsnag/bugsnag-go/v2 v2.1.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-chi/chi v4.0.2+incompatible
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
-	github.com/hashicorp/go-uuid v1.0.2 // indirect
-	github.com/joho/godotenv v1.4.0
-	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/kr/text v0.2.0 // indirect
-	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
 	github.com/nats-io/nats.go v1.8.1
 	github.com/nats-io/stan.go v0.5.0
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/opentracing/opentracing-go v1.2.0
-	github.com/pelletier/go-toml v1.7.0 // indirect
-	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/rs/cors v1.6.0
-	github.com/satori/go.uuid v1.2.0
-	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
-	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/afero v1.2.2 // indirect
-	github.com/spf13/cobra v0.0.7
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.7.1
-	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/pretty v1.0.1 // indirect
-	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	github.com/stretchr/testify v1.11.1
 	go.mongodb.org/mongo-driver v1.9.0
-	go.uber.org/atomic v1.9.0
-	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
-	gopkg.in/DataDog/dd-trace-go.v1 v1.34.0
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/launchdarkly/go-sdk-common.v2 v2.5.0
-	gopkg.in/launchdarkly/go-server-sdk.v5 v5.8.1
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-go 1.15
+require (
+	github.com/armon/go-metrics v0.3.10 // indirect
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/golang/protobuf v1.4.1 // indirect
+	github.com/golang/snappy v0.0.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/nats-io/nats-server/v2 v2.0.0 // indirect
+	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
+	github.com/nats-io/nkeys v0.0.2 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/procfs v0.0.8 // indirect
+	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
+	github.com/tidwall/pretty v1.0.1 // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.0.2 // indirect
+	github.com/xdg-go/stringprep v1.0.2 // indirect
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
+	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+go 1.23.0
