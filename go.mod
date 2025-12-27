@@ -7,7 +7,7 @@ require (
 	github.com/armon/go-metrics v0.3.10
 	github.com/bugsnag/bugsnag-go/v2 v2.1.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/go-chi/chi v4.1.3+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
