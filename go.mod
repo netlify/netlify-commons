@@ -1,7 +1,7 @@
 module github.com/netlify/netlify-commons
 
 require (
-	github.com/BurntSushi/toml v0.4.1
+	github.com/BurntSushi/toml v1.6.0
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
