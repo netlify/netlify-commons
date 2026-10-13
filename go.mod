@@ -5,14 +5,13 @@ require (
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/nats-io/nats-streaming-server v0.15.1 // indirect
-	github.com/nats-io/nats.go v1.8.1
-	github.com/nats-io/stan.go v0.5.0
+	github.com/nats-io/nats-streaming-server v0.24.6 // indirect
+	github.com/nats-io/nats.go v1.15.0
+	github.com/nats-io/stan.go v0.10.2
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
